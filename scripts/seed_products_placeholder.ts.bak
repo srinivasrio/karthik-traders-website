@@ -1,0 +1,58 @@
+
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+import {
+    aeratorSets,
+    motors,
+    wormGearboxes,
+    bevelGearboxes,
+    longArmGearboxes,
+    spares,
+    motorCovers,
+    floats,
+    fans,
+    frames,
+    rods,
+    kitBoxes,
+    longArmSpares
+} from '../src/data/products';
+
+dotenv.config({ path: '.env.local' });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase URL or Key');
+    process.exit(1);
+}
+
+// create a service role client or use anon key with RLS policy allowing insert?
+// The anon key might not have permission to insert if RLS is on and policy requires admin role.
+// We set up RLS policy: "Admins can insert products".
+// So I need to sign in as admin or bypass RLS?
+// "service_role" key is best for seeding. But I don't have it in .env.local (I have anon).
+// I can disable RLS temporarily or insert using a user that defaults to admin?
+// Or I can just USE the service role key if I can get it.
+// I only got anon key.
+// "Admins can insert products" -> check `public.profiles` for `role='admin'`.
+// I can create an admin user first?
+// Or I can temporarily allow public insert in the migration?
+
+// BETTER: I will assume I can run SQL to insert data? No, these are complex objects.
+// I can temporarily disable RLS on products table for seeding?
+// Or I can add a policy "Public can insert products" temporarily?
+
+// Let's try to pass the service_role key if I can find it?
+// The `get_publishable_keys` tool only returned anon and publishable.
+// Using `run_command` I can't easily get service_role.
+// But I can run SQL! `mcp_supabase-mcp-server_execute_sql`.
+// I can write a script that generates SQL insert statements!
+// That is much safer and bypasses RLS issues because I run it via the MCP tool which (presumably) has admin access.
+
+// PLAN CHANGE: Generate SQL file for seeding instead of running a JS script against the API.
+// 1. Create a script `scripts/generate_seed_sql.ts` that reads data and outputs SQL.
+// 2. Run the script -> `seed.sql`.
+// 3. Apply `seed.sql` using `apply_migration` (or execute_sql).
+
+console.log("Use generate_seed_sql.ts instead");

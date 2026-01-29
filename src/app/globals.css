@@ -1,0 +1,825 @@
+@import "tailwindcss";
+
+/* ==========================================
+   KARTHIK TRADERS - AQUACULTURE DESIGN SYSTEM
+   ========================================== */
+
+:root {
+  /* ============================================
+     LIQUID GLASS AQUA COLOR PALETTE
+     ============================================ */
+
+  /* Primary Aqua Gradient Scale */
+  --aqua-50: #F0FDFF;
+  --aqua-100: #E0FBFF;
+  --aqua-200: #A8F1FF;
+  /* Background sections */
+  --aqua-300: #6FE6FC;
+  /* Primary UI color */
+  --aqua-400: #4ED7F1;
+  /* Buttons, active states */
+  --aqua-500: #38C8E8;
+  --aqua-600: #22B4D4;
+  --aqua-700: #1A9AB8;
+  --aqua-800: #157A94;
+  --aqua-900: #0F5A6E;
+
+  /* Highlight / Accent / Glow */
+  --highlight: #FFFA8D;
+  --highlight-soft: rgba(255, 250, 141, 0.3);
+
+  /* Deep Blue (Headers, Text) */
+  --deep-blue-800: #0B3D4A;
+  --deep-blue-900: #062A35;
+  --deep-blue-950: #021820;
+
+  /* Steel Grey (Neutrals - Softer) */
+  --steel-50: #F8FDFE;
+  --steel-100: #F1FAFB;
+  --steel-200: #E4F4F6;
+  --steel-300: #C8E8ED;
+  --steel-400: #8CBFC8;
+  --steel-500: #5A9AA6;
+  --steel-600: #3D7A86;
+  --steel-700: #2B5B65;
+  --steel-800: #1C3F47;
+
+  /* Brand Colors */
+  --aqualion-gold: #FFCE47;
+  --aqualion-gold-dark: #E6B530;
+  --aqualion-gold-light: #FFE082;
+  --seaboss-blue: #4ED7F1;
+  --seaboss-blue-dark: #38C8E8;
+  --seaboss-blue-light: #6FE6FC;
+
+  /* CTA Colors */
+  --cta-primary: #4ED7F1;
+  --cta-primary-hover: #38C8E8;
+  --cta-secondary: #6FE6FC;
+  --cta-accent: #FFFA8D;
+
+  /* Status Colors */
+  --success-500: #34D399;
+  --success-600: #10B981;
+  --warning-500: #FFCE47;
+  --warning-600: #E6B530;
+  --error-500: #FB7185;
+  --error-600: #F43F5E;
+
+  /* Backgrounds */
+  --background: #FFFFFF;
+  --background-soft: #F0FDFF;
+  --background-section: #A8F1FF;
+  --foreground: #0B3D4A;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(111, 230, 252, 0.3);
+
+  /* Liquid Glass Shadows */
+  --shadow-soft: 0 4px 20px rgba(78, 215, 241, 0.1);
+  --shadow-glass: 0 8px 32px rgba(78, 215, 241, 0.15);
+  --shadow-glow: 0 0 40px rgba(111, 230, 252, 0.25);
+  --shadow-hover: 0 12px 40px rgba(78, 215, 241, 0.2);
+  --shadow-highlight: 0 0 30px rgba(255, 250, 141, 0.4);
+
+  /* Animation Timing */
+  --ease-liquid: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 200ms;
+  --duration-base: 400ms;
+  --duration-slow: 700ms;
+}
+
+/* Dark Mode */
+/* Dark Mode - Disabled to enforce light theme
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #FFFFFF;
+    --foreground: #0B3D4A;
+    --card-bg: rgba(255, 255, 255, 0.8);
+    --card-border: rgba(111, 230, 252, 0.3);
+  }
+}
+*/
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Custom Colors */
+  --color-aqua-50: var(--aqua-50);
+  --color-aqua-100: var(--aqua-100);
+  --color-aqua-200: var(--aqua-200);
+  --color-aqua-300: var(--aqua-300);
+  --color-aqua-400: var(--aqua-400);
+  --color-aqua-500: var(--aqua-500);
+  --color-aqua-600: var(--aqua-600);
+  --color-aqua-700: var(--aqua-700);
+  --color-aqua-800: var(--aqua-800);
+  --color-aqua-900: var(--aqua-900);
+
+  --color-deep-blue-800: var(--deep-blue-800);
+  --color-deep-blue-900: var(--deep-blue-900);
+  --color-deep-blue-950: var(--deep-blue-950);
+
+  --color-steel-50: var(--steel-50);
+  --color-steel-100: var(--steel-100);
+  --color-steel-200: var(--steel-200);
+  --color-steel-300: var(--steel-300);
+  --color-steel-400: var(--steel-400);
+  --color-steel-500: var(--steel-500);
+  --color-steel-600: var(--steel-600);
+  --color-steel-700: var(--steel-700);
+  --color-steel-800: var(--steel-800);
+
+  --color-aqualion: var(--aqualion-gold);
+  --color-aqualion-dark: var(--aqualion-gold-dark);
+  --color-aqualion-light: var(--aqualion-gold-light);
+  --color-seaboss: var(--seaboss-blue);
+  --color-seaboss-dark: var(--seaboss-blue-dark);
+  --color-seaboss-light: var(--seaboss-blue-light);
+
+  --color-success: var(--success-500);
+  --color-warning: var(--warning-500);
+  --color-error: var(--error-500);
+}
+
+/* ==========================================
+   BASE STYLES
+   ========================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================
+   TYPOGRAPHY
+   ========================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--deep-blue-800);
+}
+
+h1 {
+  font-size: 3rem;
+}
+
+h2 {
+  font-size: 2.25rem;
+}
+
+h3 {
+  font-size: 1.875rem;
+}
+
+h4 {
+  font-size: 1.5rem;
+}
+
+h5 {
+  font-size: 1.25rem;
+}
+
+h6 {
+  font-size: 1.125rem;
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.75rem;
+    /* Reduced from 2.25rem */
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    /* Reduced from 1.875rem */
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    /* Reduced from 1.5rem */
+  }
+
+  h4 {
+    font-size: 1.125rem;
+    /* Reduced from 1.25rem */
+  }
+}
+
+/* High Contrast for Outdoor Visibility */
+.high-contrast {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================
+   FLUID LIQUID GLASS ANIMATIONS (Advanced)
+   ========================================== */
+
+/* 1. Global Ambient Motion (Breathing) */
+@keyframes breathe {
+
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: scale(1.002);
+    filter: brightness(1.02);
+  }
+}
+
+.animate-breathe {
+  animation: breathe 5s ease-in-out infinite;
+}
+
+/* 2. Liquid Background Shift */
+@keyframes liquidFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.liquid-bg {
+  background: linear-gradient(-45deg, var(--aqua-50), var(--steel-50), var(--aqua-100), var(--aqua-50));
+  background-size: 400% 400%;
+  animation: liquidFlow 15s ease infinite;
+}
+
+/* 3. Glass Refraction (Border Shine) */
+@keyframes borderShine {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.glass-shine-border {
+  position: relative;
+}
+
+.glass-shine-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  background: linear-gradient(90deg,
+      rgba(111, 230, 252, 0.1),
+      rgba(255, 250, 141, 0.4),
+      rgba(111, 230, 252, 0.1));
+  background-size: 200% 100%;
+  animation: borderShine 4s linear infinite;
+  border-radius: inherit;
+  opacity: 0.6;
+}
+
+/* 4. Soft Parallax Float */
+@keyframes floatParallax {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-float {
+  animation: floatParallax 6s var(--ease-smooth) infinite;
+}
+
+/* 5. Page Transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(20px) scale(0.99);
+  filter: blur(4px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 600ms linear;
+}
+
+/* 6. Ripple Effect (Refined) */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.btn-ripple::after {
+  /* ... existing ripple styles but refined ... */
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 60%);
+}
+
+/* 7. Card Idle Micro-Motion (More organic) */
+@keyframes cardIdle {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  33% {
+    transform: translateY(-2px) rotate(0.05deg);
+  }
+
+  66% {
+    transform: translateY(1px) rotate(-0.05deg);
+  }
+}
+
+.card-idle-motion {
+  animation: cardIdle 8s ease-in-out infinite;
+}
+
+/* ==========================================
+   LIQUID GLASS COMPONENTS
+   ========================================== */
+
+/* Glass Card - Liquid Style */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(111, 230, 252, 0.2);
+  border-radius: 16px;
+  box-shadow: var(--shadow-glass);
+  transition: all var(--duration-base) var(--ease-smooth);
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(111, 230, 252, 0.4);
+}
+
+/* Product Card - Liquid Glass */
+.product-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  transition: all var(--duration-base) var(--ease-smooth);
+}
+
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(111, 230, 252, 0.4);
+}
+
+.product-card:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.03);
+}
+
+.product-image {
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+/* Brand Badges */
+.badge-aqualion {
+  background: linear-gradient(135deg, var(--aqualion-gold), var(--aqualion-gold-dark));
+  color: white;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-seaboss {
+  background: linear-gradient(135deg, var(--seaboss-blue), var(--seaboss-blue-dark));
+  color: white;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Price Display */
+.price-sale {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--success-600);
+  font-variant-numeric: tabular-nums;
+}
+
+.price-mrp {
+  font-size: 1rem;
+  color: var(--steel-500);
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+
+.price-savings {
+  background: linear-gradient(135deg, var(--success-500), #16A34A);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Buttons - Liquid Glass Style */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  white-space: nowrap;
+  width: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+}
+
+.btn:hover::before {
+  opacity: 1;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-sm {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 0.75rem;
+  border-radius: 8px;
+}
+
+.btn-lg {
+  height: 48px;
+  padding: 0 24px;
+  font-size: 1rem;
+  border-radius: 12px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--aqua-400), var(--aqua-500));
+  color: white;
+  box-shadow: 0 2px 10px rgba(78, 215, 241, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--aqua-500), var(--aqua-600));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(78, 215, 241, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  color: var(--deep-blue-800);
+  border: 1px solid var(--card-border);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--aqua-300);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--aqua-500);
+  border: 1.5px solid var(--aqua-400);
+}
+
+.btn-outline:hover {
+  background: rgba(78, 215, 241, 0.1);
+  border-color: var(--aqua-500);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--steel-600);
+}
+
+.btn-ghost:hover {
+  background: rgba(111, 230, 252, 0.1);
+  color: var(--aqua-600);
+}
+
+.btn-aqualion {
+  background: linear-gradient(135deg, var(--aqualion-gold), var(--aqualion-gold-dark));
+  color: white;
+}
+
+.btn-aqualion:hover {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-seaboss {
+  background: linear-gradient(135deg, var(--seaboss-blue), var(--seaboss-blue-dark));
+  color: white;
+}
+
+.btn-seaboss:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Buy Now - Primary CTA */
+.btn-buy {
+  background: var(--cta-orange);
+  color: white;
+}
+
+.btn-buy:hover {
+  background: var(--cta-orange-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+/* Add to Cart */
+.btn-cart {
+  background: var(--cta-green);
+  color: white;
+}
+
+.btn-cart:hover {
+  background: var(--cta-green-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* Stock Status */
+.stock-in {
+  color: var(--success-600);
+}
+
+.stock-limited {
+  color: var(--warning-600);
+}
+
+.stock-out {
+  color: var(--error-600);
+}
+
+/* ==========================================
+   NAVIGATION
+   ========================================== */
+
+.nav-link {
+  position: relative;
+  color: var(--steel-600);
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--aqua-600);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--aqua-500), var(--aqua-600));
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+  width: 80%;
+}
+
+.nav-link.active {
+  color: var(--aqua-600);
+}
+
+.nav-link.active::after {
+  width: 80%;
+}
+
+/* ==========================================
+   HERO SECTION
+   ========================================== */
+
+.hero-gradient {
+  background: linear-gradient(135deg,
+      var(--deep-blue-900) 0%,
+      var(--aqua-900) 50%,
+      var(--deep-blue-800) 100%);
+}
+
+.hero-overlay {
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.1) 50%,
+      rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* Wave Animation */
+@keyframes wave {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-25%) translateY(5px);
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.wave-animation {
+  animation: wave 8s linear infinite;
+}
+
+/* ==========================================
+   RESPONSIVE UTILITIES
+   ========================================== */
+
+.container-custom {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .container-custom {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-custom {
+    padding: 0 32px;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+
+  /* Keep buttons compact on mobile */
+  .btn {
+    height: 40px;
+    padding: 0 14px;
+    font-size: 0.8125rem;
+  }
+
+  .btn-sm {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 0.75rem;
+  }
+
+  .product-card {
+    border-radius: 8px;
+  }
+}
+
+/* Grid Systems - 2 columns on mobile */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .product-grid {
+    gap: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+}
+
+/* ==========================================
+   SCROLLBAR STYLING
+   ========================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--steel-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--steel-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--steel-500);
+}
+
+/* ==========================================
+   LOADING STATES
+   ========================================== */
+
+.skeleton {
+  background: linear-gradient(90deg,
+      var(--steel-200) 0%,
+      var(--steel-100) 50%,
+      var(--steel-200) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ==========================================
+   SELECTION
+   ========================================== */
+
+::selection {
+  background: var(--aqua-200);
+  color: var(--deep-blue-900);
+}
