@@ -102,22 +102,7 @@ export default function LoginPage() {
                 return;
             }
 
-            // Check if profile exists
-            if (authData.user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', authData.user.id)
-                    .maybeSingle();
 
-                if (!profile) {
-                    // No profile exists - sign out and show error in UI only
-                    await supabase.auth.signOut();
-                    setError('No account found. Please sign up first.');
-                    setLoading(false);
-                    return;
-                }
-            }
 
             router.push('/dashboard');
         } catch (err: any) {

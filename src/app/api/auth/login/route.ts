@@ -77,19 +77,34 @@ export async function POST(request: Request) {
 
         // Attempt to handle via Admin Client
         if (supabaseAdmin) {
-            // Check if user exists by looking up their profile using mobile number
-            // Since we link mobile in profiles, this is a reliable way to find the auth user id
-            const { data: profile } = await supabaseAdmin
-                .from('profiles')
-                .select('id')
-                .eq('mobile', phone)
-                .single();
+            // Check if user exists by searching directly in Auth system
+            // This is more reliable than profiles if the trigger was slow or failed
+            const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+            const existingUser = users.find(u => u.email === email);
 
-            if (profile && profile.id) {
-                // User exists, so password must be wrong (e.g. secret rotated). Update it.
-                await supabaseAdmin.auth.admin.updateUserById(profile.id, { password });
+            if (existingUser) {
+                // User exists in Auth, but maybe password needs rotation or just sign in
+                // We update password to match the one derived from phone (in case it changed or secret was rotated)
+                await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
+
+                // Also ensure profile exists (repair if missing)
+                const { data: profile } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', existingUser.id)
+                    .single();
+
+                if (!profile) {
+                    console.log('Login: Repairing missing profile for user', existingUser.id);
+                    await supabaseAdmin.from('profiles').insert({
+                        id: existingUser.id,
+                        mobile: phone,
+                        role: 'customer'
+                    });
+                }
+
             } else {
-                // User likely doesn't exist (or profile missing), try creating new user
+                // User truly doesn't exist, try creating new user
                 const { error: createError } = await supabaseAdmin.auth.admin.createUser({
                     email,
                     password,
@@ -97,11 +112,7 @@ export async function POST(request: Request) {
                     user_metadata: { mobile: phone, firebase_uid: firebaseUser.localId }
                 });
 
-                // If createUser fails with existing email but no profile found, we might need to handle edge case
-                // But relying on profile lookup is generally correct for this system
                 if (createError) {
-                    // Fallback: If create error says "email already registered", try listUsers to find ID?
-                    // For now, throw to see error
                     throw createError;
                 }
             }
