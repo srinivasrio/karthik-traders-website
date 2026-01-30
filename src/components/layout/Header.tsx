@@ -100,6 +100,12 @@ export default function Header() {
         }
     };
 
+    const handleLogout = () => {
+        if (window.confirm('Are you sure you want to logout?')) {
+            logout();
+        }
+    };
+
     return (
         <header
             className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${isScrolled
@@ -136,7 +142,7 @@ export default function Header() {
                         {/* Desktop Menu Button */}
                         {user ? (
                             <button
-                                onClick={logout}
+                                onClick={handleLogout}
                                 className="px-5 py-2.5 rounded-full border border-red-200 text-red-600 font-medium text-base hover:bg-red-50 transition-colors"
                             >
                                 Logout
@@ -325,7 +331,7 @@ export default function Header() {
                                                 </Link>
                                                 <button
                                                     onClick={() => {
-                                                        logout();
+                                                        handleLogout();
                                                         setIsMobileMenuOpen(false);
                                                     }}
                                                     className="flex items-center justify-center px-2 py-2 rounded-lg text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"

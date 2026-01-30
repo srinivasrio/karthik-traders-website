@@ -127,7 +127,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         Back to Home
                     </Link>
                     <button
-                        onClick={() => logout()}
+                        onClick={() => {
+                            if (window.confirm('Are you sure you want to logout?')) {
+                                logout();
+                            }
+                        }}
                         className="flex items-center w-full px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors"
                     >
                         <ArrowLeftOnRectangleIcon className="mr-2 h-4 w-4 text-slate-400" />
