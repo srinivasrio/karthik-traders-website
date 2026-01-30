@@ -299,22 +299,14 @@ function TrustHighlightsSection() {
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handlePullDown = () => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1500);
-  };
-
   return (
-    <MobileGestureLayout onPullDown={handlePullDown}>
-      <div className="min-h-screen">
-        <HeroSection />
-        <CategoriesSection />
-        <TrustHighlightsSection />
-        <ReviewsSection />
-        <MapSection />
-        <ContactForm />
-
-      </div>
-    </MobileGestureLayout>
+    <div className="min-h-screen">
+      <HeroSection />
+      <CategoriesSection />
+      <TrustHighlightsSection />
+      <ReviewsSection />
+      <MapSection />
+      <ContactForm />
+    </div>
   );
 }
