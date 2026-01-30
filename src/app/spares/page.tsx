@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 type CategoryFilter = 'all' | 'motor-cover' | 'float' | 'fan' | 'frame' | 'rod' | 'kit-box';
 
 import { Suspense } from 'react';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
 function SparesContent() {
     const router = useRouter();
@@ -155,7 +156,7 @@ function SparesContent() {
 
 export default function SparesPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-white pt-20 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aqua-600"></div></div>}>
+        <Suspense fallback={<SimpleLoadingScreen />}>
             <SparesContent />
         </Suspense>
     );

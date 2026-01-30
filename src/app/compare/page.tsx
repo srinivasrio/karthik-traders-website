@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -305,14 +306,7 @@ function CompareContent() {
 
 export default function ComparePage() {
     return (
-        <Suspense fallback={
-            <div className="min-h-screen bg-steel-50 pt-24 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-aqua-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-steel-500">Loading comparison...</p>
-                </div>
-            </div>
-        }>
+        <Suspense fallback={<SimpleLoadingScreen />}>
             <CompareContent />
         </Suspense>
     );

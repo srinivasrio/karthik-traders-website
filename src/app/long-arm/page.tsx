@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 type LongArmCategory = 'all' | 'gearbox' | 'spare';
 
 import { Suspense } from 'react';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
 function LongArmContent() {
     const router = useRouter();
@@ -166,7 +167,7 @@ function LongArmContent() {
 
 export default function LongArmPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-white pt-20 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aqua-600"></div></div>}>
+        <Suspense fallback={<SimpleLoadingScreen />}>
             <LongArmContent />
         </Suspense>
     );

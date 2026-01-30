@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import { useSearchParams } from 'next/navigation';
 import { aeratorSets, Brand, formatPrice } from '@/data/products';
 import ProductGrid from '@/components/products/ProductGrid';
@@ -144,7 +145,7 @@ function AeratorSetsContent() {
 
 export default function AeratorSetsPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <Suspense fallback={<SimpleLoadingScreen />}>
             <AeratorSetsContent />
         </Suspense>
     );
