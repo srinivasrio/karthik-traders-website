@@ -282,6 +282,18 @@ export default function Footer() {
                         <Link href="/terms-conditions" className="text-deep-blue-700 hover:text-aqua-700 text-sm transition-colors font-medium">
                             Terms & Conditions
                         </Link>
+                        <span className="hidden md:inline text-deep-blue-300">|</span>
+                        <span className="text-deep-blue-700/80 text-sm font-medium">
+                            Developed by{' '}
+                            <a
+                                href="https://www.iamsrinivas.tech"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-deep-blue-900 hover:text-aqua-700 transition-colors font-bold"
+                            >
+                                Srinivas Kumar
+                            </a>
+                        </span>
                     </div>
                 </div>
             </div>
