@@ -14,8 +14,10 @@ import {
     Bars3Icon,
     XMarkIcon,
     UserIcon,
+
     ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const navigation = [
     { name: 'Overview', href: '/admin', icon: HomeIcon },
@@ -31,6 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const [mounted, setMounted] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -127,11 +130,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         Back to Home
                     </Link>
                     <button
-                        onClick={() => {
-                            if (window.confirm('Are you sure you want to logout?')) {
-                                logout();
-                            }
-                        }}
+                        onClick={() => setIsLogoutModalOpen(true)}
                         className="flex items-center w-full px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors"
                     >
                         <ArrowLeftOnRectangleIcon className="mr-2 h-4 w-4 text-slate-400" />
@@ -171,6 +170,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {children}
                 </main>
             </div>
-        </div>
+
+
+            <ConfirmationModal
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={logout}
+                title="Sign Out"
+                message="Are you sure you want to sign out of the Admin Panel?"
+                confirmText="Sign Out"
+                isDestructive={true}
+            />
+        </div >
     );
 }

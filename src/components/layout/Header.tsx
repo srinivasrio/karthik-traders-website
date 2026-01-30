@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -22,6 +23,7 @@ export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [cartCount, setCartCount] = useState(0);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const { user, logout, profile } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
@@ -101,9 +103,7 @@ export default function Header() {
     };
 
     const handleLogout = () => {
-        if (window.confirm('Are you sure you want to logout?')) {
-            logout();
-        }
+        setIsLogoutModalOpen(true);
     };
 
     return (
@@ -368,6 +368,16 @@ export default function Header() {
                     )}
                 </AnimatePresence>
             </div >
+
+            <ConfirmationModal
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={logout}
+                title="Sign Out"
+                message="Are you sure you want to sign out of your account?"
+                confirmText="Sign Out"
+                isDestructive={true}
+            />
         </header >
     );
 }
