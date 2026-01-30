@@ -297,6 +297,8 @@ export default function Footer() {
                     </div>
                 </div>
             </div>
-        </footer >
+            {/* Explicit Spacer for Mobile Bottom Nav */}
+            <div className="h-24 md:h-0 w-full" aria-hidden="true" />
+        </footer>
     );
 }

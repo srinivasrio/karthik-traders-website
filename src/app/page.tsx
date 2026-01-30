@@ -247,17 +247,17 @@ function TrustHighlightsSection() {
       <div className="container-custom px-4">
         {/* Increased height to allow 'peeking' next card, overflow hidden to mask exits */}
         <div className="max-w-md mx-auto h-[200px] relative flex flex-col items-center justify-center overflow-hidden">
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {/* Render Primary Card */}
             <motion.div
               key={primaryItem.id}
               variants={variants}
-              initial="bottom" // Was secondary (bottom) before becoming primary
+              initial="bottom"
               animate="center"
               exit="exit"
               transition={{ duration: 0.8, ease: "easeInOut" }}
               className="absolute w-full flex items-center gap-4 p-4 rounded-[20px] bg-white/60 backdrop-blur-md border border-white/50 shadow-sm"
-              style={{ maxHeight: '88px' }}
+              style={{ maxHeight: '88px', top: '56px' }} // Centered vertically in 200px container
             >
               <div className={`w-12 h-12 rounded-full ${primaryItem.color} flex items-center justify-center text-2xl shadow-inner shrink-0 transition-colors duration-500`}>
                 {primaryItem.icon}
@@ -265,28 +265,6 @@ function TrustHighlightsSection() {
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-deep-blue-900 truncate">{primaryItem.title}</h3>
                 <p className="text-xs text-steel-600 truncate">{primaryItem.desc}</p>
-              </div>
-            </motion.div>
-
-            {/* Render Secondary Card (The Peek) */}
-            <motion.div
-              key={secondaryItem.id}
-              variants={variants}
-              initial="enter"
-              animate="bottom"
-              exit="center" // It doesn't actually exit, it promotes to primary (which uses 'initial=bottom'), but for AnimatePresence logic, this key *remains* in the next render as Primary. 
-              // Wait, if next render has key={secondaryItem.id} as the FIRST element, standard comparison might just update props. 
-              // Frame Motion handles layout shifts if key persists.
-              transition={{ duration: 0.8, ease: "easeInOut" }}
-              className="absolute w-full flex items-center gap-4 p-4 rounded-[20px] bg-white/60 backdrop-blur-md border border-white/50 shadow-sm"
-              style={{ maxHeight: '88px' }}
-            >
-              <div className={`w-12 h-12 rounded-full ${secondaryItem.color} flex items-center justify-center text-2xl shadow-inner shrink-0 transition-colors duration-500`}>
-                {secondaryItem.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-deep-blue-900 truncate">{secondaryItem.title}</h3>
-                <p className="text-xs text-steel-600 truncate">{secondaryItem.desc}</p>
               </div>
             </motion.div>
           </AnimatePresence>
