@@ -275,7 +275,7 @@ export default function Footer() {
                     <p className="text-deep-blue-700/80 text-sm text-center md:text-left font-medium">
                         © {new Date().getFullYear()} Karthik Traders. All rights reserved.
                     </p>
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-6 gap-y-2">
                         <Link href="/privacy-policy" className="text-deep-blue-700 hover:text-aqua-700 text-sm transition-colors font-medium">
                             Privacy Policy
                         </Link>
