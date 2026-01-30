@@ -223,7 +223,7 @@ export default function AdminProductsPage() {
                                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-600 uppercase">Category</th>
                                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-600 uppercase">Price</th>
                                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-600 uppercase">Stock</th>
-                                <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-600 uppercase">Status</th>
+                                <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-600 uppercase">Visibility</th>
                                 <th className="px-3 py-2 text-right text-[10px] font-semibold text-slate-600 uppercase">Actions</th>
                             </tr>
                         </thead>
@@ -300,8 +300,8 @@ export default function AdminProductsPage() {
                                                         onChange={(e) => setNewStatus(e.target.value === 'active')}
                                                         className="px-1.5 py-0.5 text-xs border border-slate-300 rounded"
                                                     >
-                                                        <option value="active">In Stock</option>
-                                                        <option value="out">Out of Stock</option>
+                                                        <option value="active">Visible</option>
+                                                        <option value="out">Hidden</option>
                                                     </select>
                                                     <button
                                                         onClick={() => saveStatus(product.id)}
@@ -320,11 +320,11 @@ export default function AdminProductsPage() {
                                                 <button
                                                     onClick={() => startEditStatus(product.id, product.is_active)}
                                                     className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${product.is_active
-                                                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                        : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                                         }`}
                                                 >
-                                                    {product.is_active ? 'In Stock' : 'Out of Stock'}
+                                                    {product.is_active ? 'Visible' : 'Hidden'}
                                                 </button>
                                             )}
                                         </td>
