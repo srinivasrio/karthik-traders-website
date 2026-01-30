@@ -37,9 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchProfile = async (userId: string) => {
         try {
-            // Add timeout to prevent hanging (15 seconds)
+            // Add timeout to prevent hanging (4 seconds)
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('timeout')), 15000);
+                setTimeout(() => reject(new Error('timeout')), 4000);
             });
 
             const fetchPromise = supabase
@@ -71,7 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setSession(session);
                 setUser(session?.user ?? null);
                 if (session?.user) {
-                    await fetchProfile(session.user.id);
+                    // Don't await profile - let it load in background for faster UI
+                    fetchProfile(session.user.id);
                 }
             } catch (err) {
                 console.error('Session init error:', err);
@@ -91,7 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
-                await fetchProfile(session.user.id);
+                // Don't await profile
+                fetchProfile(session.user.id);
             } else {
                 setProfile(null);
             }

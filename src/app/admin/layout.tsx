@@ -54,7 +54,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    if (!user || (profile && profile.role !== 'admin')) {
+    if (!user || !profile || profile.role !== 'admin') {
+        // If user exists but profile is explicitly loading/missing, show loading
+        if (user && !profile) {
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-600"></div>
+                </div>
+            );
+        }
         return null;
     }
 
