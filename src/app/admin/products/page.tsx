@@ -18,11 +18,10 @@ interface Product {
 
 const categoryFilters = [
     { id: 'all', label: 'All', categories: [] },
-    { id: 'aerator-set', label: 'Aerator Sets', categories: ['aerator-set'] },
-    { id: 'motors', label: 'Motors', categories: ['motor'] },
-    { id: 'gearboxes', label: 'Gearboxes', categories: ['worm-gearbox', 'bevel-gearbox'] },
-    { id: 'spares', label: 'Spares', categories: ['motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'] },
-    { id: 'long-arm', label: 'Long Arm', categories: ['long-arm-gearbox', 'long-arm-spare'] },
+    { id: 'aerators', label: 'Aerators', categories: ['aerators'] },
+    { id: 'motors', label: 'Motors', categories: ['motors'] },
+    { id: 'gearboxes', label: 'Gearboxes', categories: ['gearboxes'] },
+    { id: 'spares', label: 'Spares', categories: ['spares'] },
 ];
 
 export default function AdminProductsPage() {
