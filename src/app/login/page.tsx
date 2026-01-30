@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ConfirmationResult } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
@@ -17,6 +17,8 @@ const AUTH_DOMAIN = 'karthiktraders.com';
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectUrl = searchParams.get('redirect') || '/dashboard';
     const { signInWithOTP } = useAuth(); // Use context for firebase phone auth
 
     // View State
@@ -108,7 +110,7 @@ export default function LoginPage() {
 
 
 
-            router.push('/dashboard');
+            router.push(redirectUrl);
         } catch (err: any) {
             // Only catch unexpected errors
             setError(err.message || 'An unexpected error occurred');
@@ -224,7 +226,7 @@ export default function LoginPage() {
             const { error: sessionError } = await supabase.auth.setSession(data.session);
             if (sessionError) throw sessionError;
 
-            router.push('/dashboard');
+            router.push(redirectUrl);
 
         } catch (err: any) {
             setError(getUserFriendlyError(err));

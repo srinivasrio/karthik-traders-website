@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
+import Link from 'next/link';
 
 export default function CheckoutPage() {
     const { cartItems, clearCart } = useCart();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [formData, setFormData] = useState({
         fullName: '',
         addressLine1: '',
@@ -19,6 +22,18 @@ export default function CheckoutPage() {
         pincode: '',
         mobile: ''
     });
+
+    // Check authentication on mount
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setIsAuthenticated(!!session);
+            if (!session) {
+                setShowLoginPrompt(true);
+            }
+        };
+        checkAuth();
+    }, []);
 
     const subtotal = cartItems.reduce((sum, item) => sum + ((Number(item.salePrice) || Number(item.price) || 0) * item.quantity), 0);
     const totalAmount = subtotal; // Add shipping logic if needed
@@ -34,8 +49,8 @@ export default function CheckoutPage() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                alert('Please log in to place an order.');
-                router.push('/login?redirect=/bulk-orders');
+                setShowLoginPrompt(true);
+                setLoading(false);
                 return;
             }
 
@@ -70,6 +85,37 @@ export default function CheckoutPage() {
         }
     };
 
+    // Login Prompt Modal
+    if (showLoginPrompt && !isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-steel-50/30 pt-20 flex items-center justify-center px-4">
+                <div className="bg-white rounded-2xl shadow-xl border border-steel-100 p-8 max-w-md w-full text-center">
+                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-bold text-deep-blue-900 mb-2">Login Required</h2>
+                    <p className="text-steel-600 mb-6">Please login to place your order. Your cart items will be saved.</p>
+                    <div className="flex flex-col gap-3">
+                        <Link
+                            href="/login?redirect=/cart"
+                            className="w-full py-3 rounded-xl bg-deep-blue-900 text-white font-bold text-sm hover:bg-deep-blue-800 transition-colors"
+                        >
+                            Login to Continue
+                        </Link>
+                        <Link
+                            href="/cart"
+                            className="w-full py-3 rounded-xl bg-steel-100 text-steel-700 font-medium text-sm hover:bg-steel-200 transition-colors"
+                        >
+                            Back to Cart
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (cartItems.length === 0) {
         return (
             <div className="min-h-screen pt-24 text-center">
@@ -80,6 +126,7 @@ export default function CheckoutPage() {
             </div>
         );
     }
+
 
     return (
         <MobileGestureLayout>

@@ -9,6 +9,7 @@ import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { useLiveProduct } from '@/hooks/useLiveProducts';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
 interface ProductPageProps {
     params: Promise<{ slug: string }>;
@@ -46,14 +47,7 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
     }, [slug]);
 
     if (loading) {
-        return (
-            <div className="min-h-screen pt-24 flex items-center justify-center bg-white">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-steel-400 text-sm animate-pulse">Loading details...</p>
-                </div>
-            </div>
-        );
+        return <SimpleLoadingScreen />;
     }
 
     if (!product) {

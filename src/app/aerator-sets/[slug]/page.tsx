@@ -8,6 +8,7 @@ import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { useLiveProduct } from '@/hooks/useLiveProducts';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
 interface ProductPageProps {
     params: Promise<{ slug: string }>;
@@ -30,14 +31,7 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
     }, [slug]);
 
     if (loading) {
-        return (
-            <div className="min-h-screen pt-24 flex items-center justify-center bg-white">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-steel-400 text-sm animate-pulse">Loading details...</p>
-                </div>
-            </div>
-        );
+        return <SimpleLoadingScreen />;
     }
 
     if (!product) {
@@ -274,7 +268,7 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
                                 )}
 
                                 <Link
-                                    href={`/compare?ids=${product.id}`}
+                                    href={`/compare?ids=${initialProduct?.id || product.id}`}
                                     className="mt-3 w-full flex items-center justify-center gap-2 py-3 text-steel-600 bg-steel-50 hover:bg-steel-100 rounded-xl transition-colors font-medium border border-transparent hover:border-steel-200 group/compare"
                                 >
                                     <svg className="w-5 h-5 text-steel-400 group-hover/compare:text-aqua-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
