@@ -390,6 +390,7 @@ export default function LoginPage() {
                                         required
                                         value={fullName}
                                         onChange={(e) => setFullName(e.target.value)}
+                                        autoComplete="name"
                                         className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-aqua-500 focus:border-aqua-500 sm:text-sm bg-white text-black"
                                         placeholder="John Doe"
                                     />
@@ -402,6 +403,7 @@ export default function LoginPage() {
                                         minLength={6}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
+                                        autoComplete="new-password"
                                         className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-aqua-500 focus:border-aqua-500 sm:text-sm bg-white text-black"
                                     />
                                 </div>
@@ -412,6 +414,7 @@ export default function LoginPage() {
                                         required
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
+                                        autoComplete="new-password"
                                         className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-aqua-500 focus:border-aqua-500 sm:text-sm bg-white text-black"
                                         placeholder="••••••••"
                                     />
