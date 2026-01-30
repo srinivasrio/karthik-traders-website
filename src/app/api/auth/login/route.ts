@@ -1,13 +1,21 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { generateDerivedEmail, generateDerivedPassword } from '@/lib/server-auth';
+import { generateDerivedPassword } from '@/lib/server-auth';
 
 // Initialize Supabase Admin Client
-// We need Service Role Key to bypass email confirmation for new users
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+// Email domain - MUST match signup
+const AUTH_DOMAIN = 'karthiktraders.com';
+
+// Generate email in same format as signup
+function generateDerivedEmail(phone: string): string {
+    const cleanPhone = phone.replace('+', '');
+    return `${cleanPhone}@${AUTH_DOMAIN}`;
+}
 
 export async function POST(request: Request) {
     try {
@@ -17,8 +25,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: 'Missing ID Token' }, { status: 400 });
         }
 
-        // 1. Verify Firebase ID Token via Google Identity Toolkit
-        // We use the API Key from environment variables
+        // 1. Verify Firebase ID Token
         const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
         if (!firebaseApiKey) {
             throw new Error("Missing NEXT_PUBLIC_FIREBASE_API_KEY");
@@ -45,12 +52,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: 'Phone number not found in token' }, { status: 400 });
         }
 
-        // 2. Derive Credentials
+        // 2. Derive email (using same format as signup)
         const email = generateDerivedEmail(phone);
-        const password = generateDerivedPassword(phone);
+        const derivedPassword = generateDerivedPassword(phone);
 
-        // 3. Initialize Supabase Client
-        // Use Service Role if available for admin tasks, otherwise Anon (might fail for signup if confirm required)
+        // 3. Initialize Supabase Clients
         const supabaseAdmin = supabaseServiceKey
             ? createClient(supabaseUrl, supabaseServiceKey, {
                 auth: {
@@ -60,92 +66,78 @@ export async function POST(request: Request) {
             })
             : null;
 
-        // Client for signing in (Anon key is fine for signIn)
         const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
-        // 4. Attempt Sign In
-        const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (signInData.session) {
-            return NextResponse.json({ session: signInData.session });
-        }
-
-        // 5. If Sign In failed, attempt Sign Up or Update Password
-
-        // Attempt to handle via Admin Client
+        // 4. Check if user exists and get their info
         if (supabaseAdmin) {
-            // Check if user exists by searching directly in Auth system
-            // This is more reliable than profiles if the trigger was slow or failed
             const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
             const existingUser = users.find(u => u.email === email);
 
             if (existingUser) {
-                // User exists in Auth, but maybe password needs rotation or just sign in
-                // We update password to match the one derived from phone (in case it changed or secret was rotated)
-                await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
-
-                // Also ensure profile exists (repair if missing)
-                const { data: profile } = await supabaseAdmin
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', existingUser.id)
-                    .single();
-
-                if (!profile) {
-                    console.log('Login: Repairing missing profile for user', existingUser.id);
-                    await supabaseAdmin.from('profiles').insert({
-                        id: existingUser.id,
-                        mobile: phone,
-                        role: 'customer'
-                    });
-                }
-
+                // User exists - they should use their password, not OTP for login
+                // OTP is for signup/password reset only
+                // Return a helpful message directing them to use password
+                return NextResponse.json({
+                    message: 'Account exists. Please use your password to login, or use "Forgot Password" to reset it.',
+                    userExists: true
+                }, { status: 200 });
             } else {
-                // User truly doesn't exist, try creating new user
-                const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+                // User doesn't exist - this is OTP-based first login (pre-signup flow)
+                // Create user with derived password, they'll set real password in signup step
+                const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
                     email,
-                    password,
+                    password: derivedPassword,
                     email_confirm: true,
                     user_metadata: { mobile: phone, firebase_uid: firebaseUser.localId }
                 });
 
                 if (createError) {
+                    // If user already exists (race condition), handle gracefully
+                    if (createError.message?.includes('already been registered')) {
+                        return NextResponse.json({
+                            message: 'Account exists. Please use your password to login.',
+                            userExists: true
+                        }, { status: 200 });
+                    }
                     throw createError;
                 }
+
+                // Create profile for the new user
+                await supabaseAdmin.from('profiles').insert({
+                    id: newUser.user.id,
+                    mobile: phone,
+                    role: 'customer'
+                });
+
+                // Sign in with derived password to get session
+                const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password: derivedPassword,
+                });
+
+                if (signInError) throw signInError;
+
+                return NextResponse.json({
+                    session: signInData.session,
+                    isNewUser: true
+                });
             }
         } else {
-            // Fallback to Anon Key SignUp (Will send confirmation email if enabled)
-            // This is not ideal for Phone Auth bridge.
-            const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
+            // Fallback without admin client - try sign in with derived password
+            const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
                 email,
-                password,
-                options: {
-                    data: { mobile: phone, firebase_uid: firebaseUser.localId }
-                }
+                password: derivedPassword,
             });
 
-            if (signUpError) throw signUpError;
-            // If session is null, it means email confirmation is active
-            if (!signUpData.session) {
-                return NextResponse.json({
-                    message: 'Account created. Please verify your email if required, or contact support.',
-                    details: 'Missing Service Role Key'
-                }, { status: 403 });
+            if (signInData.session) {
+                return NextResponse.json({ session: signInData.session });
             }
+
+            // If sign in fails and no admin client, can't create user
+            return NextResponse.json({
+                message: 'Account not found or incorrect credentials. Please sign up first.',
+            }, { status: 401 });
         }
-
-        // 6. Final Sign In to get session
-        const { data: finalSession, error: finalError } = await supabaseClient.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (finalError) throw finalError;
-
-        return NextResponse.json({ session: finalSession.session });
 
     } catch (error: any) {
         console.error('Auth API Error:', error);
