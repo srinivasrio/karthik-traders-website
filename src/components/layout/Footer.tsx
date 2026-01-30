@@ -53,7 +53,7 @@ export default function Footer() {
                 </svg>
             </div>
 
-            <div className="container-custom py-12 md:py-16 relative z-10">
+            <div className="container-custom pt-12 pb-32 md:py-16 relative z-10">
                 {/* Main Footer Content */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
                     {/* Brand Section */}
