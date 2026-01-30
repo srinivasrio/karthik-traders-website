@@ -7,6 +7,7 @@ import { formatPrice, Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
 interface CartItem extends Product {
     quantity: number;
@@ -35,17 +36,7 @@ export default function CartPage() {
     const totalSavings = totalMrp - subtotal;
 
     if (isLoading) {
-        return (
-            <div className="min-h-screen bg-aqua-50/50 pt-24 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    {/* Liquid Loader */}
-                    <div className="relative w-12 h-12">
-                        <div className="absolute inset-0 rounded-full border-4 border-aqua-100"></div>
-                        <div className="absolute inset-0 rounded-full border-4 border-t-aqua-500 animate-spin"></div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <SimpleLoadingScreen />;
     }
 
     return (
