@@ -50,23 +50,15 @@ export default function ReviewsSection() {
 
                 <div className="relative max-w-4xl mx-auto">
                     {/* Main Slider */}
-                    <div className="overflow-hidden py-10">
-                        <AnimatePresence mode="wait">
+                    <div className="relative py-10 min-h-[400px]">
+                        <AnimatePresence initial={false}>
                             <motion.div
                                 key={currentIndex}
-                                initial={{ opacity: 0, x: 50 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -50 }}
+                                initial={{ opacity: 0, x: 50, position: 'absolute' }}
+                                animate={{ opacity: 1, x: 0, position: 'relative' }}
+                                exit={{ opacity: 0, x: -50, position: 'absolute' }}
                                 transition={{ duration: 0.5, ease: "easeOut" }}
-                                drag="x"
-                                dragConstraints={{ left: 0, right: 0 }}
-                                dragElastic={1}
-                                onDragEnd={(e, { offset, velocity }) => {
-                                    const swipe = offset.x;
-                                    if (swipe < -50) nextSlide();
-                                    else if (swipe > 50) prevSlide();
-                                }}
-                                className="bg-gradient-to-br from-white to-cyan-50 rounded-2xl p-8 md:p-10 border border-cyan-100 shadow-[0_10px_40px_rgba(6,182,212,0.15)] mx-4 md:mx-12 relative cursor-grab active:cursor-grabbing"
+                                className="bg-gradient-to-br from-white to-cyan-50 rounded-2xl p-8 md:p-10 border border-cyan-100 shadow-[0_10px_40px_rgba(6,182,212,0.15)] mx-4 md:mx-12 cursor-grab active:cursor-grabbing w-full left-0 right-0 top-0"
                             >
                                 {/* Quote Icon */}
                                 <div className="absolute top-6 right-8 text-6xl text-cyan-200 serif font-bold opacity-30">

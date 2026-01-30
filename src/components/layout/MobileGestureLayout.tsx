@@ -18,33 +18,56 @@ export default function MobileGestureLayout({
     onPullDown,
     onSwipeUp
 }: MobileGestureLayoutProps) {
+    const minSwipeDistance = 50;
 
-    // Swipe handling
-    const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        const SWIPE_THRESHOLD = 50;
-        if (info.offset.x > SWIPE_THRESHOLD && onSwipeRight) {
-            onSwipeRight();
-        } else if (info.offset.x < -SWIPE_THRESHOLD && onSwipeLeft) {
-            onSwipeLeft();
-        }
+    // We don't need state for touch start/end if we just use refs or simple handlers?
+    // Actually, React events are robust enough.
+    // Let's use a simple implementation that doesn't block scroll.
 
-        // Simple manual pull down check
-        if (info.offset.y > 100 && onPullDown) {
-            onPullDown();
-        } else if (info.offset.y < -100 && onSwipeUp) {
-            onSwipeUp();
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        touchStartX = e.targetTouches[0].clientX;
+        touchStartY = e.targetTouches[0].clientY;
+    }
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        touchEndX = e.targetTouches[0].clientX;
+        touchEndY = e.targetTouches[0].clientY;
+    }
+
+    const onTouchEnd = () => {
+        if (!touchStartX || !touchEndX) return;
+
+        const distanceX = touchStartX - touchEndX;
+        const distanceY = touchStartY - touchEndY;
+        const isLeftSwipe = distanceX > minSwipeDistance;
+        const isRightSwipe = distanceX < -minSwipeDistance;
+        const isUpSwipe = distanceY > minSwipeDistance;
+        const isDownSwipe = distanceY < -minSwipeDistance;
+
+        // Only trigger horizontal swipes if vertical movement is small (intentional swipe)
+        if (Math.abs(distanceX) > Math.abs(distanceY)) {
+            if (isLeftSwipe && onSwipeLeft) onSwipeLeft();
+            if (isRightSwipe && onSwipeRight) onSwipeRight();
+        } else {
+            // Vertical swipes
+            if (isUpSwipe && onSwipeUp) onSwipeUp();
+            if (isDownSwipe && onPullDown) onPullDown();
         }
     };
 
     return (
-        <motion.div
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={handleDragEnd}
-            className="min-h-screen touch-pan-y"
+        <div
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            className="min-h-screen"
         >
             {children}
-        </motion.div>
+        </div>
     );
 }
