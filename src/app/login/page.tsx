@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -7,6 +6,7 @@ import { ConfirmationResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
 type ViewState = 'login' | 'signup';
 type SignupStep = 'phone' | 'otp' | 'details';
@@ -232,6 +232,7 @@ export default function LoginPage() {
     // --- RENDER ---
     return (
         <div className="min-h-screen pt-24 pb-12 flex flex-col items-center justify-center bg-slate-50 px-4">
+            {loading && <SimpleLoadingScreen />}
             <div className="max-w-md w-full mb-4">
                 <Link
                     href="/"
