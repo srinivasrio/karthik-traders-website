@@ -112,14 +112,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const signInWithOTP = async (phone: string): Promise<ConfirmationResult> => {
-        // Ensure recaptcha is set up
-        if (!window.recaptchaVerifier) {
+        // Clear any existing reCAPTCHA verifier first (handles stale state)
+        if (window.recaptchaVerifier) {
+            try {
+                window.recaptchaVerifier.clear();
+            } catch (e) {
+                // Ignore clear errors
+            }
+            window.recaptchaVerifier = null;
+        }
+
+        // Ensure the container exists
+        const container = document.getElementById('recaptcha-container');
+        if (!container) {
+            throw new Error('reCAPTCHA container not found. Please refresh the page.');
+        }
+
+        // Clear any existing reCAPTCHA widgets in the container
+        container.innerHTML = '';
+
+        try {
+            // Create new reCAPTCHA verifier
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 'size': 'invisible',
+                'callback': () => {
+                    // reCAPTCHA solved - will proceed with OTP
+                    console.log('reCAPTCHA verified');
+                },
+                'expired-callback': () => {
+                    // Reset reCAPTCHA when expired
+                    console.log('reCAPTCHA expired, resetting...');
+                    if (window.recaptchaVerifier) {
+                        try {
+                            window.recaptchaVerifier.clear();
+                        } catch (e) { }
+                        window.recaptchaVerifier = null;
+                    }
+                }
             });
+
+            // Render the reCAPTCHA widget
+            await window.recaptchaVerifier.render();
+
+            const appVerifier = window.recaptchaVerifier;
+            return await signInWithPhoneNumber(auth, phone, appVerifier);
+        } catch (error: any) {
+            // Clean up on error
+            if (window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier.clear();
+                } catch (e) { }
+                window.recaptchaVerifier = null;
+            }
+            container.innerHTML = '';
+
+            // Re-throw with better message
+            throw error;
         }
-        const appVerifier = window.recaptchaVerifier;
-        return await signInWithPhoneNumber(auth, phone, appVerifier);
     };
 
     const verifyOTP = async (confirmationResult: ConfirmationResult, otp: string) => {
