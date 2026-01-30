@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
+import LegalModal from '@/components/ui/LegalModal';
+import { LegalContent } from '@/data/legalContent';
 
 type ViewState = 'login' | 'signup';
 type SignupStep = 'phone' | 'otp' | 'details';
@@ -27,7 +29,9 @@ export default function LoginPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [otp, setOtp] = useState('');
+
     const [termsAccepted, setTermsAccepted] = useState(false);
+    const [activeLegalDoc, setActiveLegalDoc] = useState<'terms' | 'privacy' | 'refund' | null>(null);
 
     // Process State
     const [loading, setLoading] = useState(false);
@@ -428,17 +432,29 @@ export default function LoginPage() {
                                     <div className="ml-3 text-sm">
                                         <label htmlFor="terms" className="font-medium text-slate-700">
                                             I agree to the{' '}
-                                            <a href="/terms-conditions" target="_blank" className="text-aqua-600 hover:text-aqua-500">
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveLegalDoc('terms')}
+                                                className="text-aqua-600 hover:text-aqua-500 hover:underline"
+                                            >
                                                 Terms & Conditions
-                                            </a>
+                                            </button>
                                             ,{' '}
-                                            <a href="/refund-policy" target="_blank" className="text-aqua-600 hover:text-aqua-500">
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveLegalDoc('refund')}
+                                                className="text-aqua-600 hover:text-aqua-500 hover:underline"
+                                            >
                                                 Refund Policy
-                                            </a>
+                                            </button>
                                             {' '}and{' '}
-                                            <a href="/privacy-policy" target="_blank" className="text-aqua-600 hover:text-aqua-500">
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveLegalDoc('privacy')}
+                                                className="text-aqua-600 hover:text-aqua-500 hover:underline"
+                                            >
                                                 Privacy Policy
-                                            </a>
+                                            </button>
                                         </label>
                                     </div>
                                 </div>
@@ -467,6 +483,18 @@ export default function LoginPage() {
 
                 <div id="recaptcha-container"></div>
             </div>
+
+            {/* Legal Modals */}
+            <LegalModal
+                isOpen={!!activeLegalDoc}
+                onClose={() => setActiveLegalDoc(null)}
+                title={
+                    activeLegalDoc === 'terms' ? 'Terms & Conditions' :
+                        activeLegalDoc === 'privacy' ? 'Privacy Policy' :
+                            activeLegalDoc === 'refund' ? 'Refund Policy' : ''
+                }
+                content={activeLegalDoc ? LegalContent[activeLegalDoc] : null}
+            />
         </div>
     );
 }
