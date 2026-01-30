@@ -22,6 +22,7 @@ const categoryFilters = [
     { id: 'motors', label: 'Motors', categories: ['motors'] },
     { id: 'gearboxes', label: 'Gearboxes', categories: ['gearboxes'] },
     { id: 'spares', label: 'Spares', categories: ['spares'] },
+    { id: 'long-arm', label: 'Long Arm', categories: ['long-arm'] },
 ];
 
 export default function AdminProductsPage() {
