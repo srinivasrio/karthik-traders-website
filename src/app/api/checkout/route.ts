@@ -121,7 +121,7 @@ export async function POST(request: Request) {
 ${itemsList}
 ━━━━━━━━━━━━━━━━━━
 <b>Shipping Address:</b>
-${shippingAddress.address}, ${shippingAddress.city}
+${shippingAddress.addressLine1}, ${shippingAddress.city}
 ${shippingAddress.state}, ${shippingAddress.pincode}
 `.trim();
 
