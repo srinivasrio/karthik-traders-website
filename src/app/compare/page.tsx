@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { aeratorSets, Product, formatPrice, calculateSavings } from '@/data/products';
+import { useLiveProducts } from '@/hooks/useLiveProducts';
 
 function CompareContent() {
     const searchParams = useSearchParams();
@@ -14,6 +15,9 @@ function CompareContent() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
 
+    // Fetch live data from Supabase
+    const { products: liveAeratorSets, loading: productsLoading } = useLiveProducts(aeratorSets);
+
     useEffect(() => {
         if (idsParam) {
             const ids = idsParam.split(',');
@@ -21,10 +25,17 @@ function CompareContent() {
         }
     }, [idsParam]);
 
+    // Sync selected products with live data
     useEffect(() => {
-        const products = aeratorSets.filter(p => selectedIds.includes(p.id));
-        setSelectedProducts(products);
-    }, [selectedIds]);
+        if (!productsLoading) {
+            const products = liveAeratorSets.filter(p => {
+                // Find static version to get its original ID for robust matching
+                const staticItem = aeratorSets.find(as => as.slug === p.slug);
+                return selectedIds.includes(p.id) || (staticItem && selectedIds.includes(staticItem.id));
+            });
+            setSelectedProducts(products);
+        }
+    }, [selectedIds, liveAeratorSets, productsLoading]);
 
     const handleAddProduct = (productId: string) => {
         if (selectedIds.length >= 2) {
@@ -37,17 +48,27 @@ function CompareContent() {
     };
 
     const handleRemoveProduct = (productId: string) => {
-        setSelectedIds(selectedIds.filter(id => id !== productId));
+        // Remove both UUID and static ID to be safe
+        const product = liveAeratorSets.find(p => p.id === productId);
+        const staticId = aeratorSets.find(as => as.slug === product?.slug)?.id;
+
+        setSelectedIds(prev => prev.filter(id => id !== productId && id !== staticId));
     };
 
     // All specification keys
-    const allSpecKeys = Array.from(
-        new Set(
-            selectedProducts.flatMap(p =>
-                p.specifications ? Object.keys(p.specifications) : []
+    const allSpecKeys = useMemo(() => {
+        return Array.from(
+            new Set(
+                selectedProducts.flatMap(p =>
+                    p.specifications ? Object.keys(p.specifications) : []
+                )
             )
-        )
-    ).filter(key => key !== 'Warranty');
+        ).filter(key => key !== 'Warranty');
+    }, [selectedProducts]);
+
+    if (productsLoading) {
+        return <SimpleLoadingScreen />;
+    }
 
     // Animation variants
     const container = {
@@ -84,8 +105,9 @@ function CompareContent() {
                         </h3>
 
                         <div className="grid grid-cols-3 gap-2 md:gap-4">
-                            {aeratorSets.map((product) => {
-                                const isSelected = selectedIds.includes(product.id);
+                            {liveAeratorSets.map((product) => {
+                                const staticId = aeratorSets.find(as => as.slug === product.slug)?.id;
+                                const isSelected = selectedIds.includes(product.id) || (staticId ? selectedIds.includes(staticId) : false);
                                 const isDisabled = selectedProducts.length >= 2 && !isSelected;
 
                                 return (
@@ -215,15 +237,37 @@ function CompareContent() {
                                 <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 ${idx >= 2 ? 'hidden md:block' : ''}`}>
                                     <p className="text-sm md:text-xl font-bold text-green-600">{formatPrice(product.salePrice)}</p>
                                     <p className="text-[10px] md:text-sm text-black">MRP: <span className="line-through">{formatPrice(product.mrp)}</span></p>
-                                    <p className="text-[10px] md:text-xs text-green-600 mt-1 font-medium">
-                                        Save {formatPrice(calculateSavings(product.mrp, product.salePrice))}
-                                    </p>
+                                    {calculateSavings(product.mrp, product.salePrice) > 0 && (
+                                        <p className="text-[10px] md:text-xs text-green-600 mt-1 font-medium">
+                                            Save {formatPrice(calculateSavings(product.mrp, product.salePrice))}
+                                        </p>
+                                    )}
                                 </div>
                             ))}
                             {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
                                 const gridIndex = selectedProducts.length + i;
                                 return (
                                     <div key={`empty-price-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 ${gridIndex >= 2 ? 'hidden md:block' : ''}`} />
+                                );
+                            })}
+                        </div>
+
+                        {/* Availability Row */}
+                        <div className="grid grid-cols-[100px_repeat(2,1fr)] md:grid-cols-[200px_repeat(3,1fr)] border-b border-steel-200">
+                            <div className="p-2 md:p-4 bg-steel-50 font-semibold text-steel-600 text-xs md:text-base flex items-center">
+                                Availability
+                            </div>
+                            {selectedProducts.map((product, idx) => (
+                                <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 ${idx >= 2 ? 'hidden md:block' : ''}`}>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${product.inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                                    </span>
+                                </div>
+                            ))}
+                            {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
+                                const gridIndex = selectedProducts.length + i;
+                                return (
+                                    <div key={`empty-stock-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 ${gridIndex >= 2 ? 'hidden md:block' : ''}`} />
                                 );
                             })}
                         </div>
