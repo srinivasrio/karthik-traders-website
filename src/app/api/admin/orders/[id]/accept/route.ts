@@ -105,6 +105,7 @@ export async function POST(
         }
 
         // Update order status to confirmed
+        console.log('[DEBUG] Attempting status update to confirmed for order:', orderId);
         const { error: updateError } = await supabaseAdmin
             .from('orders')
             .update({
@@ -114,8 +115,13 @@ export async function POST(
             .eq('id', orderId);
 
         if (updateError) {
-            return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+            console.error('[DEBUG] Update status error details:', updateError);
+            return NextResponse.json({
+                error: 'Failed to update order: ' + updateError.message,
+                details: updateError
+            }, { status: 500 });
         }
+        console.log('[DEBUG] Order status updated successfully to confirmed');
 
         return NextResponse.json({
             success: true,
@@ -123,7 +129,7 @@ export async function POST(
         });
 
     } catch (err: any) {
-        console.error('[DEBUG] Reject order CATCH error:', err.message, err.stack);
+        console.error('[DEBUG] Accept order CATCH error:', err.message, err.stack);
         return NextResponse.json({ error: 'Internal Server Error: ' + err.message }, { status: 500 });
     }
 }
