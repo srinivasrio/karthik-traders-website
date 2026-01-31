@@ -69,9 +69,23 @@ export default function DashboardPage() {
             case 'shipped':
                 return 'bg-purple-100 text-purple-800';
             case 'cancelled':
+            case 'rejected':
                 return 'bg-red-100 text-red-800';
             default:
                 return 'bg-slate-100 text-slate-800';
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return 'Awaiting Approval';
+            case 'confirmed':
+                return 'Order Confirmed';
+            case 'rejected':
+                return 'Order Rejected';
+            default:
+                return status.charAt(0).toUpperCase() + status.slice(1);
         }
     };
 
@@ -183,8 +197,8 @@ export default function DashboardPage() {
                                             </p>
                                         </div>
                                         <div className="text-right flex items-center gap-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(order.status)}`}>
-                                                {order.status}
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                                                {getStatusText(order.status)}
                                             </span>
                                             <p className="font-semibold text-slate-900">
                                                 ₹{Number(order.total_amount).toLocaleString()}
