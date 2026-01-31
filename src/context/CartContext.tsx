@@ -73,11 +73,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [cartItems, isInitialized]);
 
     const addToCart = (newItem: CartItem) => {
+        // Global out of stock prevention
+        const productStock = newItem.stock !== undefined ? newItem.stock : (newItem.inStock === false ? 0 : 999);
+        if (productStock <= 0) {
+            alert('This product is currently out of stock');
+            return;
+        }
+
         setCartItems(prev => {
             const existingItemIndex = prev.findIndex(item => item.id === newItem.id);
             if (existingItemIndex > -1) {
+                const currentQty = prev[existingItemIndex].quantity || 1;
+                if (currentQty >= productStock) {
+                    alert(`Only ${productStock} units available in stock`);
+                    return prev;
+                }
                 const newCart = [...prev];
-                newCart[existingItemIndex].quantity = (newCart[existingItemIndex].quantity || 1) + 1;
+                newCart[existingItemIndex].quantity = currentQty + 1;
                 return newCart;
             }
             return [...prev, { ...newItem, quantity: 1 }];
@@ -93,6 +105,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
             removeFromCart(itemId);
             return;
         }
+
+        const item = cartItems.find(i => i.id === itemId);
+        if (item) {
+            const productStock = item.stock !== undefined ? item.stock : (item.inStock === false ? 0 : 999);
+            if (quantity > productStock) {
+                alert(`Only ${productStock} units available in stock`);
+                return;
+            }
+        }
+
         setCartItems(prev => prev.map(item =>
             item.id === itemId ? { ...item, quantity } : item
         ));

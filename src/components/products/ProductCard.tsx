@@ -108,7 +108,9 @@ export default function ProductCard({
             quantity: 1,
             image: product.images?.[0] || '',
             images: product.images || [],
-            name: product.name // Ensure name is passed
+            name: product.name,
+            stock: product.stock,
+            inStock: product.inStock
         });
         if (onAddToCart) onAddToCart(product);
     };
@@ -351,7 +353,8 @@ export default function ProductCard({
                                     <span className="text-sm font-bold flex-1 text-center select-none">{cartQuantity}</span>
                                     <button
                                         onClick={handleIncrement}
-                                        className="w-10 h-full flex items-center justify-center hover:bg-green-700 active:bg-green-800 transition-colors"
+                                        disabled={product.stock !== undefined && cartQuantity >= product.stock}
+                                        className={`w-10 h-full flex items-center justify-center hover:bg-green-700 active:bg-green-800 transition-colors ${product.stock !== undefined && cartQuantity >= product.stock ? 'opacity-30 cursor-not-allowed' : ''}`}
                                     >
                                         <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

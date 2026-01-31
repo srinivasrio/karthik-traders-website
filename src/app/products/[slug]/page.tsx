@@ -72,7 +72,9 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
             quantity: 1,
             image: product.images?.[0] || '',
             images: product.images || [],
-            name: product.name
+            name: product.name,
+            stock: product.stock,
+            inStock: product.inStock
         });
     };
 
@@ -223,7 +225,11 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
                                             </button>
                                             <span className="flex-1 text-center font-bold text-lg text-deep-blue-900">{cartQuantity}</span>
-                                            <button onClick={handleIncrement} className="w-12 h-full flex items-center justify-center text-steel-600 hover:bg-white active:scale-95 transition-all rounded-r-lg">
+                                            <button
+                                                onClick={handleIncrement}
+                                                disabled={product.stock !== undefined && cartQuantity >= product.stock}
+                                                className={`w-12 h-full flex items-center justify-center text-steel-600 hover:bg-white active:scale-95 transition-all rounded-r-lg ${product.stock !== undefined && cartQuantity >= product.stock ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                            >
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                             </button>
                                         </div>
@@ -233,11 +239,15 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                                     <div className="flex gap-3">
                                         <button
                                             onClick={handleAddToCart}
-                                            className="flex-1 btn btn-primary py-3.5 shadow-lg shadow-aqua-500/20 active:scale-95 transition-transform"
+                                            disabled={product.stock !== undefined ? product.stock <= 0 : !product.inStock}
+                                            className={`flex-1 btn btn-primary py-3.5 shadow-lg active:scale-95 transition-transform ${product.stock !== undefined ? (product.stock <= 0 ? 'bg-slate-100 text-slate-400 border-slate-200 shadow-none cursor-not-allowed' : 'bg-aqua-500 hover:bg-aqua-600 border-aqua-500 shadow-aqua-500/20') : (!product.inStock ? 'bg-slate-100 text-slate-400 border-slate-200 shadow-none cursor-not-allowed' : 'bg-aqua-500 hover:bg-aqua-600 border-aqua-500 shadow-aqua-500/20')}`}
                                         >
-                                            Add to Cart
+                                            {(product.stock !== undefined ? product.stock <= 0 : !product.inStock) ? 'Out of Stock' : 'Add to Cart'}
                                         </button>
                                     </div>
+                                )}
+                                {(product.stock !== undefined ? product.stock <= 0 : !product.inStock) && (
+                                    <p className="text-center text-xs text-rose-500 font-bold mt-2 uppercase tracking-tight">Currently Unavailable</p>
                                 )}
                             </div>
 
