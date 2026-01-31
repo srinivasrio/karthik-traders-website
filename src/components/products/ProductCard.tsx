@@ -299,6 +299,21 @@ export default function ProductCard({
                         {/* Stock Availability Badge */}
                         <div className="mb-2">
                             {stockInfo ? (
+                                !stockInfo.is_active || stockInfo.stock <= 0 ? (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center p-2">
+                                        <div className="w-full py-1.5 bg-rose-500/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-widest text-center shadow-lg transform -rotate-12 border-y border-white/20">
+                                            Out of Stock
+                                        </div>
+                                    </div>
+                                ) : null
+                            ) : (product.stock !== undefined && product.stock <= 0) || product.inStock === false ? (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center p-2">
+                                    <div className="w-full py-1.5 bg-rose-500/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-widest text-center shadow-lg transform -rotate-12 border-y border-white/20">
+                                        Out of Stock
+                                    </div>
+                                </div>
+                            ) : null}
+                            {stockInfo ? (
                                 stockInfo.is_active && stockInfo.stock > 0 ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded-full">
                                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>

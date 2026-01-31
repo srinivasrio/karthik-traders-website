@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import Link from 'next/link';
+import OrderSuccessModal from '@/components/ui/OrderSuccessModal';
 
 export default function CheckoutPage() {
     const { cartItems, clearCart } = useCart();
@@ -22,6 +23,8 @@ export default function CheckoutPage() {
         pincode: '',
         mobile: ''
     });
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [placedOrderId, setPlacedOrderId] = useState('');
 
     // Check authentication on mount
     useEffect(() => {
@@ -75,14 +78,19 @@ export default function CheckoutPage() {
 
             // Success
             clearCart();
-            alert('Order placed successfully!');
-            router.push('/dashboard'); // creating dashboard/orders view next?
+            setPlacedOrderId(data.orderId);
+            setIsSuccessModalOpen(true);
         } catch (err: any) {
             console.error(err);
             alert('Error placing order: ' + err.message);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSuccessClose = () => {
+        setIsSuccessModalOpen(false);
+        router.push('/dashboard');
     };
 
     // Login Prompt Modal
@@ -238,6 +246,12 @@ export default function CheckoutPage() {
                     </div>
                 </div>
             </div>
+
+            <OrderSuccessModal
+                isOpen={isSuccessModalOpen}
+                onClose={handleSuccessClose}
+                orderId={placedOrderId}
+            />
         </MobileGestureLayout>
     );
 }
