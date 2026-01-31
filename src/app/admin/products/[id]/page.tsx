@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const CATEGORIES = [
@@ -14,9 +14,19 @@ const CATEGORIES = [
 ];
 
 export default function EditProductPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-xs">Loading...</div>}>
+            <EditProductContent />
+        </Suspense>
+    );
+}
+
+function EditProductContent() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const id = params.id as string;
+    const fromCategory = searchParams.get('fromCategory') || 'all';
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -128,7 +138,11 @@ export default function EditProductPage() {
 
             if (error) throw error;
 
-            router.push('/admin/products');
+            const redirectUrl = fromCategory && fromCategory !== 'all'
+                ? `/admin/products?category=${fromCategory}`
+                : '/admin/products';
+
+            router.push(redirectUrl);
         } catch (error: any) {
             console.error('Error updating product:', error);
             alert('Failed to update product: ' + error.message);
@@ -257,7 +271,7 @@ export default function EditProductPage() {
 
                 <div className="flex justify-end gap-3">
                     <Link
-                        href="/admin/products"
+                        href={fromCategory && fromCategory !== 'all' ? `/admin/products?category=${fromCategory}` : "/admin/products"}
                         className="bg-white py-2 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                         Cancel

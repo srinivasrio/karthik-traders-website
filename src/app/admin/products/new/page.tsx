@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 const CATEGORIES = [
     { value: 'aerators', label: 'Aerators' },
@@ -13,6 +14,16 @@ const CATEGORIES = [
 ];
 
 export default function NewProductPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-xs">Loading...</div>}>
+            <NewProductContent />
+        </Suspense>
+    );
+}
+
+function NewProductContent() {
+    const searchParams = useSearchParams();
+    const fromCategory = searchParams.get('fromCategory') || 'all';
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -96,7 +107,11 @@ export default function NewProductPage() {
 
             if (error) throw error;
 
-            router.push('/admin/products');
+            const redirectUrl = fromCategory && fromCategory !== 'all'
+                ? `/admin/products?category=${fromCategory}`
+                : '/admin/products';
+
+            router.push(redirectUrl);
         } catch (error: any) {
             console.error('Error adding product:', error);
             alert('Failed to add product: ' + error.message);
@@ -276,7 +291,7 @@ export default function NewProductPage() {
 
                 <div className="flex justify-end gap-3">
                     <Link
-                        href="/admin/products"
+                        href={fromCategory && fromCategory !== 'all' ? `/admin/products?category=${fromCategory}` : "/admin/products"}
                         className="bg-white py-2 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                         Cancel

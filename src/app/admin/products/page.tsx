@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PlusIcon, PencilIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface Product {
     id: string;
@@ -26,11 +27,23 @@ const categoryFilters = [
 ];
 
 export default function AdminProductsPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-xs">Loading...</div>}>
+            <ProductsContent />
+        </Suspense>
+    );
+}
+
+function ProductsContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const initialCategory = searchParams.get('category') || 'all';
+
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeFilter, setActiveFilter] = useState('all');
+    const [activeFilter, setActiveFilter] = useState(initialCategory);
     const [editingStock, setEditingStock] = useState<string | null>(null);
     const [newStock, setNewStock] = useState<number>(0);
     const [editingStatus, setEditingStatus] = useState<string | null>(null);
@@ -40,6 +53,21 @@ export default function AdminProductsPage() {
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    useEffect(() => {
+        const category = searchParams.get('category') || 'all';
+        setActiveFilter(category);
+    }, [searchParams]);
+
+    const handleFilterChange = (categoryId: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (categoryId === 'all') {
+            params.delete('category');
+        } else {
+            params.set('category', categoryId);
+        }
+        router.push(`/admin/products?${params.toString()}`);
+    };
 
     useEffect(() => {
         let filtered = products;
@@ -202,7 +230,7 @@ export default function AdminProductsPage() {
                 {categoryFilters.map((filter) => (
                     <button
                         key={filter.id}
-                        onClick={() => setActiveFilter(filter.id)}
+                        onClick={() => handleFilterChange(filter.id)}
                         className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${activeFilter === filter.id
                             ? 'bg-aqua-600 text-white shadow-md'
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:shadow-sm'
@@ -242,7 +270,7 @@ export default function AdminProductsPage() {
                                 filteredProducts.map((product) => (
                                     <tr key={product.id} className="hover:bg-slate-50">
                                         <td className="px-3 py-2">
-                                            <p className="text-xs font-medium text-slate-900 truncate max-w-[200px]">
+                                            <p className="text-xs font-medium text-slate-900">
                                                 {product.name}
                                             </p>
                                         </td>
@@ -330,7 +358,7 @@ export default function AdminProductsPage() {
                                         </td>
                                         <td className="px-3 py-2 text-right">
                                             <Link
-                                                href={`/admin/products/${product.id}`}
+                                                href={`/admin/products/${product.id}?fromCategory=${activeFilter}`}
                                                 className="text-[10px] text-aqua-600 hover:text-aqua-800 mr-2"
                                             >
                                                 Edit
