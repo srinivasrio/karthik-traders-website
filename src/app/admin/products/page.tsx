@@ -275,9 +275,29 @@ function ProductsContent() {
                                                 {product.category === 'aerator-set'
                                                     ? (() => {
                                                         const specs = product.specifications || {};
-                                                        const brand = specs.Brand || specs.brand || '';
-                                                        const model = specs['Model number'] || specs.model || specs.Model || '';
+                                                        let brand = specs.Brand || specs.brand || '';
+                                                        let model = specs['Model number'] || specs.model || specs.Model || '';
+
+                                                        // Fallback for brand from name
+                                                        if (!brand) {
+                                                            if (product.name.toUpperCase().includes('AQUA LION')) brand = 'AQUA LION';
+                                                            else if (product.name.toUpperCase().includes('SEA BOSS')) brand = 'SEA BOSS';
+                                                        }
+
+                                                        // Fallback for model from name
+                                                        if (!model) {
+                                                            const bracketMatch = product.name.match(/\(([^)]+)\)/);
+                                                            if (bracketMatch) {
+                                                                model = bracketMatch[1];
+                                                            } else {
+                                                                // Extract codes like PR 20 B or HV-13-W
+                                                                const modelMatch = product.name.match(/(PR[- ]\d+[A-Z]*|HV[- ]\d+[A-Z]*)/i);
+                                                                if (modelMatch) model = modelMatch[0];
+                                                            }
+                                                        }
+
                                                         if (brand && model) return `${brand} - ${model}`;
+                                                        if (brand) return `${brand} - ${product.name.replace(/AQUA LION|SEA BOSS/i, '').trim()}`;
                                                         return product.name;
                                                     })()
                                                     : product.name
