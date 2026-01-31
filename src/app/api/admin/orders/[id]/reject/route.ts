@@ -18,7 +18,11 @@ export async function POST(
 ) {
     try {
         const { id: orderId } = await params;
-        console.log('Reject Order Request received for:', orderId);
+        console.log('[DEBUG] Reject Order Request received for:', orderId);
+
+        // Debug environment variables
+        console.log('[DEBUG] SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+        console.log('[DEBUG] SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 
         // Verify admin token
@@ -28,18 +32,24 @@ export async function POST(
         }
 
         const token = authHeader.replace('Bearer ', '');
+        console.log('[DEBUG] Token extraction success, length:', token.length);
+
         const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
         if (authError || !user) {
+            console.error('[DEBUG] Auth Error:', authError?.message || 'No user found');
             return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
+        console.log('[DEBUG] User authenticated:', user.id);
 
         // Check if user is admin
-        const { data: profile } = await supabaseAdmin
+        const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single();
+
+        console.log('[DEBUG] Profile fetch:', profile?.role || 'null', 'Error:', profileError?.message || 'none');
 
         if (profile?.role !== 'admin') {
             return NextResponse.json({ error: 'Admin access required' }, { status: 403 });

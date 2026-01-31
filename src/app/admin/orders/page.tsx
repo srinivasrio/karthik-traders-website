@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { CheckIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface OrderItem {
     quantity: number;
@@ -66,6 +67,19 @@ export default function AdminOrdersPage() {
     const [activeTab, setActiveTab] = useState('all');
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'success' | 'warning';
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'warning'
+    });
 
     useEffect(() => {
         fetchOrders();
@@ -96,9 +110,18 @@ export default function AdminOrdersPage() {
         }
     };
 
-    const handleAccept = async (orderId: string) => {
-        if (!confirm('Accept this order? Stock will be deducted.')) return;
+    const handleAccept = (orderId: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Confirm Order?',
+            message: 'Are you sure you want to accept this order? Product stock will be deducted automatically.',
+            type: 'success',
+            onConfirm: () => executeAccept(orderId)
+        });
+    };
 
+    const executeAccept = async (orderId: string) => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
         setActionLoading(orderId);
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -119,7 +142,7 @@ export default function AdminOrdersPage() {
             setOrders(prev => prev.map(o =>
                 o.id === orderId ? { ...o, status: 'confirmed' } : o
             ));
-            alert('Order accepted successfully!');
+            // alert('Order accepted successfully!');
         } catch (err: any) {
             alert('Error: ' + err.message);
         } finally {
@@ -127,9 +150,18 @@ export default function AdminOrdersPage() {
         }
     };
 
-    const handleReject = async (orderId: string) => {
-        if (!confirm('Reject this order?')) return;
+    const handleReject = (orderId: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Reject Order?',
+            message: 'Are you sure you want to reject this order? This action cannot be undone.',
+            type: 'danger',
+            onConfirm: () => executeReject(orderId)
+        });
+    };
 
+    const executeReject = async (orderId: string) => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
         setActionLoading(orderId);
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -150,7 +182,6 @@ export default function AdminOrdersPage() {
             setOrders(prev => prev.map(o =>
                 o.id === orderId ? { ...o, status: 'rejected' } : o
             ));
-            alert('Order rejected.');
         } catch (err: any) {
             alert('Error: ' + err.message);
         } finally {
@@ -350,6 +381,16 @@ export default function AdminOrdersPage() {
                     </table>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+                confirmText={confirmModal.type === 'danger' ? 'Reject Order' : 'Accept Order'}
+            />
         </div>
     );
 }

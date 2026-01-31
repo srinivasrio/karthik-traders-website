@@ -3,9 +3,19 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+
+interface OrderItem {
+    quantity: number;
+    price_at_purchase: number;
+    product: {
+        name: string;
+        slug: string;
+    };
+}
 
 interface Order {
     id: string;
@@ -15,6 +25,7 @@ interface Order {
     total_amount: number;
     customer_name: string;
     created_by_admin: boolean;
+    order_items?: OrderItem[];
 }
 
 export default function DashboardPage() {
@@ -22,6 +33,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
+    const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
     // Handle redirect in useEffect to avoid setState during render
     useEffect(() => {
@@ -42,12 +54,26 @@ export default function DashboardPage() {
             // Fetch orders by user_id OR customer_mobile
             const { data, error } = await supabase
                 .from('orders')
-                .select('id, order_number, created_at, status, total_amount, customer_name, created_by_admin')
+                .select(`
+                    id, 
+                    order_number, 
+                    created_at, 
+                    status, 
+                    total_amount, 
+                    customer_name, 
+                    created_by_admin,
+                    order_items(
+                        quantity,
+                        price_at_purchase,
+                        product:products(name, slug)
+                    )
+                `)
                 .or(`user_id.eq.${user?.id},customer_mobile.eq.${profile?.mobile}`)
                 .order('created_at', { ascending: false })
                 .limit(10);
 
             if (!error && data) {
+                // @ts-ignore
                 setOrders(data);
             }
         } catch (err) {
@@ -177,34 +203,74 @@ export default function DashboardPage() {
                         ) : (
                             <div className="space-y-3">
                                 {orders.map(order => (
-                                    <div key={order.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-medium text-slate-900 text-sm">
-                                                    Order #{order.order_number || order.id.slice(0, 8)}
+                                    <div key={order.id} className="overflow-hidden border border-slate-100 rounded-xl transition-all">
+                                        <div
+                                            onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                            className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                                        >
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-bold text-slate-900 text-sm">
+                                                        Order #{order.order_number || order.id.slice(0, 8)}
+                                                    </p>
+                                                    {order.created_by_admin && (
+                                                        <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold uppercase">
+                                                            Store Order
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                                    {new Date(order.created_at).toLocaleDateString('en-IN', {
+                                                        day: 'numeric',
+                                                        month: 'short',
+                                                        year: 'numeric'
+                                                    })}
                                                 </p>
-                                                {order.created_by_admin && (
-                                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                                                        Store Order
-                                                    </span>
-                                                )}
                                             </div>
-                                            <p className="text-xs text-slate-500 mt-1">
-                                                {new Date(order.created_at).toLocaleDateString('en-IN', {
-                                                    day: 'numeric',
-                                                    month: 'short',
-                                                    year: 'numeric'
-                                                })}
-                                            </p>
+                                            <div className="text-right flex items-center gap-4">
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                                                        {getStatusText(order.status)}
+                                                    </span>
+                                                    <p className="font-bold text-slate-900 text-sm">
+                                                        ₹{Number(order.total_amount).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                                <svg
+                                                    className={`w-4 h-4 text-slate-400 transition-transform ${expandedOrder === order.id ? 'rotate-180' : ''}`}
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
                                         </div>
-                                        <div className="text-right flex items-center gap-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                                                {getStatusText(order.status)}
-                                            </span>
-                                            <p className="font-semibold text-slate-900">
-                                                ₹{Number(order.total_amount).toLocaleString()}
-                                            </p>
-                                        </div>
+
+                                        {/* Expanded Details */}
+                                        <AnimatePresence>
+                                            {expandedOrder === order.id && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="bg-white border-t border-slate-50 overflow-hidden"
+                                                >
+                                                    <div className="p-4 space-y-3">
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Order Items</p>
+                                                        <div className="space-y-2">
+                                                            {order.order_items?.map((item, idx) => (
+                                                                <div key={idx} className="flex justify-between items-center text-sm bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/50">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-semibold text-slate-800">{item.product?.name || 'Unknown Product'}</span>
+                                                                        <span className="text-[11px] text-slate-500">Qty: {item.quantity}</span>
+                                                                    </div>
+                                                                    <span className="font-bold text-slate-700">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 ))}
                             </div>
