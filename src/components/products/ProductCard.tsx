@@ -268,26 +268,6 @@ export default function ProductCard({
                             </p>
                         )}
 
-                        {/* Highlight: Custom for Aerator (3 lines), standard for others (1 line truncate) */}
-                        {variant === 'aerator' ? (
-                            <div className="text-[10px] text-steel-500 min-w-0 mb-2 leading-tight flex flex-col gap-0.5 mt-1">
-                                <span className="font-semibold text-deep-blue-700">
-                                    {product.specifications?.['Frame Material'] || product.features[0]?.substring(0, 25)}
-                                </span>
-                                {product.warranty?.includes('Piece-to-Piece') ? (
-                                    <>
-                                        <span>1 Year Piece-to-Piece</span>
-                                        <span>Replacement Warranty</span>
-                                    </>
-                                ) : (
-                                    <span>{product.warranty ? (product.warranty.toLowerCase().includes('warranty') ? product.warranty : `${product.warranty} Warranty`) : getHighlight()}</span>
-                                )}
-                            </div>
-                        ) : (
-                            <p className="text-[10px] text-steel-500 truncate min-w-0 h-[1rem] mb-2">
-                                {getHighlight()}
-                            </p>
-                        )}
 
                         {/* Flexible Spacer to push Footer down */}
                         <div className="flex-grow"></div>
