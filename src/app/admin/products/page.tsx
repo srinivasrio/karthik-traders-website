@@ -271,34 +271,36 @@ function ProductsContent() {
                                 filteredProducts.map((product) => (
                                     <tr key={product.id} className="hover:bg-slate-50">
                                         <td className="px-3 py-2">
-                                            <p className="text-xs font-medium text-slate-900">
-                                                {product.category.includes('aerator')
+                                            <p className="text-xs font-medium text-slate-900 leading-relaxed max-w-[300px]">
+                                                {product.category.toLowerCase().includes('aerator')
                                                     ? (() => {
                                                         const specs = product.specifications || {};
                                                         let brand = specs.Brand || specs.brand || '';
                                                         let model = specs['Model number'] || specs.model || specs.Model || '';
 
+                                                        const pName = product.name || '';
+
                                                         // Fallback for brand from name
                                                         if (!brand) {
-                                                            if (product.name.toUpperCase().includes('AQUA LION')) brand = 'AQUA LION';
-                                                            else if (product.name.toUpperCase().includes('SEA BOSS')) brand = 'SEA BOSS';
+                                                            if (pName.toUpperCase().includes('AQUA LION')) brand = 'AQUA LION';
+                                                            else if (pName.toUpperCase().includes('SEA BOSS')) brand = 'SEA BOSS';
                                                         }
 
                                                         // Fallback for model from name
                                                         if (!model) {
-                                                            const bracketMatch = product.name.match(/\(([^)]+)\)/);
+                                                            const bracketMatch = pName.match(/\(([^)]+)\)/);
                                                             if (bracketMatch) {
                                                                 model = bracketMatch[1];
                                                             } else {
                                                                 // Extract codes like PR 20 B or HV-13-W
-                                                                const modelMatch = product.name.match(/(PR[- ]\d+[A-Z]*|HV[- ]\d+[A-Z]*)/i);
+                                                                const modelMatch = pName.match(/(PR[- ]\d+[A-Z]*|HV[- ]\d+[A-Z]*)/i);
                                                                 if (modelMatch) model = modelMatch[0];
                                                             }
                                                         }
 
                                                         if (brand && model) return `${brand} - ${model}`;
-                                                        if (brand) return `${brand} - ${product.name.replace(/AQUA LION|SEA BOSS/i, '').trim()}`;
-                                                        return product.name;
+                                                        if (brand) return `${brand} - ${pName.replace(/AQUA LION|SEA BOSS/i, '').trim()}`;
+                                                        return pName;
                                                     })()
                                                     : product.name
                                                 }
