@@ -1,0 +1,75 @@
+#!/bin/bash
+# vps_db_repair.sh
+# This script repairs the Supabase PostgreSQL schema on the self-hosted VPS.
+
+echo "--- Karthik Traders DB Repair Tool ---"
+
+# Find container name
+DB_CONTAINER=$(docker ps --format '{{.Names}}' | grep "db" | grep "supabase" | head -n 1)
+
+if [ -z "$DB_CONTAINER" ]; then
+    DB_CONTAINER=$(docker ps --format '{{.Names}}' | grep "postgres" | head -n 1)
+fi
+
+if [ -z "$DB_CONTAINER" ]; then
+  echo "Error: Could not find Supabase/Postgres container."
+  exit 1
+fi
+
+echo "Targeting Container: $DB_CONTAINER"
+
+# SQL to apply
+REPAIR_SQL="
+-- 1. Orders table updates
+ALTER TABLE public.orders 
+ADD COLUMN IF NOT EXISTS customer_mobile text,
+ADD COLUMN IF NOT EXISTS customer_name text,
+ADD COLUMN IF NOT EXISTS created_by_admin boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+
+-- 2. Order Number Support
+CREATE SEQUENCE IF NOT EXISTS order_number_seq START 100001;
+ALTER TABLE public.orders 
+ADD COLUMN IF NOT EXISTS order_number bigint DEFAULT nextval('order_number_seq');
+
+-- 3. Order Items updates
+ALTER TABLE public.order_items 
+ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+
+-- 4. RPC for Stock Management
+CREATE OR REPLACE FUNCTION decrement_stock(p_product_id uuid, p_quantity integer)
+RETURNS void AS \$\$
+BEGIN
+    UPDATE public.products
+    SET stock = GREATEST(0, stock - p_quantity)
+    WHERE id = p_product_id;
+END;
+\$\$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 5. Link existing records (Backfill)
+UPDATE public.orders SET updated_at = created_at WHERE updated_at IS NULL;
+
+-- 6. Trigger for profile linking (Ensure exists)
+CREATE OR REPLACE FUNCTION link_orders_to_user()
+RETURNS TRIGGER AS \$\$
+BEGIN
+  UPDATE public.orders 
+  SET user_id = NEW.id
+  WHERE customer_mobile = NEW.mobile AND user_id IS NULL;
+  RETURN NEW;
+END;
+\$\$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_profile_created ON public.profiles;
+CREATE TRIGGER on_profile_created
+  AFTER INSERT ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION link_orders_to_user();
+
+echo 'Database schema synchronized successfully.'
+"
+
+echo "Applying SQL migrations..."
+docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -c "$REPAIR_SQL"
+
+echo "--- Repair Complete ---"
+echo "Please run: npm run build && pm2 restart website"
