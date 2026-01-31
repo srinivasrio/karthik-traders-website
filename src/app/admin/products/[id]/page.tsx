@@ -6,11 +6,18 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const CATEGORIES = [
-    { value: 'aerators', label: 'Aerators' },
-    { value: 'spares', label: 'Spares' },
-    { value: 'motors', label: 'Motors' },
-    { value: 'gearboxes', label: 'Gearboxes' },
-    { value: 'long-arm', label: 'Long Arm' },
+    { value: 'aerator-set', label: 'Aerator Set' },
+    { value: 'motor', label: 'Motor' },
+    { value: 'worm-gearbox', label: 'Worm Gearbox' },
+    { value: 'bevel-gearbox', label: 'Bevel Gearbox' },
+    { value: 'long-arm-gearbox', label: 'Long Arm Gearbox' },
+    { value: 'long-arm-spare', label: 'Long Arm Spare' },
+    { value: 'kit-box', label: 'Kit Box' },
+    { value: 'rod', label: 'Rod' },
+    { value: 'frame', label: 'Frame' },
+    { value: 'fan', label: 'Fan' },
+    { value: 'float', label: 'Float' },
+    { value: 'motor-cover', label: 'Motor Cover' },
 ];
 
 export default function EditProductPage() {

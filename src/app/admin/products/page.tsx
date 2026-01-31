@@ -15,15 +15,16 @@ interface Product {
     mrp: number | null;
     stock: number;
     is_active: boolean;
+    specifications?: any;
 }
 
 const categoryFilters = [
     { id: 'all', label: 'All', categories: [] },
-    { id: 'aerators', label: 'Aerators', categories: ['aerators'] },
-    { id: 'motors', label: 'Motors', categories: ['motors'] },
-    { id: 'gearboxes', label: 'Gearboxes', categories: ['gearboxes'] },
-    { id: 'spares', label: 'Spares', categories: ['spares'] },
-    { id: 'long-arm', label: 'Long Arm', categories: ['long-arm'] },
+    { id: 'aerators', label: 'Aerators', categories: ['aerator-set'] },
+    { id: 'motors', label: 'Motors', categories: ['motor'] },
+    { id: 'gearboxes', label: 'Gearboxes', categories: ['worm-gearbox', 'bevel-gearbox', 'long-arm-gearbox'] },
+    { id: 'spares', label: 'Spares', categories: ['kit-box', 'rod', 'frame', 'fan', 'float', 'motor-cover', 'long-arm-spare'] },
+    { id: 'long-arm', label: 'Long Arm', categories: ['long-arm-gearbox', 'long-arm-spare'] },
 ];
 
 export default function AdminProductsPage() {
@@ -114,7 +115,7 @@ function ProductsContent() {
         try {
             const { data, error } = await supabase
                 .from('products')
-                .select('id, name, slug, category, price, mrp, stock, is_active')
+                .select('id, name, slug, category, price, mrp, stock, is_active, specifications')
                 .order('category')
                 .order('name');
 
@@ -271,7 +272,16 @@ function ProductsContent() {
                                     <tr key={product.id} className="hover:bg-slate-50">
                                         <td className="px-3 py-2">
                                             <p className="text-xs font-medium text-slate-900">
-                                                {product.name}
+                                                {product.category === 'aerator-set'
+                                                    ? (() => {
+                                                        const specs = product.specifications || {};
+                                                        const brand = specs.Brand || specs.brand || '';
+                                                        const model = specs['Model number'] || specs.model || specs.Model || '';
+                                                        if (brand && model) return `${brand} - ${model}`;
+                                                        return product.name;
+                                                    })()
+                                                    : product.name
+                                                }
                                             </p>
                                         </td>
                                         <td className="px-3 py-2">
