@@ -3,9 +3,15 @@ import { Product } from '@/data/products';
 
 export async function getLiveProductsAction(staticProducts: Product[]): Promise<Product[]> {
     try {
-        const { data, error } = await supabase
-            .from('products')
-            .select('id, slug, mrp, price, stock, is_active');
+        // Run fetch and minimum delay in parallel to ensure loading screen shows for at least 1s
+        const [response] = await Promise.all([
+            supabase
+                .from('products')
+                .select('id, slug, mrp, price, stock, is_active'),
+            new Promise(resolve => setTimeout(resolve, 1000))
+        ]);
+
+        const { data, error } = response;
 
         if (error) {
             console.error('Server Fetch Error:', error);
