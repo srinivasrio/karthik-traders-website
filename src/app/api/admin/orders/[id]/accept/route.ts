@@ -115,7 +115,7 @@ export async function POST(
             .eq('id', orderId);
 
         if (updateError) {
-            console.error('[DEBUG] Update status error details:', updateError);
+            console.error('[DEBUG] Update status error details:', JSON.stringify(updateError));
             return NextResponse.json({
                 error: 'Failed to update order: ' + updateError.message,
                 details: updateError

@@ -80,7 +80,8 @@ export async function POST(
             .eq('id', orderId);
 
         if (updateError) {
-            return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+            console.error('[DEBUG] Update status error details:', JSON.stringify(updateError));
+            return NextResponse.json({ error: 'Failed to update order: ' + updateError.message }, { status: 500 });
         }
 
         return NextResponse.json({
@@ -89,7 +90,7 @@ export async function POST(
         });
 
     } catch (err: any) {
-        console.error('Reject order error:', err);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error('[DEBUG] Reject order CATCH error:', err.message, err.stack);
+        return NextResponse.json({ error: 'Internal Server Error: ' + err.message }, { status: 500 });
     }
 }
