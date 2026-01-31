@@ -64,8 +64,6 @@ DROP TRIGGER IF EXISTS on_profile_created ON public.profiles;
 CREATE TRIGGER on_profile_created
   AFTER INSERT ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION link_orders_to_user();
-
-echo 'Database schema synchronized successfully.'
 "
 
 echo "Applying SQL migrations..."
