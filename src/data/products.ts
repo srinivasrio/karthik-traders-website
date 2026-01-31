@@ -835,7 +835,7 @@ export const bevelGearboxes: Product[] = [
     id: 'aqualion-a3-bevel-gearbox',
     slug: 'aqualion-a3-bevel-gearbox',
     name: 'Aqualion A3 Bevel Gearbox',
-    model: 'AQUA LION A3',
+    model: 'Aqualion A3 Bevel',
     brand: 'aqualion',
     category: 'bevel-gearbox',
     mrp: 10500,
