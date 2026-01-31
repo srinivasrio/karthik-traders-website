@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karthik Traders - Project Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #008080; /* Teal/Aqua color for Karthik Traders */
+            --secondary: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #ffffff;
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
+            line-height: 1.6;
+            color: var(--secondary);
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg);
+            padding: 60px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border-radius: 8px;
+        }
+
+        @media print {
+            body { background: none; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; border-radius: 0; padding: 40px; }
+            .page-break { page-break-before: always; }
+        }
+
+        header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.025em;
+        }
+
+        .doc-type {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--secondary);
+            margin-bottom: 10px;
+            letter-spacing: -0.05em;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            border-left: 4px solid var(--primary);
+            padding-left: 15px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        p { margin-bottom: 15px; font-size: 15px; color: #334155; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            text-align: left;
+            padding: 12px;
+            border: 1px solid var(--border);
+            font-weight: 700;
+        }
+
+        td {
+            padding: 12px;
+            border: 1px solid var(--border);
+        }
+
+        tr:nth-child(even) { background-color: #fafafa; }
+
+        .total-row {
+            font-weight: 800;
+            background-color: #f8fafc !important;
+            font-size: 16px;
+        }
+
+        .total-row td:last-child {
+            color: var(--primary);
+        }
+
+        .badge-free {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .page-list {
+            column-count: 2;
+            column-gap: 40px;
+            font-size: 13px;
+        }
+
+        .page-list-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .page-number {
+            min-width: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .feature-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .feature-item strong { display: block; margin-bottom: 5px; color: var(--primary); }
+
+        footer {
+            margin-top: 80px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-text">KARTHIK TRADERS</div>
+            <div class="doc-type">Project Portfolio</div>
+        </header>
+
+        <h1>Comprehensive Technical Specification</h1>
+        <p>A professional breakdown of the Karthik Traders industrial e-commerce ecosystem, featuring Next.js architecture, real-time stock management, and enterprise-grade cloud infrastructure.</p>
+
+        <h2>💰 Valuation & Financial Split</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Service / Resource</th>
+                    <th>Description</th>
+                    <th>Investment (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Full-Stack Development</strong></td>
+                    <td>Frontend, Backend, Database, Cloud & Architecture.</td>
+                    <td><strong>12,000</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Development Tools</strong></td>
+                    <td>Professional licenses, logic tools, and automation scripts.</td>
+                    <td>8,000</td>
+                </tr>
+                <tr>
+                    <td><strong>Supabase Pro Suite</strong></td>
+                    <td>Managed Database, Storage, and Real-time data engine.</td>
+                    <td>7,000</td>
+                </tr>
+                <tr>
+                    <td><strong>Monthly Tech Support</strong></td>
+                    <td>Professional maintenance, monitoring, and quick fixes.</td>
+                    <td>2,500</td>
+                </tr>
+                <tr>
+                    <td><strong>Enterprise SSL Security</strong></td>
+                    <td>Advanced TLS encryption and security certification.</td>
+                    <td>2,000</td>
+                </tr>
+                <tr>
+                    <td><strong>Managed DNS Routing</strong></td>
+                    <td>Optimized global routing and DNS infrastructure management.</td>
+                    <td>1,000</td>
+                </tr>
+                <tr>
+                    <td><strong>Cybersecurity Firewall</strong></td>
+                    <td>UFW audit, anti-DDoS, and RLS database protection.</td>
+                    <td>500</td>
+                </tr>
+                <tr>
+                    <td>Firebase OTP & SMS Gateway</td>
+                    <td>Mobile verification gateway (Chargeable after free trial).</td>
+                    <td><span class="badge-free">FREE / INCLUDED</span></td>
+                </tr>
+                <tr>
+                    <td>VPS Server Hosting</td>
+                    <td>High-spec Enterprise Grade VPS (2 vCPU, 4GB RAM).</td>
+                    <td><span class="badge-free">FREE / INCLUDED</span></td>
+                </tr>
+                <tr>
+                    <td>Telegram Alert Engine</td>
+                    <td>Real-time automated notification bot for orders/queries.</td>
+                    <td><span class="badge-free">FREE / INCLUDED</span></td>
+                </tr>
+                <tr>
+                    <td>SEO Meta Suite</td>
+                    <td>Automated search engine indexing and metadata management.</td>
+                    <td><span class="badge-free">FREE / INCLUDED</span></td>
+                </tr>
+                <tr>
+                    <td>Design Assets</td>
+                    <td>Custom premium icons, illustrations, and font sets.</td>
+                    <td><span class="badge-free">FREE / INCLUDED</span></td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="2">TOTAL PROJECT VALUATION</td>
+                    <td>₹33,000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="page-break"></div>
+
+        <h2>📄 Application Architecture (30 Pages)</h2>
+        <h3>Public Experience</h3>
+        <div class="page-list">
+            <div class="page-list-item"><span class="page-number">01</span>Homepage</div>
+            <div class="page-list-item"><span class="page-number">02</span>About Us</div>
+            <div class="page-list-item"><span class="page-number">03</span>Contact</div>
+            <div class="page-list-item"><span class="page-number">04</span>Products Listing</div>
+            <div class="page-list-item"><span class="page-number">05</span>Product Detail</div>
+            <div class="page-list-item"><span class="page-number">06</span>Aerator Sets Listing</div>
+            <div class="page-list-item"><span class="page-number">07</span>Aerator Set Detail</div>
+            <div class="page-list-item"><span class="page-number">08</span>Long Arm Listing</div>
+            <div class="page-list-item"><span class="page-number">09</span>Long Arm Detail</div>
+            <div class="page-list-item"><span class="page-number">10</span>Spares Listing</div>
+            <div class="page-list-item"><span class="page-number">11</span>Spares Detail</div>
+            <div class="page-list-item"><span class="page-number">12</span>Compare Products</div>
+        </div>
+
+        <h3>Transactions & Auth</h3>
+        <div class="page-list">
+            <div class="page-list-item"><span class="page-number">13</span>Shopping Cart</div>
+            <div class="page-list-item"><span class="page-number">14</span>Bulk Orders</div>
+            <div class="page-list-item"><span class="page-number">15</span>Secure Login</div>
+            <div class="page-list-item"><span class="page-number">16</span>Forgot Password</div>
+            <div class="page-list-item"><span class="page-number">17</span>Complete Profile</div>
+            <div class="page-list-item"><span class="page-number">18</span>Client Dashboard</div>
+        </div>
+
+        <h3>Advanced Admin Panel</h3>
+        <div class="page-list">
+            <div class="page-list-item"><span class="page-number">19</span>Admin Overiew</div>
+            <div class="page-list-item"><span class="page-number">20</span>Manage Customers</div>
+            <div class="page-list-item"><span class="page-number">21</span>Customer Data Detail</div>
+            <div class="page-list-item"><span class="page-number">22</span>Order Management</div>
+            <div class="page-list-item"><span class="page-number">23</span>Full Order Details</div>
+            <div class="page-list-item"><span class="page-number">24</span>Centralized Inventory</div>
+            <div class="page-list-item"><span class="page-number">25</span>Edit Active Product</div>
+            <div class="page-list-item"><span class="page-number">26</span>New Catalog Item</div>
+            <div class="page-list-item"><span class="page-number">27</span>System Settings</div>
+        </div>
+
+        <h3>Legal Compliance</h3>
+        <div class="page-list">
+            <div class="page-list-item"><span class="page-number">28</span>Privacy Policy</div>
+            <div class="page-list-item"><span class="page-number">29</span>Terms & Conditions</div>
+            <div class="page-list-item"><span class="page-number">30</span>Refund Policy</div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h2>🗄️ Database Schema & Data Model</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Table Name</th>
+                    <th>Technical Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Users</strong></td>
+                    <td>Identity management and authentication handshake.</td>
+                </tr>
+                <tr>
+                    <td><strong>Profiles</strong></td>
+                    <td>Permission-based data storage and RBAC roles.</td>
+                </tr>
+                <tr>
+                    <td><strong>Products</strong></td>
+                    <td>Inventory master records, SEO slugs, and relational data.</td>
+                </tr>
+                <tr>
+                    <td><strong>Orders</strong></td>
+                    <td>Global transaction tracking with custom identifier logic.</td>
+                </tr>
+                <tr>
+                    <td><strong>Order_items</strong></td>
+                    <td>Granular sub-item tracking for multi-product orders.</td>
+                </tr>
+                <tr>
+                    <td><strong>Addresses</strong></td>
+                    <td>Persistent encrypted customer shipping data.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>⚙️ Infrastructure & Tech Stack</h2>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <strong>Hosting Environment</strong>
+                Ubuntu 22.04 LTS VPS with dedicated NVMe storage and Nginx reverse proxying.
+            </div>
+            <div class="feature-item">
+                <strong>Backend Engine</strong>
+                Supabase PostgreSQL with Row Level Security (RLS) for data integrity.
+            </div>
+            <div class="feature-item">
+                <strong>Frontend Stack</strong>
+                Next.js 16 (App Router), React 19, and Tailwind CSS V4 for blazing speed.
+            </div>
+            <div class="feature-item">
+                <strong>Premium Features</strong>
+                Telegram Webhook alerts, OTP verification, and adaptive mobile responsive UI.
+            </div>
+        </div>
+
+        <footer>
+            Prepared for Karthik Traders | Professional E-commerce Solution | 2026
+        </footer>
+    </div>
+</body>
+</html>
