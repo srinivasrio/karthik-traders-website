@@ -31,6 +31,7 @@ const CATEGORIES = [
     { id: 'motors', label: 'Motors' },
     { id: 'gearboxes', label: 'Gearboxes' },
     { id: 'spares', label: 'Spares' },
+    { id: 'long-arm', label: 'Long Arm' },
 ];
 
 export default function NewOrderPage() {
