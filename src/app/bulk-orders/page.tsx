@@ -124,14 +124,16 @@ export default function CheckoutPage() {
         );
     }
 
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 && !isSuccessModalOpen) {
         return (
-            <div className="min-h-screen pt-24 text-center">
-                <h2>Your cart is empty</h2>
-                <button onClick={() => router.push('/products')} className="text-blue-500 underline">
-                    Browse Products
-                </button>
-            </div>
+            <MobileGestureLayout>
+                <div className="min-h-screen pt-24 text-center">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-4">Your cart is empty</h2>
+                    <Link href="/products" className="text-aqua-600 hover:text-aqua-700 transition-colors">
+                        Browse Products
+                    </Link>
+                </div>
+            </MobileGestureLayout>
         );
     }
 

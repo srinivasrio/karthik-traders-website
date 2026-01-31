@@ -43,7 +43,7 @@ export default function OrderSuccessModal({ isOpen, onClose, orderId }: OrderSuc
 
                             <h2 className="text-2xl font-bold text-slate-900 mb-2">Order Requested!</h2>
                             <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-                                Your order <span className="font-semibold text-slate-900">#{orderId.slice(0, 8)}</span> has been submitted successfully.
+                                Your order <span className="font-semibold text-slate-900">#{orderId}</span> has been submitted successfully.
                                 <br /><br />
                                 You will be notified via SMS once our team reviews and accepts your order.
                             </p>
@@ -66,7 +66,7 @@ export default function OrderSuccessModal({ isOpen, onClose, orderId }: OrderSuc
                                 onClick={onClose}
                                 className="w-full py-4 bg-deep-blue-900 text-white rounded-2xl font-bold text-sm shadow-lg shadow-deep-blue-900/20 active:scale-95 transition-transform"
                             >
-                                Track in Dashboard
+                                Go back to dashboard
                             </button>
                         </div>
                     </motion.div>

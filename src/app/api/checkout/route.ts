@@ -103,7 +103,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: itemsError.message }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, orderId: order.id });
+        return NextResponse.json({ success: true, orderId: order.order_number });
     } catch (err: any) {
         console.error('Internal error:', err);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

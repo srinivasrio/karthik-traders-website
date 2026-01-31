@@ -17,6 +17,7 @@ interface OrderItem {
 
 interface Order {
     id: string;
+    order_number?: number;
     created_at: string;
     status: string;
     total_amount: number;
@@ -200,8 +201,8 @@ export default function AdminOrdersPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                                    ? 'border-aqua-500 text-aqua-600'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                                ? 'border-aqua-500 text-aqua-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                                 }`}
                         >
                             {tab.label}
@@ -264,7 +265,7 @@ export default function AdminOrdersPage() {
                                                     </button>
                                                     <div>
                                                         <p className="text-sm font-medium text-slate-900">
-                                                            #{order.id.slice(0, 8)}
+                                                            #{order.order_number || order.id.slice(0, 8)}
                                                         </p>
                                                         <p className="text-xs text-slate-500">
                                                             {new Date(order.created_at).toLocaleDateString()}

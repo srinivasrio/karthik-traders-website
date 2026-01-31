@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 
 interface Order {
     id: string;
+    order_number?: number;
     created_at: string;
     status: string;
     total_amount: number;
@@ -41,7 +42,7 @@ export default function DashboardPage() {
             // Fetch orders by user_id OR customer_mobile
             const { data, error } = await supabase
                 .from('orders')
-                .select('id, created_at, status, total_amount, customer_name, created_by_admin')
+                .select('id, order_number, created_at, status, total_amount, customer_name, created_by_admin')
                 .or(`user_id.eq.${user?.id},customer_mobile.eq.${profile?.mobile}`)
                 .order('created_at', { ascending: false })
                 .limit(10);
@@ -180,7 +181,7 @@ export default function DashboardPage() {
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 <p className="font-medium text-slate-900 text-sm">
-                                                    Order #{order.id.slice(0, 8)}
+                                                    Order #{order.order_number || order.id.slice(0, 8)}
                                                 </p>
                                                 {order.created_by_admin && (
                                                     <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
