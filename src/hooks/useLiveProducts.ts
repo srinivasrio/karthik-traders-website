@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/data/products';
 
-export function useLiveProducts(initialProducts: Product[]) {
+export function useLiveProducts(initialProducts: Product[], options?: { skipLoading?: boolean }) {
     const [products, setProducts] = useState<Product[]>(initialProducts);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!options?.skipLoading);
 
     useEffect(() => {
         const fetchLiveData = async () => {

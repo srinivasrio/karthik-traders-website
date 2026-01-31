@@ -179,6 +179,14 @@ export default function ProductCard({
                             {product.brand === 'seaboss' && (
                                 <span className="px-1.5 py-0.5 text-[10px] font-bold bg-aqua-100 text-aqua-700 rounded-full border border-aqua-200">SEA BOSS</span>
                             )}
+                            {product.badge && (
+                                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full border uppercase ${product.badge === 'Best Selling' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                                    product.badge === 'Limited Stock' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                        'bg-blue-100 text-blue-700 border-blue-200'
+                                    }`}>
+                                    {product.badge}
+                                </span>
+                            )}
                         </div>
 
                         {/* Savings Badge - Absolute */}

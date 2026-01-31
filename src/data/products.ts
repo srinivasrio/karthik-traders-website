@@ -42,6 +42,7 @@ export interface Product {
   weight?: string;
   stock?: number;
   isActive?: boolean;
+  badge?: string;
 }
 
 // ==========================================
@@ -56,6 +57,7 @@ export const aeratorSets: Product[] = [
     slug: 'aqualion-2hp-4-paddle-pr20b',
     name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 B)',
     model: 'PR 20 B',
+    badge: 'Best Selling',
     brand: 'aqualion',
     category: 'aerator-set',
     mrp: 34000,
@@ -134,6 +136,7 @@ export const aeratorSets: Product[] = [
     slug: 'aqualion-2hp-4-paddle-pr20nb',
     name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 NB)',
     model: 'PR 20 NB',
+    badge: 'Best Selling',
     brand: 'aqualion',
     category: 'aerator-set',
     mrp: 35000,
@@ -209,6 +212,7 @@ export const aeratorSets: Product[] = [
     slug: 'aqualion-2hp-4-paddle-pr20cmb',
     name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 CMB)',
     model: 'PR 20 CMB',
+    badge: 'Best Selling',
     brand: 'aqualion',
     category: 'aerator-set',
     mrp: 39000,
@@ -290,8 +294,8 @@ export const aeratorSets: Product[] = [
     category: 'aerator-set',
     mrp: 25000,
     salePrice: 23999,
+    badge: 'Limited Stock',
     features: [
-      '2HP Sea Boss 3-phase motor',
       'A2 WORM Gearbox',
       '6.2 kg Sea Boss floats',
     ],
@@ -366,8 +370,8 @@ export const aeratorSets: Product[] = [
     category: 'aerator-set',
     mrp: 26500,
     salePrice: 25499,
+    badge: 'Limited Stock',
     features: [
-      '2HP Sea Boss 3-phase motor',
       'Sea Boss Bevel Gearbox',
       '6.2 kg Sea Boss floats',
     ],
@@ -443,7 +447,6 @@ export const aeratorSets: Product[] = [
     mrp: 26500,
     salePrice: 24999,
     features: [
-      '2HP Sea Boss high-efficiency motor',
       'A2 Worm Gearbox 105RPM',
       '6.5 kg Sea Boss floats',
     ],
@@ -519,7 +522,6 @@ export const aeratorSets: Product[] = [
     mrp: 28000,
     salePrice: 26499,
     features: [
-      '2HP Sea Boss motor with improved cooling',
       'Sea Boss Bevel Gearbox',
       '6.2 kg Sea Boss floats',
     ],
@@ -595,7 +597,6 @@ export const aeratorSets: Product[] = [
     mrp: 29000,
     salePrice: 27499,
     features: [
-      '2HP Sea Boss motor with improved cooling',
       'Sea Boss Bevel Gearbox',
       'SS 304 frame and rods',
     ],
@@ -834,6 +835,7 @@ export const bevelGearboxes: Product[] = [
     id: 'aqualion-a3-bevel-gearbox',
     slug: 'aqualion-a3-bevel-gearbox',
     name: 'Aqualion A3 Bevel Gearbox',
+    model: 'AQUA LION A3',
     brand: 'aqualion',
     category: 'bevel-gearbox',
     mrp: 10500,
