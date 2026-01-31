@@ -48,6 +48,7 @@ export default function NewOrderPage() {
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showProductDropdown, setShowProductDropdown] = useState(false);
+    const [showCategoryProducts, setShowCategoryProducts] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
 
     const [formData, setFormData] = useState({
@@ -120,6 +121,7 @@ export default function NewOrderPage() {
         setSelectedCategory(categoryId);
         filterProducts(searchQuery, categoryId);
         setShowProductDropdown(true);
+        setShowCategoryProducts(true); // Show products when category is clicked
     };
 
     const filterProducts = (query: string, category: string) => {
@@ -158,6 +160,7 @@ export default function NewOrderPage() {
 
         setSearchQuery('');
         setShowProductDropdown(false);
+        setShowCategoryProducts(false); // Hide dropdown after adding
     };
 
     const updateQuantity = (productId: string, delta: number) => {
@@ -351,8 +354,8 @@ export default function NewOrderPage() {
                             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500"
                         />
 
-                        {/* Dropdown - show when searching OR when category selected */}
-                        {showProductDropdown && (searchQuery || selectedCategory !== 'all') && (
+                        {/* Dropdown - show when searching OR when any category is clicked */}
+                        {(showProductDropdown && searchQuery) || showCategoryProducts ? (
                             <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-auto">
                                 {filteredProducts.length === 0 ? (
                                     <div className="p-3 text-sm text-slate-500">No products found</div>
@@ -376,7 +379,7 @@ export default function NewOrderPage() {
                                     ))
                                 )}
                             </div>
-                        )}
+                        ) : null}
                     </div>
 
                     {/* Order Items */}
