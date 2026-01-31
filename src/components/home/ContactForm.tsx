@@ -19,6 +19,7 @@ export default function ContactForm() {
             name: (form.elements.namedItem('name') as HTMLInputElement).value,
             mobile: (form.elements.namedItem('phone') as HTMLInputElement).value,
             location: (form.elements.namedItem('location') as HTMLInputElement).value,
+            address: (form.elements.namedItem('address') as HTMLInputElement).value,
             message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
             status: 'new'
         };
@@ -113,13 +114,23 @@ export default function ContactForm() {
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="location" className="block text-sm font-bold !text-black mb-1">Location / Town</label>
+                                        <label htmlFor="location" className="block text-sm font-bold !text-black mb-1">Town / City</label>
                                         <input
                                             type="text"
                                             id="location"
                                             suppressHydrationWarning
                                             className="w-full px-4 py-3 rounded-xl bg-white border border-black focus:border-aqua-500 focus:ring-2 focus:ring-aqua-200 outline-none transition-all font-medium placeholder:text-gray-500 text-black"
                                             placeholder="Nellore, AP"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="address" className="block text-sm font-bold !text-black mb-1">Full Address</label>
+                                        <input
+                                            type="text"
+                                            id="address"
+                                            suppressHydrationWarning
+                                            className="w-full px-4 py-3 rounded-xl bg-white border border-black focus:border-aqua-500 focus:ring-2 focus:ring-aqua-200 outline-none transition-all font-medium placeholder:text-gray-500 text-black"
+                                            placeholder="House No, Street Name..."
                                         />
                                     </div>
                                 </div>
