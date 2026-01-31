@@ -64,6 +64,16 @@ DROP TRIGGER IF EXISTS on_profile_created ON public.profiles;
 CREATE TRIGGER on_profile_created
   AFTER INSERT ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION link_orders_to_user();
+
+-- 7. Update Aerator Names (Full Model Numbers)
+UPDATE public.products SET name = 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 B)' WHERE slug = 'aqualion-2hp-4-paddle-pr20b';
+UPDATE public.products SET name = 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 NB)' WHERE slug = 'aqualion-2hp-4-paddle-pr20nb';
+UPDATE public.products SET name = 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 CMB)' WHERE slug = 'aqualion-2hp-4-paddle-pr20cmb';
+UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (HV-13-W)' WHERE slug = 'seaboss-2hp-4-paddle-hv13w';
+UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (HV-13-B)' WHERE slug = 'seaboss-2hp-4-paddle-hv13b';
+UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (PR-14-W)' WHERE slug = 'seaboss-2hp-4-paddle-pr14w';
+UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (PR-14-B)' WHERE slug = 'seaboss-2hp-4-paddle-pr14b';
+UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set SS 304 Frame (PR 14 BSS)' WHERE slug = 'seaboss-2hp-4-paddle-pr14bss';
 "
 
 echo "Applying SQL migrations..."
