@@ -28,6 +28,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // Fetch user profile to get mobile number
+        const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('mobile, full_name')
+            .eq('id', user.id)
+            .single();
+
         // Format items for RPC
         const formattedItems = items.map((item: any) => ({
             product_id: item.id,
@@ -35,21 +42,45 @@ export async function POST(request: Request) {
             price: item.salePrice || item.price || item.mrp
         }));
 
-        // Call RPC function using Admin Client (bypasses RLS)
-        const { data: orderId, error } = await supabaseAdmin
-            .rpc('create_order_with_stock', {
-                p_user_id: user.id,
-                p_total_amount: totalAmount,
-                p_shipping_address: shippingAddress,
-                p_items: formattedItems
-            });
+        // Create order directly (with customer_mobile for linking)
+        const { data: order, error: orderError } = await supabaseAdmin
+            .from('orders')
+            .insert({
+                user_id: user.id,
+                customer_mobile: profile?.mobile || shippingAddress.mobile,
+                customer_name: profile?.full_name || shippingAddress.fullName,
+                total_amount: totalAmount,
+                shipping_address: shippingAddress,
+                status: 'pending',
+                payment_status: 'pending',
+                created_by_admin: false
+            })
+            .select()
+            .single();
 
-        if (error) {
-            console.error('Order creation error:', error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
+        if (orderError) {
+            console.error('Order creation error:', orderError);
+            return NextResponse.json({ error: orderError.message }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, orderId });
+        // Insert order items
+        const orderItems = formattedItems.map((item: any) => ({
+            order_id: order.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price_at_purchase: item.price
+        }));
+
+        const { error: itemsError } = await supabaseAdmin
+            .from('order_items')
+            .insert(orderItems);
+
+        if (itemsError) {
+            console.error('Order items error:', itemsError);
+            return NextResponse.json({ error: itemsError.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, orderId: order.id });
     } catch (err: any) {
         console.error('Internal error:', err);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
