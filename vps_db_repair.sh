@@ -74,6 +74,11 @@ UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (HV-1
 UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (PR-14-W)' WHERE slug = 'seaboss-2hp-4-paddle-pr14w';
 UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (PR-14-B)' WHERE slug = 'seaboss-2hp-4-paddle-pr14b';
 UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set SS 304 Frame (PR 14 BSS)' WHERE slug = 'seaboss-2hp-4-paddle-pr14bss';
+
+-- 8. Data Consistency (Gearbox Model Numbers)
+UPDATE public.products 
+SET specifications = jsonb_set(specifications, '{Model number}', '\"AQUA LION A3\"')
+WHERE name = 'Aqualion A3 Bevel Gearbox';
 "
 
 echo "Applying SQL migrations..."
