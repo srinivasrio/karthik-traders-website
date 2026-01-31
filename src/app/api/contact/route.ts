@@ -17,7 +17,7 @@ const supabaseAdmin = createClient(
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { name, mobile, location, address, message } = body;
+        const { name, mobile, location, message } = body;
 
         if (!name || !mobile) {
             return NextResponse.json({ error: 'Name and Mobile are required' }, { status: 400 });
@@ -30,7 +30,6 @@ export async function POST(request: Request) {
                 name,
                 mobile,
                 location,
-                address,
                 message,
                 status: 'new'
             }]);
@@ -47,7 +46,6 @@ export async function POST(request: Request) {
 <b>Name:</b> ${name}
 <b>Mobile:</b> <code>${mobile}</code>
 <b>Location:</b> ${location || 'Not provided'}
-<b>Address:</b> ${address || 'Not provided'}
 ━━━━━━━━━━━━━━━━━━
 <b>Message:</b>
 <i>${message || 'No message'}</i>
