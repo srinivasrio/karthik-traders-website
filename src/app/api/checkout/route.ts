@@ -4,12 +4,25 @@ import { NextResponse } from 'next/server';
 // Initialize Supabase Admin Client
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false
+        }
+    }
 );
 
 export async function POST(request: Request) {
     try {
         console.log('Checkout POST request received.');
+
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!serviceKey) {
+            console.error('CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing on server!');
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+        }
+
         const authHeader = request.headers.get('Authorization');
         if (!authHeader) {
             console.warn('Missing Authorization header for checkout request.');
@@ -17,7 +30,10 @@ export async function POST(request: Request) {
         }
 
         const token = authHeader.replace('Bearer ', '');
+        console.log('Token received length:', token.length);
         console.log('Verifying token at /api/checkout...');
+
+        // Use getUser(token) to verify the client-side JWT
         const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
         if (authError || !user) {
