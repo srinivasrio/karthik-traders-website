@@ -109,8 +109,7 @@ export async function POST(
         const { error: updateError } = await supabaseAdmin
             .from('orders')
             .update({
-                status: 'confirmed',
-                updated_at: new Date().toISOString()
+                status: 'rejected'
             })
             .eq('id', orderId);
 
