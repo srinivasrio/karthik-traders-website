@@ -8,10 +8,10 @@ const supabaseAdmin = createClient(
 
 export async function POST(
     request: Request,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: { id: string } }
 ) {
     try {
-        const { id: orderId } = await params;
+        const orderId = params.id;
 
         // Verify admin token
         const authHeader = request.headers.get('Authorization');

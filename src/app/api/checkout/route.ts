@@ -9,16 +9,23 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
     try {
+        console.log('Checkout POST request received.');
         const authHeader = request.headers.get('Authorization');
         if (!authHeader) {
+            console.warn('Missing Authorization header for checkout request.');
             return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
         }
 
         const token = authHeader.replace('Bearer ', '');
+        console.log('Verifying token at /api/checkout...');
         const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
         if (authError || !user) {
-            return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+            console.error('Checkout Auth Error:', authError);
+            return NextResponse.json({
+                error: 'Invalid token',
+                details: authError?.message || 'User not found'
+            }, { status: 401 });
         }
 
         const body = await request.json();
