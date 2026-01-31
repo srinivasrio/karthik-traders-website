@@ -54,7 +54,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'aqualion-pr20b',
     slug: 'aqualion-2hp-4-paddle-pr20b',
-    name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set',
+    name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 B)',
     model: 'PR 20 B',
     brand: 'aqualion',
     category: 'aerator-set',
@@ -132,7 +132,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'aqualion-pr20nb',
     slug: 'aqualion-2hp-4-paddle-pr20nb',
-    name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set',
+    name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 NB)',
     model: 'PR 20 NB',
     brand: 'aqualion',
     category: 'aerator-set',
@@ -207,7 +207,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'aqualion-pr20cmb',
     slug: 'aqualion-2hp-4-paddle-pr20cmb',
-    name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set',
+    name: 'AQUA LION 2HP 4 Paddle Wheel Aerator Set (PR 20 CMB)',
     model: 'PR 20 CMB',
     brand: 'aqualion',
     category: 'aerator-set',
@@ -284,7 +284,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'seaboss-hv13w',
     slug: 'seaboss-2hp-4-paddle-hv13w',
-    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set',
+    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (HV-13-W)',
     model: 'HV - 13- W',
     brand: 'seaboss',
     category: 'aerator-set',
@@ -360,7 +360,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'seaboss-hv13b',
     slug: 'seaboss-2hp-4-paddle-hv13b',
-    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set',
+    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (HV-13-B)',
     model: 'HV-13-B',
     brand: 'seaboss',
     category: 'aerator-set',
@@ -436,7 +436,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'seaboss-pr14w',
     slug: 'seaboss-2hp-4-paddle-pr14w',
-    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set',
+    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (PR-14-W)',
     model: 'PR-14-W',
     brand: 'seaboss',
     category: 'aerator-set',
@@ -512,7 +512,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'seaboss-pr14b',
     slug: 'seaboss-2hp-4-paddle-pr14b',
-    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set',
+    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (PR-14-B)',
     model: 'PR-14-B',
     brand: 'seaboss',
     category: 'aerator-set',
@@ -588,7 +588,7 @@ export const aeratorSets: Product[] = [
   {
     id: 'seaboss-pr14bss',
     slug: 'seaboss-2hp-4-paddle-pr14bss',
-    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set (SS 304 Frame)',
+    name: 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set SS 304 Frame (PR 14 BSS)',
     model: 'PR 14 BSS',
     brand: 'seaboss',
     category: 'aerator-set',

@@ -24,6 +24,23 @@ interface OrderItem {
     stock: number;
 }
 
+// Category definitions for quick filters
+const CATEGORIES = [
+    { id: 'all', label: 'All Products' },
+    { id: 'aerator-set', label: 'Aerator Sets' },
+    { id: 'motor', label: 'Motors' },
+    { id: 'worm-gearbox', label: 'Worm Gearbox' },
+    { id: 'bevel-gearbox', label: 'Bevel Gearbox' },
+    { id: 'motor-cover', label: 'Motor Cover' },
+    { id: 'float', label: 'Floats' },
+    { id: 'fan', label: 'Fans' },
+    { id: 'frame', label: 'Frames' },
+    { id: 'rod', label: 'Rods' },
+    { id: 'kit-box', label: 'Kit Box' },
+    { id: 'long-arm-gearbox', label: 'Long Arm Gearbox' },
+    { id: 'long-arm-spare', label: 'Long Arm Spares' },
+];
+
 export default function NewOrderPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -31,6 +48,7 @@ export default function NewOrderPage() {
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showProductDropdown, setShowProductDropdown] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState('all');
 
     const [formData, setFormData] = useState({
         customerMobile: '',
@@ -95,11 +113,31 @@ export default function NewOrderPage() {
         const query = e.target.value.toLowerCase();
         setSearchQuery(query);
         setShowProductDropdown(true);
+        filterProducts(query, selectedCategory);
+    };
 
-        const filtered = products.filter(p =>
-            p.name.toLowerCase().includes(query) ||
-            p.slug.toLowerCase().includes(query)
-        );
+    const handleCategoryChange = (categoryId: string) => {
+        setSelectedCategory(categoryId);
+        filterProducts(searchQuery, categoryId);
+        setShowProductDropdown(true);
+    };
+
+    const filterProducts = (query: string, category: string) => {
+        let filtered = products;
+
+        // Filter by category first
+        if (category !== 'all') {
+            filtered = filtered.filter(p => p.category === category);
+        }
+
+        // Then filter by search query
+        if (query) {
+            filtered = filtered.filter(p =>
+                p.name.toLowerCase().includes(query) ||
+                p.slug.toLowerCase().includes(query)
+            );
+        }
+
         setFilteredProducts(filtered);
     };
 
@@ -278,6 +316,29 @@ export default function NewOrderPage() {
                 <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
                     <h2 className="text-lg font-medium text-slate-900 mb-4">Products</h2>
 
+                    {/* Category Filters */}
+                    <div className="mb-4">
+                        <p className="text-sm font-medium text-slate-600 mb-2">Quick Categories:</p>
+                        <div className="flex flex-wrap gap-2">
+                            {CATEGORIES.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => handleCategoryChange(cat.id)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${selectedCategory === cat.id
+                                        ? 'bg-aqua-600 text-white'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                >
+                                    {cat.label}
+                                    {selectedCategory === cat.id && cat.id !== 'all' && (
+                                        <span className="ml-1">({filteredProducts.length})</span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Search Products */}
                     <div className="relative mb-4">
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -290,8 +351,8 @@ export default function NewOrderPage() {
                             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500"
                         />
 
-                        {/* Dropdown */}
-                        {showProductDropdown && searchQuery && (
+                        {/* Dropdown - show when searching OR when category selected */}
+                        {showProductDropdown && (searchQuery || selectedCategory !== 'all') && (
                             <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-auto">
                                 {filteredProducts.length === 0 ? (
                                     <div className="p-3 text-sm text-slate-500">No products found</div>
