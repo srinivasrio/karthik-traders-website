@@ -248,137 +248,141 @@ export default function AdminOrdersPage() {
             </div>
 
             {/* Orders Table */}
-            <div className="mt-6">
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-                    <table className="min-w-full divide-y divide-slate-300">
-                        <thead className="bg-slate-50">
-                            <tr>
-                                <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-slate-900 sm:pl-6">
-                                    Order
-                                </th>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
-                                    Customer
-                                </th>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900 hidden md:table-cell">
-                                    Address
-                                </th>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
-                                    Total
-                                </th>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
-                                    Status
-                                </th>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 bg-white">
-                            {loading ? (
-                                <tr><td colSpan={6} className="text-center py-8">Loading...</td></tr>
-                            ) : filteredOrders.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-8 text-slate-500">No orders found.</td></tr>
-                            ) : (
-                                filteredOrders.map((order) => (
-                                    <>
-                                        <tr key={order.id} className={order.status === 'pending' ? 'bg-yellow-50' : ''}>
-                                            <td className="py-4 pl-4 pr-3 sm:pl-6">
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                                                        className="text-slate-400 hover:text-slate-600"
-                                                    >
-                                                        {expandedOrder === order.id ? (
-                                                            <ChevronUpIcon className="w-4 h-4" />
-                                                        ) : (
-                                                            <ChevronDownIcon className="w-4 h-4" />
-                                                        )}
-                                                    </button>
-                                                    <div>
+            <div className="mt-8 flow-root">
+                <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                    <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+                            <table className="min-w-full divide-y divide-slate-300">
+                                <thead className="bg-slate-50">
+                                    <tr>
+                                        <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-slate-900 sm:pl-6">
+                                            Order
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
+                                            Customer
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900 hidden md:table-cell">
+                                            Address
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
+                                            Total
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
+                                            Status
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200 bg-white">
+                                    {loading ? (
+                                        <tr><td colSpan={6} className="text-center py-8">Loading...</td></tr>
+                                    ) : filteredOrders.length === 0 ? (
+                                        <tr><td colSpan={6} className="text-center py-8 text-slate-500">No orders found.</td></tr>
+                                    ) : (
+                                        filteredOrders.map((order) => (
+                                            <>
+                                                <tr key={order.id} className={order.status === 'pending' ? 'bg-yellow-50' : ''}>
+                                                    <td className="py-4 pl-4 pr-3 sm:pl-6">
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                                                className="text-slate-400 hover:text-slate-600"
+                                                            >
+                                                                {expandedOrder === order.id ? (
+                                                                    <ChevronUpIcon className="w-4 h-4" />
+                                                                ) : (
+                                                                    <ChevronDownIcon className="w-4 h-4" />
+                                                                )}
+                                                            </button>
+                                                            <div>
+                                                                <p className="text-sm font-medium text-slate-900">
+                                                                    #{order.order_number || order.id.slice(0, 8)}
+                                                                </p>
+                                                                <p className="text-xs text-slate-500">
+                                                                    {new Date(order.created_at).toLocaleDateString()}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-4">
                                                         <p className="text-sm font-medium text-slate-900">
-                                                            #{order.order_number || order.id.slice(0, 8)}
+                                                            {order.customer_name || order.profile?.full_name || 'Unknown'}
                                                         </p>
                                                         <p className="text-xs text-slate-500">
-                                                            {new Date(order.created_at).toLocaleDateString()}
+                                                            {order.customer_mobile || order.profile?.mobile}
                                                         </p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-4">
-                                                <p className="text-sm font-medium text-slate-900">
-                                                    {order.customer_name || order.profile?.full_name || 'Unknown'}
-                                                </p>
-                                                <p className="text-xs text-slate-500">
-                                                    {order.customer_mobile || order.profile?.mobile}
-                                                </p>
-                                            </td>
-                                            <td className="px-3 py-4 text-sm text-slate-500 hidden md:table-cell max-w-xs truncate">
-                                                {formatAddress(order.shipping_address)}
-                                            </td>
-                                            <td className="px-3 py-4 text-sm font-semibold text-slate-900">
-                                                ₹{order.total_amount?.toLocaleString()}
-                                            </td>
-                                            <td className="px-3 py-4">
-                                                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${STATUS_COLORS[order.status] || 'bg-slate-100 text-slate-800'}`}>
-                                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 py-4">
-                                                {order.status === 'pending' ? (
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => handleAccept(order.id)}
-                                                            disabled={actionLoading === order.id}
-                                                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
-                                                        >
-                                                            <CheckIcon className="w-3 h-3" />
-                                                            Accept
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleReject(order.id)}
-                                                            disabled={actionLoading === order.id}
-                                                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 disabled:opacity-50"
-                                                        >
-                                                            <XMarkIcon className="w-3 h-3" />
-                                                            Reject
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <Link
-                                                        href={`/admin/orders/${order.id}`}
-                                                        className="text-sm text-aqua-600 hover:text-aqua-900"
-                                                    >
-                                                        View
-                                                    </Link>
-                                                )}
-                                            </td>
-                                        </tr>
-                                        {/* Expanded Order Items */}
-                                        {expandedOrder === order.id && (
-                                            <tr className="bg-slate-50">
-                                                <td colSpan={6} className="px-6 py-4">
-                                                    <div className="space-y-2">
-                                                        <p className="text-xs font-semibold text-slate-600 uppercase">Order Items:</p>
-                                                        {order.order_items?.map((item, idx) => (
-                                                            <div key={idx} className="flex justify-between text-sm">
-                                                                <span>{item.product?.name || 'Unknown Product'} × {item.quantity}</span>
-                                                                <span className="font-medium">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
+                                                    </td>
+                                                    <td className="px-3 py-4 text-sm text-slate-500 hidden md:table-cell max-w-xs truncate">
+                                                        {formatAddress(order.shipping_address)}
+                                                    </td>
+                                                    <td className="px-3 py-4 text-sm font-semibold text-slate-900">
+                                                        ₹{order.total_amount?.toLocaleString()}
+                                                    </td>
+                                                    <td className="px-3 py-4">
+                                                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${STATUS_COLORS[order.status] || 'bg-slate-100 text-slate-800'}`}>
+                                                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-4">
+                                                        {order.status === 'pending' ? (
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={() => handleAccept(order.id)}
+                                                                    disabled={actionLoading === order.id}
+                                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
+                                                                >
+                                                                    <CheckIcon className="w-3 h-3" />
+                                                                    Accept
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleReject(order.id)}
+                                                                    disabled={actionLoading === order.id}
+                                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 disabled:opacity-50"
+                                                                >
+                                                                    <XMarkIcon className="w-3 h-3" />
+                                                                    Reject
+                                                                </button>
                                                             </div>
-                                                        ))}
-                                                        {/* Show address on mobile */}
-                                                        <div className="md:hidden pt-2 border-t border-slate-200 mt-2">
-                                                            <p className="text-xs font-semibold text-slate-600 uppercase">Delivery Address:</p>
-                                                            <p className="text-sm text-slate-700">{formatAddress(order.shipping_address)}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                                        ) : (
+                                                            <Link
+                                                                href={`/admin/orders/${order.id}`}
+                                                                className="text-sm text-aqua-600 hover:text-aqua-900"
+                                                            >
+                                                                View
+                                                            </Link>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                                {/* Expanded Order Items */}
+                                                {expandedOrder === order.id && (
+                                                    <tr className="bg-slate-50">
+                                                        <td colSpan={6} className="px-6 py-4">
+                                                            <div className="space-y-2">
+                                                                <p className="text-xs font-semibold text-slate-600 uppercase">Order Items:</p>
+                                                                {order.order_items?.map((item, idx) => (
+                                                                    <div key={idx} className="flex justify-between text-sm">
+                                                                        <span>{item.product?.name || 'Unknown Product'} × {item.quantity}</span>
+                                                                        <span className="font-medium">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
+                                                                    </div>
+                                                                ))}
+                                                                {/* Show address on mobile */}
+                                                                <div className="md:hidden pt-2 border-t border-slate-200 mt-2">
+                                                                    <p className="text-xs font-semibold text-slate-600 uppercase">Delivery Address:</p>
+                                                                    <p className="text-sm text-slate-700">{formatAddress(order.shipping_address)}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
