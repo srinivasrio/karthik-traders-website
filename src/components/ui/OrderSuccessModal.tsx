@@ -1,77 +1,88 @@
+"use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
     onClose: () => void;
-    orderId: string;
+    orderId?: string;
+    message?: string;
 }
 
-export default function OrderSuccessModal({ isOpen, onClose, orderId }: OrderSuccessModalProps) {
+export default function OrderSuccessModal({ isOpen, onClose, orderId, message }: OrderSuccessModalProps) {
+    const router = useRouter();
+
+    const handleViewOrders = () => {
+        onClose();
+        router.push('/admin/orders');
+    };
+
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                    {/* Backdrop */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
-                    ></motion.div>
+        <Transition.Root show={isOpen} as={Fragment}>
+            <Dialog as="div" className="relative z-50" onClose={onClose}>
+                <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0"
+                    enterTo="opacity-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                >
+                    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" />
+                </Transition.Child>
 
-                    {/* Modal Content */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
-                    >
-                        <div className="p-8 text-center">
-                            {/* Success Icon Animation */}
-                            <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                                className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6"
-                            >
-                                <CheckCircleIcon className="w-12 h-12 text-emerald-600" />
-                            </motion.div>
-
-                            <h2 className="text-2xl font-bold text-slate-900 mb-2">Order Requested!</h2>
-                            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-                                Your order <span className="font-semibold text-slate-900">#{orderId}</span> has been submitted successfully.
-                                <br /><br />
-                                You will be notified via SMS once our team reviews and accepts your order.
-                            </p>
-
-                            <div className="bg-slate-50 rounded-2xl p-4 mb-8">
-                                <div className="flex items-center gap-3 text-left">
-                                    <div className="w-10 h-10 rounded-full bg-aqua-100 flex items-center justify-center text-aqua-600 flex-shrink-0">
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
+                <div className="fixed inset-0 z-10 overflow-y-auto">
+                    <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                        <Transition.Child
+                            as={Fragment}
+                            enter="ease-out duration-300"
+                            enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            enterTo="opacity-100 translate-y-0 sm:scale-100"
+                            leave="ease-in duration-200"
+                            leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                            leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        >
+                            <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6 border border-slate-100">
+                                <div>
+                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                                        <CheckCircleIcon className="h-10 w-10 text-green-600" aria-hidden="true" />
                                     </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-slate-900 uppercase tracking-wider">Next Steps</p>
-                                        <p className="text-xs text-slate-500">Wait for admin approval. Stock will be confirmed upon acceptance.</p>
+                                    <div className="mt-3 text-center sm:mt-5">
+                                        <Dialog.Title as="h3" className="text-xl font-bold leading-6 text-slate-900">
+                                            Order Created Successfully
+                                        </Dialog.Title>
+                                        <div className="mt-2 px-2">
+                                            <p className="text-sm text-slate-500">
+                                                {message || 'The order has been created and logged in the system.'}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <button
-                                onClick={onClose}
-                                className="w-full py-4 bg-deep-blue-900 text-white rounded-2xl font-bold text-sm shadow-lg shadow-deep-blue-900/20 active:scale-95 transition-transform"
-                            >
-                                Go back to dashboard
-                            </button>
-                        </div>
-                    </motion.div>
+                                <div className="mt-6 flex flex-col gap-3">
+                                    <button
+                                        type="button"
+                                        className="inline-flex w-full justify-center rounded-xl bg-aqua-600 px-3 py-3 text-sm font-semibold text-white shadow-sm hover:bg-aqua-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua-600 transition-all active:scale-[0.98]"
+                                        onClick={handleViewOrders}
+                                    >
+                                        View All Orders
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="inline-flex w-full justify-center rounded-xl bg-white px-3 py-3 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 transition-all"
+                                        onClick={onClose}
+                                    >
+                                        Create Another Order
+                                    </button>
+                                </div>
+                            </Dialog.Panel>
+                        </Transition.Child>
+                    </div>
                 </div>
-            )}
-        </AnimatePresence>
+            </Dialog>
+        </Transition.Root>
     );
 }

@@ -40,11 +40,14 @@ export async function POST(request: Request) {
         }
 
         // Check if customer with this mobile exists
+        // Match either the pure 10 digits OR the +91 version
         const { data: existingProfile } = await supabaseAdmin
             .from('profiles')
             .select('id, full_name')
-            .eq('mobile', customerMobile)
-            .single();
+            .or(`mobile.eq.${customerMobile},mobile.eq.+91${customerMobile}`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
         // Create order
         const { data: order, error: orderError } = await supabaseAdmin
@@ -86,17 +89,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: itemsError.message }, { status: 500 });
         }
 
-        // Update product stock
+        // Update product stock using RPC correctly
         for (const item of items) {
-            await supabaseAdmin
-                .from('products')
-                .update({
-                    stock: supabaseAdmin.rpc('decrement_stock', {
-                        p_product_id: item.product_id,
-                        p_quantity: item.quantity
-                    })
-                })
-                .eq('id', item.product_id);
+            await supabaseAdmin.rpc('decrement_stock', {
+                p_product_id: item.product_id,
+                p_quantity: item.quantity
+            });
         }
 
         return NextResponse.json({

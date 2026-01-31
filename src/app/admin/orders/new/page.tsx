@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import OrderSuccessModal from '@/components/ui/OrderSuccessModal';
 
 interface Product {
     id: string;
@@ -53,6 +54,10 @@ export default function NewOrderPage() {
     const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
     const [existingCustomer, setExistingCustomer] = useState<{ id: string; full_name: string } | null>(null);
     const [checkingCustomer, setCheckingCustomer] = useState(false);
+    const [successModal, setSuccessModal] = useState({
+        isOpen: false,
+        message: ''
+    });
 
     // Fetch products on mount
     useEffect(() => {
@@ -85,11 +90,14 @@ export default function NewOrderPage() {
         }
 
         setCheckingCustomer(true);
+        // Robust check: match both raw 10 digits and +91 format
         const { data, error } = await supabase
             .from('profiles')
             .select('id, full_name')
-            .eq('mobile', mobile)
-            .single();
+            .or(`mobile.eq.${mobile},mobile.eq.+91${mobile}`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
         if (!error && data) {
             setExistingCustomer(data);
@@ -225,8 +233,16 @@ export default function NewOrderPage() {
                 throw new Error(data.error || 'Failed to create order');
             }
 
-            alert(data.message || 'Order created successfully!');
-            router.push('/admin/orders');
+            setSuccessModal({
+                isOpen: true,
+                message: data.message
+            });
+
+            // Reset form for "Create Another"
+            setFormData({ customerMobile: '', customerName: '', notes: '' });
+            setOrderItems([]);
+            setExistingCustomer(null);
+
         } catch (err: any) {
             console.error(err);
             alert('Error: ' + err.message);
@@ -460,6 +476,12 @@ export default function NewOrderPage() {
                     </button>
                 </div>
             </form>
+
+            <OrderSuccessModal
+                isOpen={successModal.isOpen}
+                onClose={() => setSuccessModal(prev => ({ ...prev, isOpen: false }))}
+                message={successModal.message}
+            />
         </div>
     );
 }
