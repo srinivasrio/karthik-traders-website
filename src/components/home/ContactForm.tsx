@@ -24,11 +24,18 @@ export default function ContactForm() {
         };
 
         try {
-            const { error } = await supabase
-                .from('contact_inquiries')
-                .insert([formData]);
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
 
-            if (error) throw error;
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to submit enquiry');
+            }
 
             setFormStatus('success');
             // Reset form

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { sendTelegramMessage } from '@/lib/telegram';
 
 // Initialize Supabase Admin Client
 const supabaseAdmin = createClient(
@@ -102,6 +103,31 @@ export async function POST(request: Request) {
             console.error('Order items error:', itemsError);
             return NextResponse.json({ error: itemsError.message }, { status: 500 });
         }
+
+        // 3. Send Telegram Notification
+        const itemsList = items.map((item: any) =>
+            `• ${item.name} x${item.quantity} - ₹${(item.salePrice || item.price).toLocaleString()}`
+        ).join('\n');
+
+        const telegramText = `
+<b>🛍️ New Order Received!</b>
+━━━━━━━━━━━━━━━━━━
+<b>Order #:</b> <code>${order.order_number}</code>
+<b>Customer:</b> ${order.customer_name}
+<b>Mobile:</b> <code>${order.customer_mobile}</code>
+<b>Total:</b> <b>₹${totalAmount.toLocaleString()}</b>
+━━━━━━━━━━━━━━━━━━
+<b>Items:</b>
+${itemsList}
+━━━━━━━━━━━━━━━━━━
+<b>Shipping Address:</b>
+${shippingAddress.address}, ${shippingAddress.city}
+${shippingAddress.state}, ${shippingAddress.pincode}
+`.trim();
+
+        sendTelegramMessage(telegramText).catch(err => {
+            console.error('Async Telegram Error:', err);
+        });
 
         return NextResponse.json({ success: true, orderId: order.order_number });
     } catch (err: any) {
