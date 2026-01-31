@@ -18,11 +18,7 @@ export async function POST(
 ) {
     try {
         const { id: orderId } = await params;
-        console.log('[DEBUG] Reject Order Request received for:', orderId);
-
-        // Debug environment variables
-        console.log('[DEBUG] SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-        console.log('[DEBUG] SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+        console.log('[DEBUG] Accept Order Request received for:', orderId);
 
         // Debug environment variables
         console.log('[DEBUG] SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
@@ -70,15 +66,21 @@ export async function POST(
             .single();
 
         if (orderError || !order) {
+            console.error('[DEBUG] Order fetch error or not found:', orderError?.message || 'Not found');
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
+        console.log('[DEBUG] Order found:', order.id, 'Status:', order.status);
 
         if (order.status !== 'pending') {
+            console.warn('[DEBUG] Order is not pending, status is:', order.status);
             return NextResponse.json({ error: 'Order is not pending' }, { status: 400 });
         }
 
         // Deduct stock for each item
-        for (const item of order.order_items) {
+        const items = order.order_items || [];
+        console.log('[DEBUG] Processing', items.length, 'items for stock deduction');
+
+        for (const item of items) {
             const { error: stockError } = await supabaseAdmin.rpc('decrement_stock', {
                 p_product_id: item.product_id,
                 p_quantity: item.quantity
@@ -121,7 +123,7 @@ export async function POST(
         });
 
     } catch (err: any) {
-        console.error('Accept order error:', err);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error('[DEBUG] Reject order CATCH error:', err.message, err.stack);
+        return NextResponse.json({ error: 'Internal Server Error: ' + err.message }, { status: 500 });
     }
 }
