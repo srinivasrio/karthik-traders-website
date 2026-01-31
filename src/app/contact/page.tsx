@@ -5,140 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import { supabase } from '@/lib/supabase';
 
-function ContactForm() {
-    const [formData, setFormData] = useState({
-        name: '',
-        mobile: '',
-        location: '',
-        message: ''
-    });
-    const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [errorMessage, setErrorMessage] = useState('');
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setStatus('idle');
-        setErrorMessage('');
-
-        try {
-            const { error } = await supabase
-                .from('contact_inquiries')
-                .insert([
-                    {
-                        name: formData.name,
-                        mobile: formData.mobile,
-                        location: formData.location,
-                        message: formData.message,
-                        status: 'new'
-                    }
-                ]);
-
-            if (error) throw error;
-
-            setStatus('success');
-            setFormData({ name: '', mobile: '', location: '', message: '' });
-        } catch (error: any) {
-            console.error('Error submitting form:', error);
-            setStatus('error');
-            setErrorMessage(error.message || 'Something went wrong');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-steel-100 shadow-lg shadow-purple-500/5">
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-bold text-deep-blue-900 mb-1">Name</label>
-                    <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg bg-steel-50 border border-steel-200 focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all outline-none font-medium text-deep-blue-900 placeholder:text-steel-400"
-                        placeholder="Enter your name"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-bold text-deep-blue-900 mb-1">Mobile Number</label>
-                    <input
-                        type="tel"
-                        required
-                        value={formData.mobile}
-                        onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg bg-steel-50 border border-steel-200 focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all outline-none font-medium text-deep-blue-900 placeholder:text-steel-400"
-                        placeholder="e.g., +91 98765 43210"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-bold text-deep-blue-900 mb-1">Location / Town</label>
-                    <input
-                        type="text"
-                        required
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg bg-steel-50 border border-steel-200 focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all outline-none font-medium text-deep-blue-900 placeholder:text-steel-400"
-                        placeholder="e.g., Nellore, AP"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-bold text-deep-blue-900 mb-1">Message</label>
-                    <textarea
-                        required
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        rows={4}
-                        className="w-full px-4 py-3 rounded-lg bg-steel-50 border border-steel-200 focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-200 transition-all outline-none font-medium text-deep-blue-900 placeholder:text-steel-400 resize-none"
-                        placeholder="Tell us what you need..."
-                    />
-                </div>
-
-                <AnimatePresence>
-                    {status === 'success' && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="text-emerald-600 text-sm font-bold bg-emerald-50 p-3 rounded-lg flex items-center gap-2"
-                        >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                            Message sent successfully! We'll contact you soon.
-                        </motion.div>
-                    )}
-                    {status === 'error' && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="text-red-600 text-sm font-bold bg-red-50 p-3 rounded-lg flex items-center gap-2"
-                        >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            Failed to send message: {errorMessage || 'Please try again.'}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full btn btn-primary py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                    {loading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                        <>
-                            Send Message
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                        </>
-                    )}
-                </button>
-            </div>
-        </form>
-    );
-}
 
 export default function ContactPage() {
     const handleBack = () => {
@@ -176,10 +42,8 @@ export default function ContactPage() {
                                 Contact Us
                             </motion.h1>
                             <p className="text-steel-600 text-base mb-6">
-                                Have questions about our products or need a custom quote? Fill out the form, and we'll get back to you shortly.
+                                Looking for bulk quantities or have a specific requirement? We're here to help. Reach out to us directly via phone or visit our location.
                             </p>
-
-                            <ContactForm />
                         </div>
 
                         {/* Contact Details Cards */}
