@@ -272,7 +272,7 @@ function ProductsContent() {
                                     <tr key={product.id} className="hover:bg-slate-50">
                                         <td className="px-3 py-2">
                                             <p className="text-xs font-medium text-slate-900">
-                                                {product.category === 'aerator-set'
+                                                {product.category.includes('aerator')
                                                     ? (() => {
                                                         const specs = product.specifications || {};
                                                         let brand = specs.Brand || specs.brand || '';
