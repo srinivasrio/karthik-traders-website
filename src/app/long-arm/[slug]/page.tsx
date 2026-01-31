@@ -17,8 +17,7 @@ interface ProductPageProps {
 
 export default function LongArmDetailPage({ params }: ProductPageProps) {
     const { slug } = use(params);
-
-    const [cartQuantity, setCartQuantity] = useState(0);
+    const { cartItems, addToCart, removeFromCart, updateQuantity } = useCart();
     const [isSpecsOpen, setIsSpecsOpen] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -28,18 +27,10 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
     const initialProduct = longArmProducts.find(p => p.slug === slug);
     const { product, loading } = useLiveProduct(initialProduct);
 
-    // Sync with Cart
-    useEffect(() => {
-        if (!product) return;
-        const checkCart = () => {
-            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            const item = cart.find((i: { id: string }) => i.id === product.id);
-            setCartQuantity(item ? item.quantity : 0);
-        };
-        checkCart();
-        window.addEventListener('cartUpdated', checkCart);
-        return () => window.removeEventListener('cartUpdated', checkCart);
-    }, [product]);
+    // Derived cart state
+    const cartItem = cartItems.find(item => item.id === product?.id);
+    const cartQuantity = cartItem ? cartItem.quantity : 0;
+    const isInCart = cartQuantity > 0;
 
     // Reset Image Index on Change
     useEffect(() => {
@@ -63,38 +54,36 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
         );
     }
 
+    // Product derived data
     const savings = calculateSavings(product.mrp, product.salePrice);
-    const isInCart = cartQuantity > 0;
     const images = product.images || [];
     const hasImages = images.length > 0;
 
     const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % images.length);
     const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
 
-    const updateCart = (newQty: number) => {
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingIndex = cart.findIndex((item: { id: string }) => item.id === product.id);
-
-        if (newQty > 0) {
-            if (existingIndex >= 0) {
-                cart[existingIndex].quantity = newQty;
-            } else {
-                cart.push({ ...product, quantity: newQty });
-            }
+    const handleIncrement = () => updateQuantity(product.id, cartQuantity + 1);
+    const handleDecrement = () => {
+        if (cartQuantity <= 1) {
+            removeFromCart(product.id);
         } else {
-            if (existingIndex >= 0) {
-                cart.splice(existingIndex, 1);
-            }
+            updateQuantity(product.id, cartQuantity - 1);
         }
-
-        localStorage.setItem('cart', JSON.stringify(cart));
-        window.dispatchEvent(new Event('cartUpdated'));
-        setCartQuantity(newQty);
     };
-
-    const handleIncrement = () => updateCart(cartQuantity + 1);
-    const handleDecrement = () => updateCart(cartQuantity - 1);
-    const handleAddToCart = () => updateCart(1);
+    const handleAddToCart = () => {
+        addToCart({
+            id: product.id,
+            model: product.model || product.name,
+            price: product.mrp,
+            salePrice: product.salePrice,
+            quantity: 1,
+            image: product.images?.[0] || '',
+            name: product.name,
+            brand: product.brand,
+            stock: product.stock,
+            inStock: product.inStock
+        });
+    };
 
     const handlePullDown = () => {
         setIsRefreshing(true);
@@ -224,7 +213,11 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
                                             </button>
                                             <span className="flex-1 text-center font-bold text-lg text-deep-blue-900">{cartQuantity}</span>
-                                            <button onClick={handleIncrement} className="w-12 h-full flex items-center justify-center text-purple-600 hover:bg-white active:scale-95 transition-all rounded-r-lg">
+                                            <button
+                                                onClick={handleIncrement}
+                                                disabled={product.stock !== undefined && cartQuantity >= product.stock}
+                                                className={`w-12 h-full flex items-center justify-center text-purple-600 hover:bg-white active:scale-95 transition-all rounded-r-lg ${product.stock !== undefined && cartQuantity >= product.stock ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                            >
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                             </button>
                                         </div>
@@ -236,9 +229,10 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
                                     <div className="flex gap-3">
                                         <button
                                             onClick={handleAddToCart}
-                                            className="flex-1 btn btn-primary bg-purple-600 hover:bg-purple-700 border-purple-600 py-3.5 shadow-lg shadow-purple-500/20 active:scale-95 transition-transform"
+                                            disabled={product.stock !== undefined ? product.stock <= 0 : !product.inStock}
+                                            className={`flex-1 btn btn-primary py-3.5 shadow-lg active:scale-95 transition-transform ${product.stock !== undefined ? (product.stock <= 0 ? 'bg-slate-100 text-slate-400 border-slate-200 shadow-none cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 border-purple-600 shadow-purple-500/20') : (!product.inStock ? 'bg-slate-100 text-slate-400 border-slate-200 shadow-none cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 border-purple-600 shadow-purple-500/20')}`}
                                         >
-                                            Add to Cart
+                                            {(product.stock !== undefined ? product.stock <= 0 : !product.inStock) ? 'Out of Stock' : 'Add to Cart'}
                                         </button>
                                     </div>
                                 )}
