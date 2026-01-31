@@ -79,6 +79,25 @@ UPDATE public.products SET name = 'SEA BOSS 2HP 4 Paddle Wheel Aerator Set SS 30
 UPDATE public.products 
 SET specifications = jsonb_set(specifications, '{Model number}', '\"AQUA LION A3\"')
 WHERE name = 'Aqualion A3 Bevel Gearbox';
+
+-- 9. Category Normalization (Migration from plural/old to normalized names)
+-- First drop the old restrictive check constraint if it exists
+ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_category_check;
+
+-- Update categories to normalized names
+UPDATE public.products SET category = 'aerator-set' WHERE category = 'aerators';
+UPDATE public.products SET category = 'motor' WHERE category = 'motors';
+UPDATE public.products SET category = 'bevel-gearbox' WHERE category = 'gearboxes' AND (name ILIKE '%bevel%' OR name ILIKE '% A3 %');
+UPDATE public.products SET category = 'long-arm-gearbox' WHERE category = 'gearboxes' AND name ILIKE '%long arm%';
+UPDATE public.products SET category = 'worm-gearbox' WHERE category = 'gearboxes' AND category NOT IN ('bevel-gearbox', 'long-arm-gearbox');
+UPDATE public.products SET category = 'spares' WHERE category = 'spares'; 
+
+-- Re-add a more inclusive check constraint covering all new types
+ALTER TABLE public.products ADD CONSTRAINT products_category_check 
+CHECK (category IN (
+    'aerator-set', 'motor', 'worm-gearbox', 'bevel-gearbox', 'long-arm-gearbox', 
+    'long-arm-spare', 'kit-box', 'rod', 'frame', 'fan', 'float', 'motor-cover', 'spares'
+));
 "
 
 echo "Applying SQL migrations..."

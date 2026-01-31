@@ -20,11 +20,11 @@ interface Product {
 
 const categoryFilters = [
     { id: 'all', label: 'All', categories: [] },
-    { id: 'aerators', label: 'Aerators', categories: ['aerator-set'] },
-    { id: 'motors', label: 'Motors', categories: ['motor'] },
-    { id: 'gearboxes', label: 'Gearboxes', categories: ['worm-gearbox', 'bevel-gearbox', 'long-arm-gearbox'] },
-    { id: 'spares', label: 'Spares', categories: ['kit-box', 'rod', 'frame', 'fan', 'float', 'motor-cover', 'long-arm-spare'] },
-    { id: 'long-arm', label: 'Long Arm', categories: ['long-arm-gearbox', 'long-arm-spare'] },
+    { id: 'aerators', label: 'Aerators', categories: ['aerator-set', 'aerators'] },
+    { id: 'motors', label: 'Motors', categories: ['motor', 'motors'] },
+    { id: 'gearboxes', label: 'Gearboxes', categories: ['gearbox', 'gearboxes', 'worm-gearbox', 'bevel-gearbox', 'long-arm-gearbox'] },
+    { id: 'spares', label: 'Spares', categories: ['spares', 'spare', 'kit-box', 'rod', 'frame', 'fan', 'float', 'motor-cover', 'long-arm-spare'] },
+    { id: 'long-arm', label: 'Long Arm', categories: ['long-arm', 'long-arm-gearbox', 'long-arm-spare'] },
 ];
 
 export default function AdminProductsPage() {
