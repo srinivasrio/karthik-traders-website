@@ -179,14 +179,6 @@ export default function ProductCard({
                             {product.brand === 'seaboss' && (
                                 <span className="px-1.5 py-0.5 text-[10px] font-bold bg-aqua-100 text-aqua-700 rounded-full border border-aqua-200">SEA BOSS</span>
                             )}
-                            {product.badge && (
-                                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full border uppercase ${product.badge === 'Best Selling' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                                    product.badge === 'Limited Stock' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                                        'bg-blue-100 text-blue-700 border-blue-200'
-                                    }`}>
-                                    {product.badge}
-                                </span>
-                            )}
                         </div>
 
                         {/* Savings Badge - Absolute */}
@@ -307,7 +299,7 @@ export default function ProductCard({
                         </div>
 
                         {/* Stock Availability Badge */}
-                        <div className="mb-2">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
                             {stockInfo ? (
                                 !stockInfo.is_active || stockInfo.stock <= 0 ? (
                                     <div className="absolute inset-0 z-10 flex items-center justify-center p-2">
@@ -339,6 +331,15 @@ export default function ProductCard({
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded-full">
                                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                                     In Stock
+                                </span>
+                            )}
+                            {/* Product Badge (Moved to bottom) */}
+                            {product.badge && (
+                                <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded-full border uppercase ${product.badge === 'Best Selling' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                                    product.badge === 'Limited Stock' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                        'bg-blue-100 text-blue-700 border-blue-200'
+                                    }`}>
+                                    {product.badge}
                                 </span>
                             )}
                         </div>
@@ -387,7 +388,7 @@ export default function ProductCard({
                         </div>
                     </div>
                 </div>
-            </Link>
-        </div>
+            </Link >
+        </div >
     );
 }
