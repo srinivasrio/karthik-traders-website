@@ -24,21 +24,13 @@ interface OrderItem {
     stock: number;
 }
 
-// Category definitions for quick filters
+// Category definitions matching Supabase database categories
 const CATEGORIES = [
     { id: 'all', label: 'All Products' },
-    { id: 'aerator-set', label: 'Aerator Sets' },
-    { id: 'motor', label: 'Motors' },
-    { id: 'worm-gearbox', label: 'Worm Gearbox' },
-    { id: 'bevel-gearbox', label: 'Bevel Gearbox' },
-    { id: 'motor-cover', label: 'Motor Cover' },
-    { id: 'float', label: 'Floats' },
-    { id: 'fan', label: 'Fans' },
-    { id: 'frame', label: 'Frames' },
-    { id: 'rod', label: 'Rods' },
-    { id: 'kit-box', label: 'Kit Box' },
-    { id: 'long-arm-gearbox', label: 'Long Arm Gearbox' },
-    { id: 'long-arm-spare', label: 'Long Arm Spares' },
+    { id: 'aerators', label: 'Aerators' },
+    { id: 'motors', label: 'Motors' },
+    { id: 'gearboxes', label: 'Gearboxes' },
+    { id: 'spares', label: 'Spares' },
 ];
 
 export default function NewOrderPage() {
@@ -70,10 +62,15 @@ export default function NewOrderPage() {
         const { data, error } = await supabase
             .from('products')
             .select('id, name, slug, price, mrp, stock, category')
-            .eq('is_active', true)
             .order('name');
 
-        if (!error && data) {
+        if (error) {
+            console.error('Error fetching products:', error);
+            return;
+        }
+
+        if (data) {
+            console.log('Fetched products:', data.length);
             setProducts(data);
             setFilteredProducts(data);
         }
