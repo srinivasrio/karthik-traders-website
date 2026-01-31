@@ -269,8 +269,18 @@ export default function ProductCard({
                         )}
 
 
+
                         {/* Flexible Spacer to push Footer down */}
                         <div className="flex-grow"></div>
+
+                        {/* Warranty Information (Bottom of Card) */}
+                        {product.warranty && (
+                            <div className="mb-1">
+                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-semibold text-teal-700 bg-teal-50 border border-teal-100 rounded">
+                                    {product.warranty.toLowerCase().includes('warranty') ? product.warranty : `${product.warranty} Warranty`}
+                                </span>
+                            </div>
+                        )}
 
                         {/* Price Section: Fixed Height */}
                         <div className="flex items-baseline gap-2 mb-1 h-[1.5rem]">
