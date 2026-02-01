@@ -283,9 +283,9 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                         return (
                             <View key={idx} style={styles.tableRow}>
                                 <Text style={styles.cellItems}>{item.product?.name || 'Item'}</Text>
-                                <Text style={styles.cellPrice}>₹{price.toLocaleString()}</Text>
+                                <Text style={styles.cellPrice}>Rs. {price.toLocaleString()}</Text>
                                 <Text style={styles.cellQty}>{qty}</Text>
-                                <Text style={styles.cellTotal}>₹{total.toLocaleString()}</Text>
+                                <Text style={styles.cellTotal}>Rs. {total.toLocaleString()}</Text>
                             </View>
                         );
                     })}
@@ -295,7 +295,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                 <View style={styles.totalsSection}>
                     <View style={[styles.totalRow, styles.grandTotal]}>
                         <Text style={styles.totalLabel}>Grand Total:</Text>
-                        <Text style={styles.totalValue}>₹{Number(order.total_amount || 0).toLocaleString()}</Text>
+                        <Text style={styles.totalValue}>Rs. {Number(order.total_amount || 0).toLocaleString()}</Text>
                     </View>
                 </View>
 
