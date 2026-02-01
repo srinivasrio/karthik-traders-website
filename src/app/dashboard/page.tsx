@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 
 interface OrderItem {
     quantity: number;
@@ -59,6 +60,7 @@ export default function DashboardPage() {
                     order_number, 
                     created_at, 
                     status, 
+                    payment_status,
                     total_amount, 
                     customer_name, 
                     created_by_admin,
@@ -255,7 +257,10 @@ export default function DashboardPage() {
                                                     className="bg-white border-t border-slate-50 overflow-hidden"
                                                 >
                                                     <div className="p-4 space-y-3">
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Order Items</p>
+                                                        <div className="flex justify-between items-center">
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Order Items</p>
+                                                            <DownloadInvoiceBtn order={order} variant="customer" />
+                                                        </div>
                                                         <div className="space-y-2">
                                                             {order.order_items?.map((item, idx) => (
                                                                 <div key={idx} className="flex justify-between items-center text-sm bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/50">

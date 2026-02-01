@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { updateOrderStatus, updatePaymentStatus } from '@/lib/orders-actions';
+import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 
 export default function OrderDetailPage() {
     const { id } = useParams();
@@ -40,6 +42,30 @@ export default function OrderDetailPage() {
         fetchOrder();
     }, [id]);
 
+    const handleUpdateStatus = async (newStatus: string) => {
+        if (!confirm(`Are you sure you want to change order status to ${newStatus}?`)) return;
+        setLoading(true);
+        const { success, data, error } = await updateOrderStatus(order.id, newStatus);
+        if (success) {
+            setOrder({ ...order, status: newStatus });
+        } else {
+            alert('Failed to update status: ' + error);
+        }
+        setLoading(false);
+    };
+
+    const handleUpdatePayment = async (newPaymentStatus: string) => {
+        if (!confirm(`Mark payment as ${newPaymentStatus}?`)) return;
+        setLoading(true);
+        const { success, data, error } = await updatePaymentStatus(order.id, newPaymentStatus);
+        if (success) {
+            setOrder({ ...order, payment_status: newPaymentStatus });
+        } else {
+            alert('Failed to update payment: ' + error);
+        }
+        setLoading(false);
+    };
+
     if (loading) return <div className="p-8">Loading...</div>;
     if (!order) return <div className="p-8">Order not found</div>;
 
@@ -57,6 +83,80 @@ export default function OrderDetailPage() {
                     }`}>
                     {order.status}
                 </span>
+            </div>
+
+
+            {/* Admin Actions Panel */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Order Actions</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {order.status === 'pending' && (
+                                <>
+                                    <button
+                                        onClick={() => handleUpdateStatus('confirmed')}
+                                        className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 transition"
+                                    >
+                                        Approve Order
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdateStatus('rejected')}
+                                        className="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded hover:bg-rose-700 transition"
+                                    >
+                                        Reject Order
+                                    </button>
+                                </>
+                            )}
+                            {order.status !== 'pending' && order.status !== 'cancelled' && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleUpdateStatus('shipped')}
+                                        className="px-3 py-1.5 bg-purple-600 text-white text-xs font-bold rounded hover:bg-purple-700 transition"
+                                    >
+                                        Mark Shipped
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdateStatus('delivered')}
+                                        className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700 transition"
+                                    >
+                                        Mark Delivered
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="md:border-l md:pl-6 border-slate-200">
+                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Payment & Invoice</h3>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                    {order.payment_status || 'Pending'}
+                                </span>
+                                {order.payment_status !== 'paid' ? (
+                                    <button
+                                        onClick={() => handleUpdatePayment('paid')}
+                                        className="text-xs font-medium text-blue-600 hover:underline"
+                                    >
+                                        Mark Paid
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => handleUpdatePayment('pending')}
+                                        className="text-xs font-medium text-slate-500 hover:text-red-600 hover:underline"
+                                    >
+                                        Mark Pending
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>
+
+                            <DownloadInvoiceBtn order={order} variant="admin" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
