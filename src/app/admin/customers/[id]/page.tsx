@@ -22,10 +22,12 @@ interface Profile {
 
 interface Order {
     id: string;
+    order_number: string; // Add order_number
     status: string;
     total_amount: number;
     payment_status: string;
     created_at: string;
+    order_items: any[]; // Add items
 }
 
 export default function CustomerDetailPage() {
@@ -36,12 +38,23 @@ export default function CustomerDetailPage() {
     const [customer, setCustomer] = useState<Profile | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         if (customerId) {
             fetchCustomerData();
         }
     }, [customerId]);
+
+    const toggleOrder = (orderId: string) => {
+        const newExpanded = new Set(expandedOrders);
+        if (newExpanded.has(orderId)) {
+            newExpanded.delete(orderId);
+        } else {
+            newExpanded.add(orderId);
+        }
+        setExpandedOrders(newExpanded);
+    };
 
     const fetchCustomerData = async () => {
         try {
@@ -55,10 +68,19 @@ export default function CustomerDetailPage() {
             if (profileError) throw profileError;
             setCustomer(profileData);
 
-            // Fetch customer orders
+            // Fetch customer orders with items
             const { data: ordersData, error: ordersError } = await supabase
                 .from('orders')
-                .select('*')
+                .select(`
+                    *,
+                    order_items (
+                        *,
+                        product:products (
+                            name,
+                            image_url
+                        )
+                    )
+                `)
                 .eq('user_id', customerId)
                 .order('created_at', { ascending: false });
 
@@ -165,15 +187,26 @@ export default function CustomerDetailPage() {
                 ) : (
                     <div className="divide-y divide-slate-100">
                         {orders.map((order) => (
-                            <div key={order.id} className="p-4 hover:bg-slate-50">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-slate-900">
-                                            Order #{order.id.slice(0, 8)}
-                                        </p>
-                                        <p className="text-[10px] text-slate-500 mt-0.5">
-                                            {formatDate(order.created_at)}
-                                        </p>
+                            <div key={order.id} className="transition-colors hover:bg-slate-50">
+                                {/* Order Header Row */}
+                                <div
+                                    className="p-4 cursor-pointer flex items-center justify-between"
+                                    onClick={() => toggleOrder(order.id)}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`transform transition-transform duration-200 text-slate-400 ${expandedOrders.has(order.id) ? 'rotate-90' : ''}`}>
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-medium text-slate-900">
+                                                Order #{order.order_number || order.id.slice(0, 8)}
+                                            </p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">
+                                                {formatDate(order.created_at)}
+                                            </p>
+                                        </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-semibold text-slate-900">
@@ -184,6 +217,49 @@ export default function CustomerDetailPage() {
                                         </span>
                                     </div>
                                 </div>
+
+                                {/* Expanded Dropdown - Product Details */}
+                                {expandedOrders.has(order.id) && (
+                                    <div className="px-4 pb-4 pl-11 bg-slate-50/50 border-t border-slate-100">
+                                        <div className="mt-3 space-y-3">
+                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Products Ordered</div>
+                                            {order.order_items && order.order_items.length > 0 ? (
+                                                <div className="space-y-2">
+                                                    {order.order_items.map((item: any) => (
+                                                        <div key={item.id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
+                                                            <div className="flex items-center gap-3">
+                                                                {item.product?.image_url ? (
+                                                                    <img src={item.product.image_url} alt="" className="w-8 h-8 rounded object-cover border border-slate-100" />
+                                                                ) : (
+                                                                    <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-400">
+                                                                        <ShoppingBagIcon className="w-4 h-4" />
+                                                                    </div>
+                                                                )}
+                                                                <div>
+                                                                    <p className="text-xs font-medium text-slate-900 line-clamp-1">{item.product?.name || 'Product'}</p>
+                                                                    <p className="text-[10px] text-slate-500">Qty: {item.quantity} × ₹{item.price_at_purchase}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-xs font-semibold text-slate-700">
+                                                                ₹{item.quantity * item.price_at_purchase}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-slate-400 italic">No items details found.</p>
+                                            )}
+                                            <div className="mt-3 text-right">
+                                                <Link
+                                                    href={`/admin/orders/${order.id}`}
+                                                    className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                                                >
+                                                    View Full Order Details →
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
