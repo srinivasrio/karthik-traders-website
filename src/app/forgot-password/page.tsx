@@ -39,7 +39,9 @@ export default function ForgotPasswordPage() {
 
         // Firebase/reCAPTCHA errors
         if (message.includes('reCAPTCHA')) {
-            return 'Verification service temporarily unavailable. Please try again.';
+            // RETURNING RAW ERROR FOR DEBUGGING
+            return `Debug Error: ${message}`;
+            // return 'Verification service temporarily unavailable. Please try again.';
         }
         if (message.includes('too-many-requests') || message.includes('TOO_MANY_ATTEMPTS')) {
             return 'Too many attempts. Please wait a few minutes and try again.';
