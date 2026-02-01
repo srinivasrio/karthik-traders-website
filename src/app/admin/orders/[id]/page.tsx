@@ -71,7 +71,25 @@ export default function OrderDetailPage() {
     };
 
     if (loading) return <div className="p-8">Loading...</div>;
-    if (!order) return <div className="p-8">Order not found</div>;
+
+    // Improved Error Display
+    if (!order) {
+        return (
+            <div className="p-8 flex flex-col gap-4">
+                <div className="text-red-600 font-bold text-lg">Order not found</div>
+                <div className="text-sm text-slate-500 bg-slate-50 p-4 rounded border border-slate-200">
+                    <p>Possible reasons:</p>
+                    <ul className="list-disc pl-5 mt-2">
+                        <li>Invalid Order ID in URL</li>
+                        <li>Database connection error</li>
+                        <li>Missing relations (e.g., Profile deleted)</li>
+                    </ul>
+                    <p className="mt-4 font-mono text-xs">ID: {id}</p>
+                </div>
+                <Link href="/admin/orders" className="text-blue-600 hover:underline">Return to Orders List</Link>
+            </div>
+        );
+    }
 
     return (
         <div className="px-4 sm:px-6 lg:px-8 py-8 bg-white shadow rounded-lg">

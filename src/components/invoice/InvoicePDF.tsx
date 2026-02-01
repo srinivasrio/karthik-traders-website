@@ -238,10 +238,12 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                         <Text style={styles.brandName}>KARTHIK TRADERS</Text>
                     </View>
 
-                    {/* Right: Logo */}
+                    {/* Right: Logo - Temporarily disabled for debugging */}
                     <View style={styles.topRight}>
-                        {/* @ts-ignore */}
-                        <Image src="/images/logo.png" style={{ width: 80, height: 80 }} />
+                        {/* 
+                         <Image src="/images/logo.png" style={{ width: 80, height: 80 }} />
+                        */}
+                        <Text style={{ fontSize: 8, color: '#ccc' }}>LOGO</Text>
                     </View>
                 </View>
 
