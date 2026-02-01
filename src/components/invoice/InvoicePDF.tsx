@@ -234,6 +234,14 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                             <Text style={styles.addressLine}>Near MRF Tyres Line, Subedar Pet,</Text>
                             <Text style={styles.addressLine}>Nellore, Andhra Pradesh - 524001.</Text>
                             <Text style={{ ...styles.addressLine, marginTop: 4, fontWeight: 'bold' }}>Mobile: +91 99638 40058</Text>
+
+                            <View style={{ marginTop: 12 }}>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold' }}>
+                                    Payment Status: <Text style={{ color: order.payment_status === 'paid' ? '#22c55e' : '#f97316' }}>
+                                        {order.payment_status === 'paid' ? 'PAID' : 'PENDING'}
+                                    </Text>
+                                </Text>
+                            </View>
                         </View>
 
                         {/* Right: Invoice Info */}
