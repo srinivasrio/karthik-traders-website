@@ -260,12 +260,17 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                     </View>
                     <View style={styles.billTo}>
                         <Text style={styles.label}>Bill To</Text>
-                        <Text style={styles.value}>{order.customer_name}</Text>
-                        {/* Parse shipping address if it exists and is an object, or show raw text */}
+                        <Text style={styles.value}>{order.customer_name || 'Valued Customer'}</Text>
+                        {/* Parse shipping address safely */}
                         <Text style={{ ...styles.value, maxWidth: 200 }}>
-                            {typeof order.shipping_address === 'object'
-                                ? `${order.shipping_address.street || ''}\n${order.shipping_address.city || ''}, ${order.shipping_address.state || ''} ${order.shipping_address.zip || ''}`
-                                : order.shipping_address || ''}
+                            {order.shipping_address && typeof order.shipping_address === 'object'
+                                ? [
+                                    order.shipping_address.address || order.shipping_address.street || '',
+                                    order.shipping_address.city || '',
+                                    order.shipping_address.state || '',
+                                    order.shipping_address.pincode || order.shipping_address.zip || ''
+                                ].filter(Boolean).join(', ')
+                                : (typeof order.shipping_address === 'string' ? order.shipping_address : '')}
                         </Text>
                         <Text style={styles.value}>{order.customer_mobile || ''}</Text>
                     </View>

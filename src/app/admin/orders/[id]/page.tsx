@@ -9,11 +9,26 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { updateOrderStatus, updatePaymentStatus } from '@/lib/orders-actions';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 import InvoiceViewer from '@/components/invoice/InvoiceViewer';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function OrderDetailPage() {
     const { id } = useParams();
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'danger' | 'success' | 'warning';
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'warning'
+    });
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -46,8 +61,18 @@ export default function OrderDetailPage() {
         fetchOrder();
     }, [id]);
 
+    const requestUpdateStatus = (newStatus: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Update Order Status?',
+            message: `Are you sure you want to change status to "${newStatus.toUpperCase()}"?`,
+            type: newStatus === 'rejected' || newStatus === 'cancelled' ? 'danger' : 'success',
+            onConfirm: () => handleUpdateStatus(newStatus)
+        });
+    };
+
     const handleUpdateStatus = async (newStatus: string) => {
-        if (!confirm(`Are you sure you want to change order status to ${newStatus}?`)) return;
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
         setLoading(true);
         const { success, data, error } = await updateOrderStatus(order.id, newStatus);
         if (success) {
@@ -58,8 +83,18 @@ export default function OrderDetailPage() {
         setLoading(false);
     };
 
+    const requestUpdatePayment = (newPaymentStatus: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Update Payment Status?',
+            message: `Are you sure you want to mark payment as "${newPaymentStatus.toUpperCase()}"?`,
+            type: 'warning',
+            onConfirm: () => handleUpdatePayment(newPaymentStatus)
+        });
+    };
+
     const handleUpdatePayment = async (newPaymentStatus: string) => {
-        if (!confirm(`Mark payment as ${newPaymentStatus}?`)) return;
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
         setLoading(true);
         const { success, data, error } = await updatePaymentStatus(order.id, newPaymentStatus);
         if (success) {
@@ -91,6 +126,14 @@ export default function OrderDetailPage() {
         );
     }
 
+    // Helper to format address
+    const formatAddress = (addr: any) => {
+        if (!addr) return 'N/A';
+        if (typeof addr === 'string') return addr;
+        const { address, addressLine1, city, state, pincode, zip } = addr;
+        return [address || addressLine1 || '', city || '', state || '', pincode || zip || ''].filter(Boolean).join(', ') || 'N/A';
+    };
+
     return (
         <div className="px-4 sm:px-6 lg:px-8 py-8 bg-white shadow rounded-lg">
             <div className="mb-6 flex items-center">
@@ -98,7 +141,7 @@ export default function OrderDetailPage() {
                     <span className="sr-only">Back</span>
                     ← Back to Orders
                 </Link>
-                <h1 className="text-2xl font-bold text-slate-900">Order #{order.id.slice(0, 8)}</h1>
+                <h1 className="text-2xl font-bold text-slate-900">Order #{order.order_number || order.id.slice(0, 8)}</h1>
                 <span className={`ml-4 px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
                     order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-slate-100 text-slate-800'
@@ -117,13 +160,13 @@ export default function OrderDetailPage() {
                             {order.status === 'pending' && (
                                 <>
                                     <button
-                                        onClick={() => handleUpdateStatus('confirmed')}
+                                        onClick={() => requestUpdateStatus('confirmed')}
                                         className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 transition"
                                     >
                                         Approve Order
                                     </button>
                                     <button
-                                        onClick={() => handleUpdateStatus('rejected')}
+                                        onClick={() => requestUpdateStatus('rejected')}
                                         className="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded hover:bg-rose-700 transition"
                                     >
                                         Reject Order
@@ -133,13 +176,13 @@ export default function OrderDetailPage() {
                             {order.status !== 'pending' && order.status !== 'cancelled' && (
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={() => handleUpdateStatus('shipped')}
+                                        onClick={() => requestUpdateStatus('shipped')}
                                         className="px-3 py-1.5 bg-purple-600 text-white text-xs font-bold rounded hover:bg-purple-700 transition"
                                     >
                                         Mark Shipped
                                     </button>
                                     <button
-                                        onClick={() => handleUpdateStatus('delivered')}
+                                        onClick={() => requestUpdateStatus('delivered')}
                                         className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700 transition"
                                     >
                                         Mark Delivered
@@ -158,14 +201,14 @@ export default function OrderDetailPage() {
                                 </span>
                                 {order.payment_status !== 'paid' ? (
                                     <button
-                                        onClick={() => handleUpdatePayment('paid')}
+                                        onClick={() => requestUpdatePayment('paid')}
                                         className="text-xs font-medium text-blue-600 hover:underline"
                                     >
                                         Mark Paid
                                     </button>
                                 ) : (
                                     <button
-                                        onClick={() => handleUpdatePayment('pending')}
+                                        onClick={() => requestUpdatePayment('pending')}
                                         className="text-xs font-medium text-slate-500 hover:text-red-600 hover:underline"
                                     >
                                         Mark Pending
@@ -185,10 +228,9 @@ export default function OrderDetailPage() {
                 <div>
                     <h3 className="text-lg font-medium text-slate-900 border-b pb-2 mb-4">Customer Details</h3>
                     <div className="text-base text-slate-600 space-y-2">
-                        <p><span className="font-semibold text-slate-700">Name:</span> {order.profile?.full_name}</p>
-                        <p><span className="font-semibold text-slate-700">Phone:</span> {order.profile?.mobile}</p>
-                        {/* Add Address if available in order metadata or profile */}
-                        <p><span className="font-semibold text-slate-700">Address:</span> {JSON.stringify(order.shipping_address || "N/A")}</p>
+                        <p><span className="font-semibold text-slate-700">Name:</span> {order.profile?.full_name || order.customer_name}</p>
+                        <p><span className="font-semibold text-slate-700">Phone:</span> {order.profile?.mobile || order.customer_mobile}</p>
+                        <p><span className="font-semibold text-slate-700">Address:</span> {formatAddress(order.shipping_address)}</p>
                     </div>
                 </div>
 
@@ -238,6 +280,16 @@ export default function OrderDetailPage() {
 
             {/* Invoice Preview Section */}
             <InvoiceViewer order={order} />
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+            />
         </div>
     );
 }
