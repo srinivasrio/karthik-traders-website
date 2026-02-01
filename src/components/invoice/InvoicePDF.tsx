@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     // Main Title
     invoiceTitle: {
         fontSize: 28,
-        fontWeight: 'extra-bold', // heavier
+        fontWeight: 'bold', // changed from extra-bold
         marginTop: 20,
         marginBottom: 10,
         textTransform: 'uppercase',
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     value: {
         fontSize: 10,
         marginBottom: 8,
-        fontWeight: 'medium',
+        // fontWeight medium removed (default normal)
     },
     // Table
     table: {
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     },
     stampText: {
         fontSize: 24,
-        fontWeight: 'black',
+        fontWeight: 'bold', // changed from black
         textTransform: 'uppercase',
     },
 
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
         color: '#111',
         textAlign: 'center',
         marginBottom: 3,
-        fontWeight: 'medium',
+        // fontWeight medium removed
     },
     footerWebsite: {
         fontSize: 11,
