@@ -1,66 +1,105 @@
-
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Image, Font } from '@react-pdf/renderer';
 
 // Define styles
 const styles = StyleSheet.create({
     page: {
-        padding: 40,
+        padding: 30,
         fontFamily: 'Helvetica',
         fontSize: 10,
-        lineHeight: 1.5,
-        color: '#333',
+        lineHeight: 1.4,
+        color: '#111', // Darker text per request
     },
-    header: {
+    // Top Header Row: GST/Addr (Left) | Brand (Center) | Logo (Right)
+    topHeaderRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 40,
+        alignItems: 'flex-start',
+        marginBottom: 20,
     },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        letterSpacing: 1,
-        textTransform: 'uppercase',
+    topLeft: {
+        width: '35%',
     },
-    brandSection: {
+    topCenter: {
+        width: '30%',
+        alignItems: 'center',
+        paddingTop: 10,
+    },
+    topRight: {
+        width: '35%',
         alignItems: 'flex-end',
     },
+
+    // Brand
     brandName: {
-        fontSize: 14,
+        fontSize: 18,
         fontWeight: 'bold',
+        textTransform: 'uppercase',
+        textAlign: 'center',
         marginBottom: 4,
     },
+
+    // GST & Address
+    gstText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    addressLabel: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        textDecoration: 'underline',
+        marginBottom: 2,
+    },
+    addressLine: {
+        fontSize: 9,
+        marginBottom: 1,
+    },
+
+    // Main Title
+    invoiceTitle: {
+        fontSize: 28,
+        fontWeight: 'extra-bold', // heavier
+        marginTop: 20,
+        marginBottom: 10,
+        textTransform: 'uppercase',
+    },
+
     metaSection: {
-        marginBottom: 30,
+        marginBottom: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: '#e5e7eb',
+        paddingTop: 10,
     },
     billTo: {
         width: '45%',
     },
     label: {
-        fontSize: 9,
-        color: '#666',
+        fontSize: 8,
+        color: '#444',
         marginBottom: 2,
         textTransform: 'uppercase',
+        fontWeight: 'bold',
     },
     value: {
         fontSize: 10,
-        marginBottom: 10,
+        marginBottom: 8,
         fontWeight: 'medium',
     },
     // Table
     table: {
         width: 'auto',
-        marginTop: 20,
+        marginTop: 10,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: '#000', // darker border
         borderStyle: 'solid',
     },
     tableRow: {
         flexDirection: 'row',
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: '#000',
         borderBottomStyle: 'solid',
         alignItems: 'center',
         minHeight: 24,
@@ -68,16 +107,16 @@ const styles = StyleSheet.create({
     tableHeader: {
         backgroundColor: '#f3f4f6',
         fontWeight: 'bold',
-        color: '#111827',
+        color: '#000',
     },
-    cellItems: { width: '50%', padding: 5, borderRightWidth: 1, borderRightColor: '#e5e7eb' },
-    cellPrice: { width: '20%', padding: 5, borderRightWidth: 1, borderRightColor: '#e5e7eb', textAlign: 'right' },
-    cellQty: { width: '10%', padding: 5, borderRightWidth: 1, borderRightColor: '#e5e7eb', textAlign: 'center' },
+    cellItems: { width: '50%', padding: 5, borderRightWidth: 1, borderRightColor: '#000' },
+    cellPrice: { width: '20%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'right' },
+    cellQty: { width: '10%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'center' },
     cellTotal: { width: '20%', padding: 5, textAlign: 'right' },
 
     // Totals
     totalsSection: {
-        marginTop: 20,
+        marginTop: 10,
         alignItems: 'flex-end',
     },
     totalRow: {
@@ -89,7 +128,8 @@ const styles = StyleSheet.create({
         width: 100,
         textAlign: 'right',
         paddingRight: 10,
-        color: '#666',
+        color: '#000',
+        fontWeight: 'bold',
     },
     totalValue: {
         width: 100,
@@ -105,30 +145,25 @@ const styles = StyleSheet.create({
     // Footer
     footer: {
         position: 'absolute',
-        bottom: 40,
-        left: 40,
-        right: 40,
+        bottom: 30,
+        left: 30,
+        right: 30,
         borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
+        borderTopColor: '#000',
         paddingTop: 10,
-    },
-    footerText: {
-        fontSize: 8,
-        color: '#9ca3af',
-        textAlign: 'center',
-        marginBottom: 4,
+        alignItems: 'center',
     },
 
     // Payment Status
     statusStamp: {
         position: 'absolute',
-        top: 200,
+        top: 250,
         right: 40,
         transform: 'rotate(-15deg)',
-        borderWidth: 3,
+        borderWidth: 4,
         borderRadius: 8,
         padding: '10 20',
-        opacity: 0.8,
+        opacity: 0.6,
         zIndex: 10,
     },
     statusPaid: {
@@ -143,8 +178,30 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'black',
         textTransform: 'uppercase',
-    }
+    },
 
+    // Restored/Updated Footer Styles
+    title: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textTransform: 'uppercase',
+    },
+    footerText: {
+        fontSize: 9,
+        color: '#111',
+        textAlign: 'center',
+        marginBottom: 3,
+        fontWeight: 'medium',
+    },
+    footerWebsite: {
+        fontSize: 11,
+        fontWeight: 'bold', // Bold Black as requested
+        color: '#000',
+        textAlign: 'center',
+        marginTop: 5,
+        textDecoration: 'none',
+    }
 });
 
 interface InvoiceProps {
@@ -160,24 +217,36 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
         <Document>
             <Page size="A4" style={styles.page}>
 
-                {/* Header */}
-                <View style={styles.header}>
-                    {/* Logo Section */}
-                    <View>
-                        {/* Ensure this path is reachable or import it. For Client Components using @react-pdf/renderer, URLs relative to public usually work locally, or absolute URLs. Best practice often is importing base64 or absolute if issues arise. Trying public path first. */}
-                        {/* @ts-ignore */}
-                        <Image src="/images/logo.png" style={{ width: 60, height: 60, marginBottom: 10 }} />
+                {/* Top Header Row */}
+                <View style={styles.topHeaderRow}>
+                    {/* Left: GST & Address */}
+                    <View style={styles.topLeft}>
+                        <Text style={styles.gstText}>GSTIN: 37AFGPY0727H1Z6</Text>
+
+                        <Text style={styles.addressLabel}>Address:</Text>
+                        <Text style={styles.addressLine}>Shop no 13,</Text>
+                        <Text style={styles.addressLine}>Opp. Madhura Sweets Line,</Text>
+                        <Text style={styles.addressLine}>Near MRF Tyres Line,</Text>
+                        <Text style={styles.addressLine}>Subedar Pet,</Text>
+                        <Text style={styles.addressLine}>Nellore,</Text>
+                        <Text style={styles.addressLine}>Andhra Pradesh - 524001.</Text>
+                        <Text style={{ ...styles.addressLine, marginTop: 4, fontWeight: 'bold' }}>Mobile: +91 99638 40058</Text>
                     </View>
-                    <View style={styles.brandSection}>
+
+                    {/* Center: Brand Name */}
+                    <View style={styles.topCenter}>
                         <Text style={styles.brandName}>KARTHIK TRADERS</Text>
-                        <Text style={styles.value}>Shop no: 13, Opp. Madhura Sweets Line,</Text>
-                        <Text style={styles.value}>Near MRF Tyres Line, Subedar Pet,</Text>
-                        <Text style={styles.value}>Nellore, Andhra Pradesh - 524001</Text>
-                        <Text style={styles.value}>GSTIN: 37AFGPY0727H1Z6</Text>
-                        <Text style={styles.value}>Mobile: +91 99638 40058</Text>
-                        <Text style={styles.value}>www.karthiktraders.in</Text>
+                    </View>
+
+                    {/* Right: Logo */}
+                    <View style={styles.topRight}>
+                        {/* @ts-ignore */}
+                        <Image src="/images/logo.png" style={{ width: 80, height: 80 }} />
                     </View>
                 </View>
+
+                {/* Invoice Title */}
+                <Text style={styles.invoiceTitle}>INVOICE</Text>
 
                 {/* Invoice Info */}
                 <View style={styles.metaSection}>
@@ -237,10 +306,10 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={{ ...styles.title, fontSize: 16, marginBottom: 10 }}>THANK YOU!</Text>
+                    <Text style={styles.title}>THANK YOU!</Text>
                     <Text style={styles.footerText}>For any questions concerning this invoice, please contact:</Text>
                     <Text style={styles.footerText}>Karthik Traders | +91 99638 40058 | support@karthiktraders.in</Text>
-                    <Text style={styles.footerText}>www.karthiktraders.in</Text>
+                    <Text style={styles.footerWebsite}>www.karthiktraders.in</Text>
                 </View>
 
             </Page>

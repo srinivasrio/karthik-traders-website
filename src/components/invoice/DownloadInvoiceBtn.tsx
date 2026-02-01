@@ -31,13 +31,24 @@ export default function DownloadInvoiceBtn({ order, variant = 'customer' }: Down
 
     if (!isClient) return null;
 
+    // Access Control: Only allow download if status is not 'pending' (Approved)
+    // This applies to both Admin and Customer as per user request.
+    const isApproved = order.status !== 'pending' && order.status !== 'cancelled' && order.status !== 'cart';
+
+    if (!isApproved) {
+        if (variant === 'admin') {
+            return <span className="text-xs text-slate-400 italic">Invoice unavailable (Pending)</span>;
+        }
+        return null;
+    }
+
     return (
         <PDFDownloadLink
             document={<InvoicePDF order={order} />}
             fileName={`Invoice-${order.order_number || order.id.slice(0, 8)}.pdf`}
             className={`${variant === 'admin'
-                    ? 'px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-700'
-                    : 'px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-700'
+                : 'px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 } text-xs font-bold rounded flex items-center gap-2 transition-colors`}
         >
             {/* @ts-ignore */}
