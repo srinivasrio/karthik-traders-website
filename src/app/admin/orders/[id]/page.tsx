@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { updateOrderStatus, updatePaymentStatus } from '@/lib/orders-actions';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
+import InvoiceViewer from '@/components/invoice/InvoiceViewer';
 
 export default function OrderDetailPage() {
     const { id } = useParams();
@@ -213,6 +214,9 @@ export default function OrderDetailPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Invoice Preview Section */}
+            <InvoiceViewer order={order} />
         </div>
     );
 }

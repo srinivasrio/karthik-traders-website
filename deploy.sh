@@ -3,11 +3,15 @@
 # Deployment Script for Karthik Traders Website
 # Usage: ./deploy.sh
 
+# Exit immediately if a command exits with a non-zero status
+set -e
+
 echo "🚀 Starting Deployment..."
 
-# 1. Pull latest changes
-echo "📥 Pulling latest code..."
-git pull origin main
+# 1. Force Pull latest changes (Discards local VPS changes to tracked files)
+echo "📥 Forcing sync with GitHub..."
+git fetch --all
+git reset --hard origin/main
 
 # 2. Install dependencies
 echo "📦 Installing dependencies..."
@@ -29,4 +33,4 @@ else
     pm2 save
 fi
 
-echo "✅ Deployment Complete! App is running on port 3000."
+echo "✅ Deployment Complete! App is updated to the latest version."

@@ -348,9 +348,9 @@ export default function AdminOrdersPage() {
                                                         ) : (
                                                             <Link
                                                                 href={`/admin/orders/${order.id}`}
-                                                                className="text-sm text-aqua-600 hover:text-aqua-900"
+                                                                className="text-sm text-aqua-600 hover:text-aqua-900 font-medium"
                                                             >
-                                                                View
+                                                                View Invoice
                                                             </Link>
                                                         )}
                                                     </td>

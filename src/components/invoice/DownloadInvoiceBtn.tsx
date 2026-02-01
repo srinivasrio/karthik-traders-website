@@ -33,7 +33,11 @@ export default function DownloadInvoiceBtn({ order, variant = 'customer' }: Down
 
     // Access Control: Only allow download if status is not 'pending' (Approved)
     // This applies to both Admin and Customer as per user request.
-    const isApproved = order.status !== 'pending' && order.status !== 'cancelled' && order.status !== 'cart';
+    const status = order.status?.toLowerCase() || '';
+    const isApproved = status !== 'pending' && status !== 'cancelled' && status !== 'cart' && status !== '';
+
+    // Debugging
+    console.log('Invoice Access Debug:', { id: order.id, status, isApproved, variant });
 
     if (!isApproved) {
         if (variant === 'admin') {
