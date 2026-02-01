@@ -47,6 +47,7 @@ const STATUS_TABS = [
     { id: 'confirmed', label: 'Confirmed' },
     { id: 'processing', label: 'Processing' },
     { id: 'shipped', label: 'Shipped' },
+    { id: 'delivered', label: 'Delivered' },
     { id: 'rejected', label: 'Rejected' },
 ];
 
