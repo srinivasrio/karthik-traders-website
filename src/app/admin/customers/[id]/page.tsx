@@ -81,7 +81,7 @@ export default function CustomerDetailPage() {
             }
 
             if (ordersData && ordersData.length > 0) {
-                // Manually fetch items for these orders to avoid deep nesting issues
+                // Manually fetch items for these orders
                 const orderIds = ordersData.map(o => o.id);
                 const { data: itemsData, error: itemsError } = await supabase
                     .from('order_items')
@@ -89,7 +89,7 @@ export default function CustomerDetailPage() {
                         *,
                         product:products (
                             name,
-                            image_url
+                            images
                         )
                     `)
                     .in('order_id', orderIds);
@@ -112,7 +112,7 @@ export default function CustomerDetailPage() {
 
         } catch (error: any) {
             console.error('Error fetching customer:', error);
-            // alert(`Error: ${error.message}`); // Removed alert to prevent annoyance
+            // alert(`Error: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -125,6 +125,8 @@ export default function CustomerDetailPage() {
             year: 'numeric'
         });
     };
+    // ...
+
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -252,8 +254,8 @@ export default function CustomerDetailPage() {
                                                     {order.order_items.map((item: any) => (
                                                         <div key={item.id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
                                                             <div className="flex items-center gap-3">
-                                                                {item.product?.image_url ? (
-                                                                    <img src={item.product.image_url} alt="" className="w-8 h-8 rounded object-cover border border-slate-100" />
+                                                                {item.product?.images && item.product.images[0] ? (
+                                                                    <img src={item.product.images[0]} alt="" className="w-8 h-8 rounded object-cover border border-slate-100" />
                                                                 ) : (
                                                                     <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-400">
                                                                         <ShoppingBagIcon className="w-4 h-4" />
