@@ -209,74 +209,60 @@ interface InvoiceProps {
 }
 
 const InvoicePDF = ({ order }: InvoiceProps) => {
-    const isPaid = order.payment_status === 'paid';
-    const displayStatus = isPaid ? 'PAID' : 'PAYMENT PENDING';
-    const statusStyle = isPaid ? styles.statusPaid : styles.statusPending;
-
     return (
         <Document>
             <Page size="A4" style={styles.page}>
 
-                {/* Top Header Row */}
-                <View style={styles.topHeaderRow}>
-                    {/* Left: GST & Address */}
-                    <View style={styles.topLeft}>
-                        <Text style={styles.gstText}>GSTIN: 37AFGPY0727H1Z6</Text>
-
-                        <Text style={styles.addressLabel}>Address:</Text>
-                        <Text style={styles.addressLine}>Shop no 13,</Text>
-                        <Text style={styles.addressLine}>Opp. Madhura Sweets Line,</Text>
-                        <Text style={styles.addressLine}>Near MRF Tyres Line,</Text>
-                        <Text style={styles.addressLine}>Subedar Pet,</Text>
-                        <Text style={styles.addressLine}>Nellore,</Text>
-                        <Text style={styles.addressLine}>Andhra Pradesh - 524001.</Text>
-                        <Text style={{ ...styles.addressLine, marginTop: 4, fontWeight: 'bold' }}>Mobile: +91 99638 40058</Text>
-                    </View>
-
-                    {/* Center: Brand Name */}
-                    <View style={styles.topCenter}>
-                        <Text style={styles.brandName}>KARTHIK TRADERS</Text>
-                    </View>
-
-                    {/* Right: Logo */}
-                    <View style={styles.topRight}>
-                        <Image src="/images/logo.png" style={{ width: 80, height: 80 }} />
+                {/* Header: Brand & Logo */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 10 }}>
+                    <Text style={{ fontSize: 24, fontWeight: 'bold', textTransform: 'uppercase', width: '70%' }}>KARTHIK TRADERS</Text>
+                    <View style={{ width: '30%', alignItems: 'flex-end' }}>
+                        <Image src="/images/logo.png" style={{ width: 60, height: 60 }} />
                     </View>
                 </View>
 
-                {/* Invoice Title */}
-                <Text style={styles.invoiceTitle}>INVOICE</Text>
+                {/* Body Top: Title & Seller Address */}
+                <View style={{ marginBottom: 20 }}>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, textTransform: 'uppercase' }}>INVOICE</Text>
 
-                {/* Invoice Info */}
-                <View style={styles.metaSection}>
-                    <View>
-                        <Text style={styles.label}>Invoice Number</Text>
-                        <Text style={styles.value}>INV-{order.order_number || (typeof order.id === 'string' ? order.id.slice(0, 8).toUpperCase() : '0000')}</Text>
-                        <Text style={styles.label}>Date</Text>
-                        <Text style={styles.value}>{new Date(order.created_at || Date.now()).toLocaleDateString()}</Text>
-                    </View>
-                    <View style={styles.billTo}>
-                        <Text style={styles.label}>Bill To</Text>
-                        <Text style={styles.value}>{order.customer_name || 'Valued Customer'}</Text>
-                        {/* Parse shipping address safely */}
-                        <Text style={{ ...styles.value, maxWidth: 200 }}>
-                            {order.shipping_address && typeof order.shipping_address === 'object'
-                                ? [
-                                    order.shipping_address.address || order.shipping_address.street || '',
-                                    order.shipping_address.city || '',
-                                    order.shipping_address.state || '',
-                                    order.shipping_address.pincode || order.shipping_address.zip || ''
-                                ].filter(Boolean).join(', ')
-                                : (typeof order.shipping_address === 'string' ? order.shipping_address : '')}
-                        </Text>
-                        <Text style={styles.value}>{order.customer_mobile || ''}</Text>
-                    </View>
-                </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        {/* Left: Seller Details */}
+                        <View style={{ width: '50%' }}>
+                            <Text style={styles.gstText}>GSTIN: 37AFGPY0727H1Z6</Text>
+                            <Text style={styles.addressLabel}>From:</Text>
+                            <Text style={styles.addressLine}>Shop no 13, Opp. Madhura Sweets Line,</Text>
+                            <Text style={styles.addressLine}>Near MRF Tyres Line, Subedar Pet,</Text>
+                            <Text style={styles.addressLine}>Nellore, Andhra Pradesh - 524001.</Text>
+                            <Text style={{ ...styles.addressLine, marginTop: 4, fontWeight: 'bold' }}>Mobile: +91 99638 40058</Text>
+                        </View>
 
-                {/* Payment Status Stamp */}
-                <View style={[styles.statusStamp, statusStyle]}>
-                    <Text style={[styles.stampText, statusStyle]}>{displayStatus}</Text>
-                    {isPaid && <Text style={{ fontSize: 10, textAlign: 'center', color: '#22c55e', marginTop: 2 }}>✓ Verified</Text>}
+                        {/* Right: Invoice Info */}
+                        <View style={{ width: '40%' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                                <Text style={styles.label}>Invoice No:</Text>
+                                <Text style={styles.value}>INV-{order.order_number || (typeof order.id === 'string' ? order.id.slice(0, 8).toUpperCase() : '0000')}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                                <Text style={styles.label}>Date:</Text>
+                                <Text style={styles.value}>{new Date(order.created_at || Date.now()).toLocaleDateString()}</Text>
+                            </View>
+                            <View style={{ marginTop: 10 }}>
+                                <Text style={styles.label}>Bill To:</Text>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>{order.customer_name || 'Valued Customer'}</Text>
+                                <Text style={{ fontSize: 9, marginBottom: 8, maxWidth: 150 }}>
+                                    {order.shipping_address && typeof order.shipping_address === 'object'
+                                        ? [
+                                            order.shipping_address.address || order.shipping_address.street || '',
+                                            order.shipping_address.city || '',
+                                            order.shipping_address.state || '',
+                                            order.shipping_address.pincode || order.shipping_address.zip || ''
+                                        ].filter(Boolean).join(', ')
+                                        : (typeof order.shipping_address === 'string' ? order.shipping_address : '')}
+                                </Text>
+                                <Text style={{ fontSize: 9 }}>{order.customer_mobile || ''}</Text>
+                            </View>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Table */}
