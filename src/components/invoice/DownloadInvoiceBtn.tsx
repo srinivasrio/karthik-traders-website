@@ -56,16 +56,18 @@ export default function DownloadInvoiceBtn({ order, variant = 'customer' }: Down
                 } text-xs font-bold rounded flex items-center gap-2 transition-colors`}
         >
             {/* @ts-ignore */}
-            {({ blob, url, loading, error }) =>
-                loading ? 'Generating...' : (
+            {({ blob, url, loading, error }) => {
+                if (loading) return 'Generating...';
+                if (error) return 'Error generating PDF';
+                return (
                     <>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                         {variant === 'admin' ? 'Invoice' : 'Download Invoice'}
                     </>
-                )
-            }
+                );
+            }}
         </PDFDownloadLink>
     );
 }

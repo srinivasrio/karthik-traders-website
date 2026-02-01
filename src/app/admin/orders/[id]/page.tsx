@@ -26,7 +26,7 @@ export default function OrderDetailPage() {
             profile:profiles(*),
             order_items(
                 *,
-                product:products(name, price, image_url)
+                product:products(name, slug)
             )
         `)
                 .eq('id', id)
@@ -34,6 +34,9 @@ export default function OrderDetailPage() {
 
             if (error) {
                 console.error("Error fetching order", error);
+                // @ts-ignore
+                setOrder(null);
+                alert(`Error fetching order: ${error.message}`);
             } else {
                 setOrder(data);
             }

@@ -63,6 +63,8 @@ export default function DashboardPage() {
                     payment_status,
                     total_amount, 
                     customer_name, 
+                    customer_mobile,
+                    shipping_address,
                     created_by_admin,
                     order_items(
                         quantity,
