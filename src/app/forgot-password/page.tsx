@@ -26,6 +26,23 @@ export default function ForgotPasswordPage() {
     const [error, setError] = useState('');
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
+    // Timer State
+    const [timer, setTimer] = useState(60);
+    const [canResend, setCanResend] = useState(false);
+
+    // Timer Effect
+    React.useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (step === 'otp' && timer > 0) {
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+        } else if (timer === 0) {
+            setCanResend(true);
+        }
+        return () => clearInterval(interval);
+    }, [step, timer]);
+
     // Helper
     const formatPhone = (phone: string) => {
         let p = phone.trim();
@@ -66,6 +83,7 @@ export default function ForgotPasswordPage() {
     };
 
     // --- STEP 1: SEND OTP ---
+    // --- STEP 1: SEND OTP ---
     const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -76,6 +94,26 @@ export default function ForgotPasswordPage() {
             const result = await signInWithOTP(formattedPhone);
             setConfirmationResult(result);
             setStep('otp');
+            setTimer(60); // Reset timer
+            setCanResend(false);
+        } catch (err: any) {
+            setError(getUserFriendlyError(err));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendOTP = async () => {
+        if (!canResend) return;
+        setError('');
+        setLoading(true);
+
+        try {
+            const formattedPhone = formatPhone(phoneNumber);
+            const result = await signInWithOTP(formattedPhone);
+            setConfirmationResult(result);
+            setTimer(60);
+            setCanResend(false);
         } catch (err: any) {
             setError(getUserFriendlyError(err));
         } finally {
@@ -311,14 +349,28 @@ export default function ForgotPasswordPage() {
                         >
                             Verify OTP
                         </button>
-                        <div className="text-center">
+                        <div className="text-center space-y-3">
                             <button
                                 type="button"
-                                onClick={() => setStep('phone')}
-                                className="text-xs text-slate-500 hover:text-slate-700"
+                                onClick={handleResendOTP}
+                                disabled={!canResend || loading}
+                                className={`text-sm font-medium ${canResend
+                                    ? 'text-aqua-600 hover:text-aqua-700 cursor-pointer'
+                                    : 'text-slate-400 cursor-not-allowed'
+                                    }`}
                             >
-                                Change Number
+                                {canResend ? 'Resend OTP' : `Resend OTP in ${timer}s`}
                             </button>
+
+                            <div>
+                                <button
+                                    type="button"
+                                    onClick={() => setStep('phone')}
+                                    className="text-xs text-slate-500 hover:text-slate-700"
+                                >
+                                    Change Number
+                                </button>
+                            </div>
                         </div>
                     </form>
                 )}
