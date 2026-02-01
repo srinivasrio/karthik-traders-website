@@ -25,6 +25,14 @@ export default function LoginPage() {
     const [view, setView] = useState<ViewState>('login');
     const [signupStep, setSignupStep] = useState<SignupStep>('phone');
 
+    // Handle URL params for tab switching
+    React.useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab === 'signup') {
+            setView('signup');
+        }
+    }, [searchParams]);
+
     // Form State
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
