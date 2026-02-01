@@ -217,7 +217,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 10 }}>
                     <Text style={{ fontSize: 24, fontWeight: 'bold', textTransform: 'uppercase', width: '70%' }}>KARTHIK TRADERS</Text>
                     <View style={{ width: '30%', alignItems: 'flex-end' }}>
-                        <Image src="/images/logo.png" style={{ width: 60, height: 60 }} />
+                        <Image src="/images/logo-small.png" style={{ width: 60, height: 60 }} />
                     </View>
                 </View>
 
@@ -303,7 +303,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                 <View style={styles.footer}>
                     <Text style={styles.title}>THANK YOU!</Text>
                     <Text style={styles.footerText}>For any questions concerning this invoice, please contact:</Text>
-                    <Text style={styles.footerText}>Karthik Traders | +91 99638 40058 | support@karthiktraders.in</Text>
+                    <Text style={styles.footerText}>Karthik Traders | +91 99638 40058 | karthiktrader111@gmail.com</Text>
                     <Text style={styles.footerWebsite}>www.karthiktraders.in</Text>
                 </View>
 
