@@ -39,9 +39,7 @@ export default function ForgotPasswordPage() {
 
         // Firebase/reCAPTCHA errors
         if (message.includes('reCAPTCHA')) {
-            // RETURNING RAW ERROR FOR DEBUGGING
-            return `Debug Error: ${message}`;
-            // return 'Verification service temporarily unavailable. Please try again.';
+            return 'Verification service temporarily unavailable. Please try again.';
         }
         if (message.includes('too-many-requests') || message.includes('TOO_MANY_ATTEMPTS')) {
             return 'Too many attempts. Please wait a few minutes and try again.';
@@ -151,10 +149,6 @@ export default function ForgotPasswordPage() {
         }
     };
 
-    // Show loading screen during async operations
-    if (loading) {
-        return <SimpleLoadingScreen />;
-    }
 
     // Success Modal with animated checkmark
     if (step === 'success') {
@@ -237,6 +231,8 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="min-h-screen pt-24 pb-12 flex flex-col items-center justify-center bg-slate-50 px-4">
+            {/* Overlay Loading Screen to prevent DOM Unmounting */}
+            {loading && <SimpleLoadingScreen />}
             <div className="max-w-md w-full mb-4">
                 <Link
                     href="/login"
