@@ -42,6 +42,7 @@ export default function LoginPage() {
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [activeLegalDoc, setActiveLegalDoc] = useState<'terms' | 'privacy' | 'refund' | null>(null);
+    const [showAlreadyRegistered, setShowAlreadyRegistered] = useState(false);
 
     // Process State
     const [loading, setLoading] = useState(false);
@@ -135,6 +136,23 @@ export default function LoginPage() {
 
         try {
             const formattedPhone = formatPhone(phoneNumber);
+
+            // 1. Check if user ALREADY exists
+            const checkRes = await fetch('/api/auth/check-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mobile: formattedPhone })
+            });
+            const checkData = await checkRes.json();
+
+            if (checkData.exists) {
+                // User ALREADY exists -> Show Custom Modal
+                setLoading(false);
+                setShowAlreadyRegistered(true);
+                return;
+            }
+
+            // 2. User does NOT exist -> Proceed with OTP
             const result = await signInWithOTP(formattedPhone);
             setConfirmationResult(result);
             setSignupStep('otp');
@@ -242,6 +260,58 @@ export default function LoginPage() {
             setLoading(false);
         }
     };
+
+
+
+    // Already Registered Modal
+    if (showAlreadyRegistered) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+                <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-slate-100 text-center animate-[scaleIn_0.3s_ease-out]">
+
+                    {/* Animated Info/User Icon */}
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                        <div className="absolute inset-0 rounded-full border-4 border-blue-100 animate-pulse"></div>
+                        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                            <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-slate-900 mb-3">
+                        Already Registered
+                    </h2>
+                    <p className="text-slate-600 mb-8 leading-relaxed">
+                        This mobile number <span className="font-bold text-slate-800">{phoneNumber}</span> is already associated with an account.
+                    </p>
+
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => { setShowAlreadyRegistered(false); setView('login'); }}
+                            className="inline-flex items-center justify-center w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-aqua-600 to-blue-600 text-white font-bold text-sm hover:from-aqua-700 hover:to-blue-700 transition-all shadow-lg shadow-aqua-500/25 active:scale-[0.98]"
+                        >
+                            Login Now
+                        </button>
+
+                        <button
+                            onClick={() => setShowAlreadyRegistered(false)}
+                            className="inline-flex items-center justify-center w-full py-3.5 px-6 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors"
+                        >
+                            Back
+                        </button>
+                    </div>
+                </div>
+                {/* Reusing existing animation styles */}
+                <style jsx>{`
+                    @keyframes scaleIn {
+                        0% { transform: scale(0.9); opacity: 0; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                `}</style>
+            </div>
+        );
+    }
 
     // --- RENDER ---
     return (
