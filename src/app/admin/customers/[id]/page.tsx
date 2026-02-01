@@ -68,27 +68,51 @@ export default function CustomerDetailPage() {
             if (profileError) throw profileError;
             setCustomer(profileData);
 
-            // Fetch customer orders with items
+            // Fetch customer orders separately first to ensure we get them
             const { data: ordersData, error: ordersError } = await supabase
                 .from('orders')
-                .select(`
-                    *,
-                    order_items (
+                .select('*')
+                .eq('user_id', customerId)
+                .order('created_at', { ascending: false });
+
+            if (ordersError) {
+                console.error("Orders Fetch Error:", ordersError);
+                throw ordersError;
+            }
+
+            if (ordersData && ordersData.length > 0) {
+                // Manually fetch items for these orders to avoid deep nesting issues
+                const orderIds = ordersData.map(o => o.id);
+                const { data: itemsData, error: itemsError } = await supabase
+                    .from('order_items')
+                    .select(`
                         *,
                         product:products (
                             name,
                             image_url
                         )
-                    )
-                `)
-                .eq('user_id', customerId)
-                .order('created_at', { ascending: false });
+                    `)
+                    .in('order_id', orderIds);
 
-            if (!ordersError) {
-                setOrders(ordersData || []);
+                if (itemsError) {
+                    console.error("Items Fetch Error:", itemsError);
+                    // Don't fail the whole page, just show orders without items
+                    setOrders(ordersData);
+                } else {
+                    // Merge items into orders
+                    const ordersWithItems = ordersData.map(order => ({
+                        ...order,
+                        order_items: itemsData?.filter(item => item.order_id === order.id) || []
+                    }));
+                    setOrders(ordersWithItems);
+                }
+            } else {
+                setOrders([]);
             }
-        } catch (error) {
+
+        } catch (error: any) {
             console.error('Error fetching customer:', error);
+            // alert(`Error: ${error.message}`); // Removed alert to prevent annoyance
         } finally {
             setLoading(false);
         }
