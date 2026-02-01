@@ -521,6 +521,7 @@ export const aeratorSets: Product[] = [
     category: 'aerator-set',
     mrp: 28000,
     salePrice: 26499,
+    badge: 'Best Selling',
     features: [
       'Sea Boss Bevel Gearbox',
       '6.2 kg Sea Boss floats',
@@ -706,9 +707,10 @@ export const motors: Product[] = [
       'IP Rating': 'IP55',
       'Phase': '3',
       'Frequency': '50Hz',
-      'Duty': 'S1'
+      'Duty': 'S1',
+      'Certification': 'ISO Certified'
     },
-    warranty: '1 Year',
+    warranty: undefined,
     inStock: true,
     stockStatus: 'in-stock'
   },
@@ -749,7 +751,7 @@ export const motors: Product[] = [
       'Duty Cycle': 'Continuous (S1)',
       'IP Rating': 'IP55'
     },
-    warranty: '1 Year',
+    warranty: undefined,
     inStock: true,
     stockStatus: 'in-stock'
   }
@@ -791,7 +793,7 @@ export const wormGearboxes: Product[] = [
       'Weight': '38 kg (Approx)',
       'Mounting': 'Standard Foot Mount'
     },
-    warranty: '1 Year',
+    warranty: undefined,
     inStock: true,
     stockStatus: 'in-stock'
   },
@@ -983,7 +985,7 @@ export const bevelGearboxes: Product[] = [
       'Color': 'Black',
       'Bearings Size': '6206, 6205, 6008'
     },
-    warranty: '1 Year',
+    warranty: undefined,
     inStock: true,
     stockStatus: 'in-stock'
   }
