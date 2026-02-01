@@ -238,12 +238,9 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                         <Text style={styles.brandName}>KARTHIK TRADERS</Text>
                     </View>
 
-                    {/* Right: Logo - Temporarily disabled for debugging */}
+                    {/* Right: Logo */}
                     <View style={styles.topRight}>
-                        {/* 
-                         <Image src="/images/logo.png" style={{ width: 80, height: 80 }} />
-                        */}
-                        <Text style={{ fontSize: 8, color: '#ccc' }}>LOGO</Text>
+                        <Image src="/images/logo.png" style={{ width: 80, height: 80 }} />
                     </View>
                 </View>
 
@@ -254,9 +251,9 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                 <View style={styles.metaSection}>
                     <View>
                         <Text style={styles.label}>Invoice Number</Text>
-                        <Text style={styles.value}>INV-{order.order_number || order.id.slice(0, 8).toUpperCase()}</Text>
+                        <Text style={styles.value}>INV-{order.order_number || (typeof order.id === 'string' ? order.id.slice(0, 8).toUpperCase() : '0000')}</Text>
                         <Text style={styles.label}>Date</Text>
-                        <Text style={styles.value}>{new Date(order.created_at).toLocaleDateString()}</Text>
+                        <Text style={styles.value}>{new Date(order.created_at || Date.now()).toLocaleDateString()}</Text>
                     </View>
                     <View style={styles.billTo}>
                         <Text style={styles.label}>Bill To</Text>
@@ -293,21 +290,26 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                     </View>
 
                     {/* Rows */}
-                    {order.order_items?.map((item: any, idx: number) => (
-                        <View key={idx} style={styles.tableRow}>
-                            <Text style={styles.cellItems}>{item.product?.name || 'Item'}</Text>
-                            <Text style={styles.cellPrice}>₹{item.price_at_purchase?.toLocaleString()}</Text>
-                            <Text style={styles.cellQty}>{item.quantity}</Text>
-                            <Text style={styles.cellTotal}>₹{(item.price_at_purchase * item.quantity).toLocaleString()}</Text>
-                        </View>
-                    ))}
+                    {order.order_items?.map((item: any, idx: number) => {
+                        const price = Number(item.price_at_purchase || 0);
+                        const qty = Number(item.quantity || 0);
+                        const total = price * qty;
+                        return (
+                            <View key={idx} style={styles.tableRow}>
+                                <Text style={styles.cellItems}>{item.product?.name || 'Item'}</Text>
+                                <Text style={styles.cellPrice}>₹{price.toLocaleString()}</Text>
+                                <Text style={styles.cellQty}>{qty}</Text>
+                                <Text style={styles.cellTotal}>₹{total.toLocaleString()}</Text>
+                            </View>
+                        );
+                    })}
                 </View>
 
                 {/* Totals */}
                 <View style={styles.totalsSection}>
                     <View style={[styles.totalRow, styles.grandTotal]}>
                         <Text style={styles.totalLabel}>Grand Total:</Text>
-                        <Text style={styles.totalValue}>₹{order.total_amount?.toLocaleString()}</Text>
+                        <Text style={styles.totalValue}>₹{Number(order.total_amount || 0).toLocaleString()}</Text>
                     </View>
                 </View>
 

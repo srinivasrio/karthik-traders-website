@@ -58,7 +58,10 @@ export default function DownloadInvoiceBtn({ order, variant = 'customer' }: Down
             {/* @ts-ignore */}
             {({ blob, url, loading, error }) => {
                 if (loading) return 'Generating...';
-                if (error) return 'Error generating PDF';
+                if (error) {
+                    console.error("PDF Generation Error:", error);
+                    return <span title={String(error)}>Error: {String(error).slice(0, 20)}...</span>;
+                }
                 return (
                     <>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
