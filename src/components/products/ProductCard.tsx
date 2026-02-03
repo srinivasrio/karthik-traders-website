@@ -206,7 +206,7 @@ export default function ProductCard({
                                             src={images[currentImageIndex]}
                                             alt={product.name}
                                             fill
-                                            className={`object-contain ${product.id === 'aqua-torque-long-arm-gearbox' ? 'scale-[1.8]' : ''}`}
+                                            className={`object-contain ${product.id === 'aqua-torque-long-arm-gearbox' ? 'scale-[2.5]' : ''}`}
                                             sizes="(max-width: 768px) 50vw, 25vw"
                                             priority={priority && currentImageIndex === 0}
                                         />
