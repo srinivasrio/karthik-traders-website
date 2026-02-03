@@ -167,7 +167,7 @@ export default function ProductCard({
 
                     {/* IMAGE SECTION: Variable Height */}
                     <div
-                        className={`relative w-full ${variant === 'aerator' ? 'h-[180px] md:h-[200px]' : 'h-[150px] md:h-[180px]'} bg-white p-2 shrink-0`}
+                        className={`relative w-full ${variant === 'aerator' ? 'h-[180px] md:h-[200px]' : 'h-[150px] md:h-[180px]'} bg-white ${product.id === 'aqua-torque-long-arm-gearbox' ? 'p-0' : 'p-2'} shrink-0`}
                         onTouchStart={handleTouchStart}
                         onTouchEnd={handleTouchEnd}
                     >
@@ -206,7 +206,7 @@ export default function ProductCard({
                                             src={images[currentImageIndex]}
                                             alt={product.name}
                                             fill
-                                            className={`object-contain ${product.id === 'aqua-torque-long-arm-gearbox' ? 'scale-150' : ''}`}
+                                            className={`object-contain ${product.id === 'aqua-torque-long-arm-gearbox' ? 'scale-[1.8]' : ''}`}
                                             sizes="(max-width: 768px) 50vw, 25vw"
                                             priority={priority && currentImageIndex === 0}
                                         />
