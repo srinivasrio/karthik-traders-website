@@ -47,3 +47,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+scripts/update_vps_env.sh
+scripts/reset_db_orders.js
+scripts/watch_orders.js

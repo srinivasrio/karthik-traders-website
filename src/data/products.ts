@@ -786,11 +786,11 @@ export const wormGearboxes: Product[] = [
       'Input Speed': '1440 RPM',
       'Output Speed': '100 RPM',
       'Housing Material': 'High-Grade Cast Iron',
-      'Worm Wheel': 'Phosphor Bronze (Pb)',
+      'Worm Wheel': 'PP',
       'Worm Shaft': 'Hardened Alloy Steel',
       'Bearings': 'Heavy Duty Taper Roller',
-      'Oil Capacity': '2.5 Liters (Recommended 90/140 Grade)',
-      'Weight': '38 kg (Approx)',
+      'Oil Capacity': '2lit ( recommended 140/320 grade )',
+      'Weight': '20 kgs',
       'Mounting': 'Standard Foot Mount'
     },
     warranty: undefined,
@@ -1252,6 +1252,7 @@ export const frames: Product[] = [
     ],
     images: ['/images/products/Products/Aerator spares/Frames/2HP SS 202 Frame 7.2KG .png'],
     specifications: {
+      'FINISHING': 'CR FINISHING',
       'Material': 'SS 202 L Angle',
       'Weight': '7.3 KG',
       'Compatibility': '2HP Paddle Wheel Aerators',
@@ -1278,6 +1279,7 @@ export const frames: Product[] = [
     ],
     images: ['/images/products/Products/Aerator spares/Frames/2HP SS 202 Frame 8KG.png'],
     specifications: {
+      'FINISHING': 'CR FINISHING',
       'Material': 'SS 202 L Angle',
       'Weight': '8 KG',
       'Compatibility': '2HP Paddle Wheel Aerators',
@@ -1304,6 +1306,7 @@ export const frames: Product[] = [
     ],
     images: ['/images/products/Products/Aerator spares/Frames/2HP SS 304 Frame 8KG.png'],
     specifications: {
+      'FINISHING': 'CR FINISHING',
       'Material': 'SS 304 L Angle',
       'Weight': '8 KG',
       'Compatibility': '2HP Paddle Wheel Aerators',
