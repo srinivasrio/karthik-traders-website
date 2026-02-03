@@ -5,6 +5,8 @@ import LayoutWrapper from "@/components/layout/LayoutWrapper";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 
+import ScrollToTop from "@/components/ui/ScrollToTop";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: '--font-inter',
@@ -58,6 +60,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased min-h-screen`} suppressHydrationWarning>
         <AuthProvider>
           <CartProvider>
+            <ScrollToTop />
             <LayoutWrapper>
               {children}
             </LayoutWrapper>
