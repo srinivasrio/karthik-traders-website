@@ -83,15 +83,23 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
         window.location.reload();
     };
 
-    const categoryLabel = product.category === 'motor' ? 'Motor' : 'Gearbox';
+    const isGearbox = product.category === 'worm-gearbox' || product.category === 'bevel-gearbox';
+    const isMotor = product.category === 'motor';
+
+    // Explicit label logic
+    const categoryLabel = isMotor ? 'Motor' : isGearbox ? 'Gearbox' : 'Product';
 
     const backLink = (() => {
         const fromParam = searchParams.get('from');
         if (fromParam === 'motors') return '/products?category=motors';
         if (fromParam === 'gearboxes') return '/products?category=gearboxes';
         if (fromParam === 'all') return '/products';
-        // Default fallback based on product category if no param
-        return `/products${categoryLabel === 'Motor' ? '?category=motors' : categoryLabel === 'Gearbox' ? '?category=gearboxes' : ''}`;
+
+        // Default fallback based on product category
+        if (isMotor) return '/products?category=motors';
+        if (isGearbox) return '/products?category=gearboxes';
+
+        return '/products';
     })();
 
     const backLabel = (() => {
@@ -99,7 +107,8 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
         if (fromParam === 'motors') return 'Motors';
         if (fromParam === 'gearboxes') return 'Gearboxes';
         if (fromParam === 'all') return 'All Products';
-        return categoryLabel === 'Motor' ? 'Motors' : categoryLabel === 'Gearbox' ? 'Gearboxes' : 'Products';
+
+        return isMotor ? 'Motors' : isGearbox ? 'Gearboxes' : 'Products';
     })();
 
     return (
