@@ -156,8 +156,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
             </div>
 
             <MobileGestureLayout
-                onSwipeLeft={handleSwipeLeft}
-                onSwipeRight={handleSwipeRight}
                 onPullDown={handlePullDown}
 
             >

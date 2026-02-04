@@ -50,9 +50,9 @@ export default function MobileGestureLayout({
         const isDownSwipe = distanceY < -minSwipeDistance;
 
         // Only trigger horizontal swipes if vertical movement is small (intentional swipe)
+        // Only trigger vertical swipes (horizontal disabled to prevent accidental navigation)
         if (Math.abs(distanceX) > Math.abs(distanceY)) {
-            if (isLeftSwipe && onSwipeLeft) onSwipeLeft();
-            if (isRightSwipe && onSwipeRight) onSwipeRight();
+            // Horizontal swipes disabled
         } else {
             // Vertical swipes
             if (isUpSwipe && onSwipeUp) onSwipeUp();
