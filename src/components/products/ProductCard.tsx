@@ -135,12 +135,12 @@ export default function ProductCard({
         })();
 
         // Force explicit context for gearboxes if not provided
-        if (!backContext && (product.category === 'worm-gearbox' || product.category === 'bevel-gearbox')) {
+        if (product.category === 'worm-gearbox' || product.category === 'bevel-gearbox') {
             return `${baseLink}?from=gearboxes`;
         }
 
         // Force explicit context for motors if not provided
-        if (!backContext && product.category === 'motor') {
+        if (product.category === 'motor') {
             return `${baseLink}?from=motors`;
         }
 

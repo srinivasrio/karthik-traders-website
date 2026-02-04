@@ -20,7 +20,14 @@ interface ProductsClientProps {
 export default function ProductsClient({ initialProducts }: ProductsClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [category, setCategory] = useState<CategoryFilter>('all');
+    const [category, setCategory] = useState<CategoryFilter>(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const cat = params.get('category');
+            if (cat === 'motors' || cat === 'gearboxes') return cat;
+        }
+        return 'all';
+    });
     const [sortBy, setSortBy] = useState<SortOption>('price-low');
     const [isLoading, setIsLoading] = useState(false);
 
