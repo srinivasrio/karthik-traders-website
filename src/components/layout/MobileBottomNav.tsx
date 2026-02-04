@@ -72,7 +72,7 @@ export default function MobileBottomNav() {
                             {active && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute inset-1 bg-aqua-100 rounded-2xl -z-10 shadow-inner"
+                                    className="absolute inset-1 bg-aqua-200 rounded-2xl -z-10 shadow-[0_0_15px_rgba(78,215,241,0.4)] border border-aqua-300/30"
                                     initial={false}
                                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                 />
@@ -97,7 +97,7 @@ export default function MobileBottomNav() {
                                         className={`object-contain transition-all duration-300 ${active ? 'brightness-110 saturate-100' : 'grayscale brightness-90 opacity-60'}`}
                                     />
                                 </div>
-                                <span className={`text-[10px] font-extrabold tracking-wide transition-colors duration-300 ${active ? 'text-aqua-700' : 'text-steel-400'}`}>
+                                <span className={`text-[10px] font-extrabold tracking-wide transition-colors duration-300 ${active ? 'text-deep-blue-800' : 'text-steel-400'}`}>
                                     {item.name}
                                 </span>
                             </motion.div>
