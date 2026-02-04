@@ -19,12 +19,12 @@ const mobileNavItems = [
     {
         name: 'Products',
         href: '/products',
-        iconSrc: '/icons/menu/products.png',
+        iconSrc: '/icons/menu/spares.png',
     },
     {
         name: 'Spares',
         href: '/spares',
-        iconSrc: '/icons/menu/spares.png',
+        iconSrc: '/icons/menu/products.png',
     },
     {
         name: 'Long Arm',
