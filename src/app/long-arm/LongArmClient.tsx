@@ -93,14 +93,6 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
         setTimeout(() => setIsLoading(false), 1000);
     };
 
-    const handleSwipeUp = () => {
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm z-50 animate-fade-in-up';
-        toast.innerText = 'No more items to load';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1500);
-    };
-
     const handleSwipeLeft = () => {
         if (category === 'all') handleCategorySelect('gearbox');
         else if (category === 'gearbox') handleCategorySelect('spare');
@@ -155,7 +147,6 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
 
             <MobileGestureLayout
                 onPullDown={handlePullDown}
-                onSwipeUp={handleSwipeUp}
                 onSwipeLeft={handleSwipeLeft}
                 onSwipeRight={handleSwipeRight}
             >

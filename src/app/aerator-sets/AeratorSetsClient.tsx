@@ -108,14 +108,6 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
         setTimeout(() => setIsLoading(false), 1000);
     };
 
-    const handleSwipeUp = () => {
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm z-50 animate-fade-in-up';
-        toast.innerText = 'Loading more products...';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1500);
-    };
-
     return (
         <div className="min-h-screen bg-white pb-24">
             <BrandFilter selectedBrand={selectedBrand as any} onSelectBrand={handleBrandSelect}>
@@ -129,7 +121,6 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
                 onSwipeLeft={handleSwipeLeft}
                 onSwipeRight={handleSwipeRight}
                 onPullDown={handlePullDown}
-                onSwipeUp={handleSwipeUp}
             >
                 <div className="container-custom py-6">
                     <ProductGrid

@@ -92,14 +92,6 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
         setTimeout(() => setIsLoading(false), 1000);
     };
 
-    const handleSwipeUp = () => {
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm z-50 animate-fade-in-up';
-        toast.innerText = 'Loading more spares...';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1500);
-    };
-
     const categoriesList = [
         { id: 'all', label: 'All' },
         { id: 'motor-cover', label: 'Doms' },
@@ -144,7 +136,7 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
                 </div>
             </div>
 
-            <MobileGestureLayout onPullDown={handlePullDown} onSwipeUp={handleSwipeUp}>
+            <MobileGestureLayout onPullDown={handlePullDown}>
                 <div className="container-custom py-6">
                     <ProductGrid
                         products={sortedProducts}
