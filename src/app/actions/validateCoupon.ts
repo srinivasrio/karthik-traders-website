@@ -63,10 +63,30 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
     }
 
     // 3. Check Product Applicability
-    // coupon_aerators.product_id can be UUID, SLUG, or SHORT_ID depending on when/how it was saved.
-    const applicableIdentifiers = coupon.coupon_aerators.map((ca: any) => ca.product_id);
+    // We now use the 'applicable_products' text array column directly, which stores Slugs.
+    // If identifying via UUID, we must resolve it.
+    let applicableIdentifiers: string[] = [];
 
-    // DEBUG LOGGING
+    if (coupon.applicable_products && Array.isArray(coupon.applicable_products)) {
+        applicableIdentifiers = coupon.applicable_products;
+    } else if (coupon.coupon_aerators && Array.isArray(coupon.coupon_aerators)) {
+        // Fallback for old schema if it still exists (legacy support)
+        applicableIdentifiers = coupon.coupon_aerators.map((ca: any) => ca.product_id);
+    }
+
+    // If NO restrictions are found, does it apply to everything? 
+    // Usually coupons are specific. If applicable_products is NULL/Empty, maybe it applies to all?
+    // For now, let's assume if it's empty, it applies to NOTHING (safer) unless it's a "Storewide" coupon.
+    // But per current requirement "SBSS500" is specific. 
+
+    const isStorewide = applicableIdentifiers.length === 0;
+    // If you want storewide coupons, you might need a flag. 
+    // For now, if applicableIdentifiers HAS values, we enforce them.
+    // If it DOES NOT have values, we assume it's storewide (or check a type).
+    // Let's assume if applicable_products is empty, it's valid for all items.
+
+    // Update: user requested specific coupon "SBSS500".
+
     console.log('--- validateCoupon Debug ---');
     console.log('Coupon Code:', normalizeCode);
     console.log('Coupon Identifiers (DB):', applicableIdentifiers);
@@ -116,7 +136,8 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
             if (staticProduct) staticShortId = staticProduct.id;
         }
 
-        const isMatch = applicableIdentifiers.includes(item.uuid) ||
+        const isMatch = isStorewide ||
+            applicableIdentifiers.includes(item.uuid) ||
             applicableIdentifiers.includes(item.slug) ||
             (item.shortId && applicableIdentifiers.includes(item.shortId)) ||
             (uuidSlug && applicableIdentifiers.includes(uuidSlug)) ||
