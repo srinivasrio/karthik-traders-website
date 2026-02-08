@@ -32,8 +32,24 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
     // Sync state with props when initialSelectedAerators changes (e.g. navigation)
     useEffect(() => {
         console.log('Syncing selectedAerators from props:', initialSelectedAerators);
-        setSelectedAerators(initialSelectedAerators);
-    }, [initialSelectedAerators]);
+
+        // Normalize: Database might store UUIDs, Slugs, or Legacy Short IDs.
+        // We want to work with Slugs internally in this form.
+        const normalizedSelection = initialSelectedAerators.map(id => {
+            // 1. Is it already a slug?
+            const bySlug = allAerators.find(p => p.slug === id);
+            if (bySlug) return bySlug.slug;
+
+            // 2. Is it a Legacy Short ID? (e.g. 'seaboss-hv13w')
+            const byId = allAerators.find(p => p.id === id);
+            if (byId) return byId.slug;
+
+            // 3. Fallback: just keep it (maybe it's a UUID we can't map, or strictly a specific unknown ID)
+            return id;
+        });
+
+        setSelectedAerators(normalizedSelection);
+    }, [initialSelectedAerators, allAerators]);
 
     const handleAeratorToggle = (productId: string) => {
         setSelectedAerators(prev =>
