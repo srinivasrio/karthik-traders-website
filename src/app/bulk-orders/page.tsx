@@ -63,16 +63,31 @@ export default function CheckoutPage() {
                 return;
             }
 
-            const productSlugs = cartItems.map(item => {
-                // If slug is present, use it
-                if (item.slug) return item.slug;
-                // If not, try to find it in allProducts using the ID
-                const product = allProducts.find(p => p.id === item.id);
-                return product ? product.slug : item.id;
+            const cartItemIdentifiers = cartItems.map(item => {
+                let slug = item.slug;
+                let id = item.id;
+
+                // Lookup missing slug/id to allow robust matching
+                if (!slug) {
+                    const product = allProducts.find(p => p.id === id);
+                    if (product) slug = product.slug;
+                }
+
+                // Also ensure we have the correct static ID if the cart item has only slug
+                if (!id || id === slug) { // sometimes id might be the slug if populated that way
+                    const product = allProducts.find(p => p.slug === slug);
+                    if (product) id = product.id;
+                }
+
+                // Fallback: if we still don't have one, just use what we have for both
+                return {
+                    id: id || slug || '',
+                    slug: slug || id || ''
+                };
             });
 
-            console.log('Validating coupon against slugs:', productSlugs);
-            const result = await validateCoupon(couponCode, productSlugs);
+            console.log('Validating coupon against items:', cartItemIdentifiers);
+            const result = await validateCoupon(couponCode, cartItemIdentifiers);
 
             if (result.isValid && result.coupon) {
                 applyCoupon(result.coupon);

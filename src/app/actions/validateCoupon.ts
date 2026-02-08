@@ -14,7 +14,13 @@ export type CouponValidationResult = {
     error?: string;
 };
 
-export async function validateCoupon(code: string, cartProductSlugs: string[]): Promise<CouponValidationResult> {
+// Define input type
+type CartItemIdentifiers = {
+    id: string;
+    slug: string;
+};
+
+export async function validateCoupon(code: string, cartItems: CartItemIdentifiers[]): Promise<CouponValidationResult> {
     const supabase = await createClient();
     const normalizeCode = code.trim().toUpperCase();
 
@@ -40,7 +46,7 @@ export async function validateCoupon(code: string, cartProductSlugs: string[]): 
 
     if (coupon.start_date) {
         const startDate = new Date(coupon.start_date);
-        startDate.setHours(0, 0, 0, 0); // Normalize coupon start date too
+        startDate.setHours(0, 0, 0, 0);
         if (startDate > now) {
             return { isValid: false, error: 'Coupon is not yet active.' };
         }
@@ -48,10 +54,6 @@ export async function validateCoupon(code: string, cartProductSlugs: string[]): 
 
     if (coupon.end_date) {
         const endDate = new Date(coupon.end_date);
-        // Set end date to end of day? Or just strictly compare. 
-        // If end_date is 2023-10-31, it should be valid ON 31st.
-        // So strict less than check against now (start of day) might fail if we don't be careful.
-        // Let's set endDate to midnight as well, and check if now > endDate.
         endDate.setHours(0, 0, 0, 0);
         if (now > endDate) {
             return { isValid: false, error: 'Coupon has expired.' };
@@ -59,19 +61,25 @@ export async function validateCoupon(code: string, cartProductSlugs: string[]): 
     }
 
     // 3. Check Product Applicability
-    // coupon_aerators.product_id now stores SLUGS
-    const applicableProductSlugs = coupon.coupon_aerators.map((ca: any) => ca.product_id);
+    // coupon_aerators.product_id can be ID or SLUG depending on when/how it was saved.
+    const applicableIdentifiers = coupon.coupon_aerators.map((ca: any) => ca.product_id);
 
-    // If usage specific: "Coupon applies only to selected aerators"
-    // We check if AT LEAST ONE item in the cart is eligible.
-    // Or do we strictly enforce it? Use case usually implies discount applies to eligible items.
-    // We will return the list of applicable products so the frontend/cart context can calculate the discount properly.
-
-    const hasApplicableItem = cartProductSlugs.some(slug => applicableProductSlugs.includes(slug));
+    // Check if ANY item in cart matches EITHER id or slug
+    const hasApplicableItem = cartItems.some(item =>
+        applicableIdentifiers.includes(item.id) || applicableIdentifiers.includes(item.slug)
+    );
 
     if (!hasApplicableItem) {
         return { isValid: false, error: 'This coupon is not applicable to any items in your cart.' };
     }
+
+    // Filter cart items that are applicable
+    const applicableItems = cartItems.filter(item =>
+        applicableIdentifiers.includes(item.id) || applicableIdentifiers.includes(item.slug)
+    );
+
+    // Return the indentifiers that matched (we can return the slugs for consistency)
+    const matchedSlugs = applicableItems.map(i => i.slug);
 
     return {
         isValid: true,
@@ -80,7 +88,7 @@ export async function validateCoupon(code: string, cartProductSlugs: string[]): 
             code: coupon.code,
             discount_type: coupon.discount_type,
             discount_value: coupon.discount_value,
-            applicable_products: applicableProductSlugs
+            applicable_products: matchedSlugs // Return slugs of applicable products
         }
     };
 }
