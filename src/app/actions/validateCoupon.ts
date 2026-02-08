@@ -35,11 +35,27 @@ export async function validateCoupon(code: string, cartProductIds: string[]): Pr
 
     // 2. Check Date Validity
     const now = new Date();
-    if (coupon.start_date && new Date(coupon.start_date) > now) {
-        return { isValid: false, error: 'Coupon is not yet active.' };
+    // Normalize to start of day for accurate date comparison
+    now.setHours(0, 0, 0, 0);
+
+    if (coupon.start_date) {
+        const startDate = new Date(coupon.start_date);
+        startDate.setHours(0, 0, 0, 0); // Normalize coupon start date too
+        if (startDate > now) {
+            return { isValid: false, error: 'Coupon is not yet active.' };
+        }
     }
-    if (coupon.end_date && new Date(coupon.end_date) < now) {
-        return { isValid: false, error: 'Coupon has expired.' };
+
+    if (coupon.end_date) {
+        const endDate = new Date(coupon.end_date);
+        // Set end date to end of day? Or just strictly compare. 
+        // If end_date is 2023-10-31, it should be valid ON 31st.
+        // So strict less than check against now (start of day) might fail if we don't be careful.
+        // Let's set endDate to midnight as well, and check if now > endDate.
+        endDate.setHours(0, 0, 0, 0);
+        if (now > endDate) {
+            return { isValid: false, error: 'Coupon has expired.' };
+        }
     }
 
     // 3. Check Product Applicability

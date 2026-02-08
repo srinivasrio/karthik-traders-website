@@ -13,6 +13,7 @@ interface CouponFormProps {
 }
 
 export default function CouponForm({ initialCoupon, initialSelectedAerators, allAerators }: CouponFormProps) {
+    console.log('CouponForm Rendered. Initial Selected:', initialSelectedAerators);
     const router = useRouter();
     // const supabase = createClient();
     const [loading, setLoading] = useState(false);
