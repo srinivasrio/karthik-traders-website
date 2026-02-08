@@ -76,6 +76,7 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
     const handleAddToCart = () => {
         addToCart({
             id: product.id,
+            slug: product.slug,
             model: product.model || product.name,
             price: product.mrp,
             salePrice: product.salePrice,

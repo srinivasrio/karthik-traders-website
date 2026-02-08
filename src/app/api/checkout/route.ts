@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
         // Format items for RPC
         const formattedItems = items.map((item: any) => ({
-            product_id: item.id,
+            product_id: item.slug || item.id, // Use slug for DB mapping, fallback to ID
             quantity: item.quantity,
             price: item.salePrice || item.price || item.mrp
         }));
