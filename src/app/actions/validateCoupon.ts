@@ -73,7 +73,11 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
 
     // CRITICAL ENHANCEMENT: Lookup Slugs for provided UUIDs from DB
     // This handles cases where client-side only had UUID and couldn't match strict Slug.
-    const cartUUIDs = cartItems.map(i => i.uuid).filter(Boolean);
+    // Filter to ensure we only query valid UUIDs (prevents 'invalid input syntax' DB errors)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const cartUUIDs = cartItems
+        .map(i => i.uuid)
+        .filter(id => id && uuidRegex.test(id));
 
     // We need to map UUID -> Slug
     const uuidToSlugMap = new Map<string, string>();

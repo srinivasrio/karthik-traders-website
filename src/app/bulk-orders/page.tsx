@@ -81,6 +81,9 @@ export default function CheckoutPage() {
                     const product = allProducts.find(p => p.id === uuid);
                     if (product) {
                         shortId = product.id;
+                        // CRITICAL FIX: If we found it by Short ID, we KNOW the slug. Pass it!
+                        // This allows validation to succeed even if the cart item only had the Short ID.
+                        slug = product.slug;
                     }
                 }
 
