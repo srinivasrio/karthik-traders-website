@@ -14,7 +14,7 @@ export type CouponValidationResult = {
     error?: string;
 };
 
-export async function validateCoupon(code: string, cartProductIds: string[]): Promise<CouponValidationResult> {
+export async function validateCoupon(code: string, cartProductSlugs: string[]): Promise<CouponValidationResult> {
     const supabase = await createClient();
     const normalizeCode = code.trim().toUpperCase();
 
@@ -59,14 +59,15 @@ export async function validateCoupon(code: string, cartProductIds: string[]): Pr
     }
 
     // 3. Check Product Applicability
-    const applicableProductIds = coupon.coupon_aerators.map((ca: any) => ca.product_id);
+    // coupon_aerators.product_id now stores SLUGS
+    const applicableProductSlugs = coupon.coupon_aerators.map((ca: any) => ca.product_id);
 
     // If usage specific: "Coupon applies only to selected aerators"
     // We check if AT LEAST ONE item in the cart is eligible.
     // Or do we strictly enforce it? Use case usually implies discount applies to eligible items.
     // We will return the list of applicable products so the frontend/cart context can calculate the discount properly.
 
-    const hasApplicableItem = cartProductIds.some(id => applicableProductIds.includes(id));
+    const hasApplicableItem = cartProductSlugs.some(slug => applicableProductSlugs.includes(slug));
 
     if (!hasApplicableItem) {
         return { isValid: false, error: 'This coupon is not applicable to any items in your cart.' };
@@ -79,7 +80,7 @@ export async function validateCoupon(code: string, cartProductIds: string[]): Pr
             code: coupon.code,
             discount_type: coupon.discount_type,
             discount_value: coupon.discount_value,
-            applicable_products: applicableProductIds
+            applicable_products: applicableProductSlugs
         }
     };
 }

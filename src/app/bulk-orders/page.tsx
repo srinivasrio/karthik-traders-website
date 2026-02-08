@@ -63,8 +63,8 @@ export default function CheckoutPage() {
                 return;
             }
 
-            const productIds = cartItems.map(item => item.id);
-            const result = await validateCoupon(couponCode, productIds);
+            const productSlugs = cartItems.map(item => item.slug || item.id);
+            const result = await validateCoupon(couponCode, productSlugs);
 
             if (result.isValid && result.coupon) {
                 applyCoupon(result.coupon);

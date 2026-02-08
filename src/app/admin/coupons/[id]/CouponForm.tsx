@@ -47,7 +47,7 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
         if (selectedAerators.length === allAerators.length) {
             setSelectedAerators([]);
         } else {
-            setSelectedAerators(allAerators.map(p => p.id));
+            setSelectedAerators(allAerators.map(p => p.slug));
         }
     };
 
@@ -214,10 +214,10 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                     {allAerators.map((product) => (
                         <div
                             key={product.id}
-                            onClick={() => handleAeratorToggle(product.id)}
+                            onClick={() => handleAeratorToggle(product.slug)}
                             className={`
                                 cursor-pointer rounded-lg border p-4 flex items-start gap-3 transition-all
-                                ${selectedAerators.includes(product.id)
+                                ${selectedAerators.includes(product.slug)
                                     ? 'border-aqua-500 bg-aqua-50/50 shadow-sm'
                                     : 'border-slate-200 hover:border-aqua-200 hover:bg-slate-50'
                                 }
@@ -225,12 +225,12 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                         >
                             <div className={`
                                 mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0
-                                ${selectedAerators.includes(product.id)
+                                ${selectedAerators.includes(product.slug)
                                     ? 'bg-aqua-500 border-aqua-500'
                                     : 'border-slate-300 bg-white'
                                 }
                             `}>
-                                {selectedAerators.includes(product.id) && (
+                                {selectedAerators.includes(product.slug) && (
                                     <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                     </svg>
