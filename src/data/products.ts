@@ -886,7 +886,7 @@ export const bevelGearboxes: Product[] = [
       'SS202 Shaft (28mm OD)',
       'Reliable Bearings (6206, 6205, 6008)'
     ],
-    images: ['/images/products/Products/Gear boxes/Bevel/Sea Boss/Sea Boss A3.png'],
+    images: ['/images/products/seaboss-a3-bevel-gearbox.png'],
     specifications: {
       'RPM': '105',
       'Gear Type': 'Bevel',
