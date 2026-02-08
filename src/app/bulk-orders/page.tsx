@@ -64,25 +64,30 @@ export default function CheckoutPage() {
             }
 
             const cartItemIdentifiers = cartItems.map(item => {
-                let slug = item.slug;
-                let id = item.id;
+                const slug = item.slug || '';
+                const uuid = item.id; // Correct assumption: item.id in cart is the UUID from DB
 
-                // Lookup missing slug/id to allow robust matching
-                if (!slug) {
-                    const product = allProducts.find(p => p.id === id);
-                    if (product) slug = product.slug;
-                }
+                let shortId = '';
 
-                // Also ensure we have the correct static ID if the cart item has only slug
-                if (!id || id === slug) { // sometimes id might be the slug if populated that way
+                // Lookup strict Short ID from allProducts using Slug
+                if (slug) {
                     const product = allProducts.find(p => p.slug === slug);
-                    if (product) id = product.id;
+                    if (product) shortId = product.id;
+                } else {
+                    // Fallback: Try to find by UUID if slug is missing 
+                    // (Unlikely if we are thorough, but good safety)
+                    // Note: We can't easily lookup static product by UUID because static products don't have the live UUIDs. 
+                    // But if item.id IS the short ID (legacy cart), then we can find it.
+                    const product = allProducts.find(p => p.id === uuid);
+                    if (product) {
+                        shortId = product.id;
+                    }
                 }
 
-                // Fallback: if we still don't have one, just use what we have for both
                 return {
-                    id: id || slug || '',
-                    slug: slug || id || ''
+                    uuid: uuid || '',
+                    slug: slug || '',
+                    shortId: shortId
                 };
             });
 

@@ -15,9 +15,10 @@ export type CouponValidationResult = {
 };
 
 // Define input type
-type CartItemIdentifiers = {
-    id: string;
-    slug: string;
+export type CartItemIdentifiers = {
+    uuid: string;     // The ID used in CartContext (usually UUID from DB)
+    slug: string;     // The product Slug
+    shortId?: string; // The static ID from products.ts
 };
 
 export async function validateCoupon(code: string, cartItems: CartItemIdentifiers[]): Promise<CouponValidationResult> {
@@ -61,25 +62,22 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
     }
 
     // 3. Check Product Applicability
-    // coupon_aerators.product_id can be ID or SLUG depending on when/how it was saved.
+    // coupon_aerators.product_id can be UUID, SLUG, or SHORT_ID depending on when/how it was saved.
     const applicableIdentifiers = coupon.coupon_aerators.map((ca: any) => ca.product_id);
 
-    // Check if ANY item in cart matches EITHER id or slug
-    const hasApplicableItem = cartItems.some(item =>
-        applicableIdentifiers.includes(item.id) || applicableIdentifiers.includes(item.slug)
+    // Filter cart items that are applicable by checking ALL possible identifiers
+    const applicableItems = cartItems.filter(item =>
+        applicableIdentifiers.includes(item.uuid) ||
+        applicableIdentifiers.includes(item.slug) ||
+        (item.shortId && applicableIdentifiers.includes(item.shortId))
     );
 
-    if (!hasApplicableItem) {
+    if (applicableItems.length === 0) {
         return { isValid: false, error: 'This coupon is not applicable to any items in your cart.' };
     }
 
-    // Filter cart items that are applicable
-    const applicableItems = cartItems.filter(item =>
-        applicableIdentifiers.includes(item.id) || applicableIdentifiers.includes(item.slug)
-    );
-
-    // Return the indentifiers that matched (we can return the slugs for consistency)
-    const matchedSlugs = applicableItems.map(i => i.slug);
+    // Return the UUIDs so CartContext can correctly identify the items to discount
+    const applicableUUIDs = applicableItems.map(i => i.uuid);
 
     return {
         isValid: true,
@@ -88,7 +86,7 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
             code: coupon.code,
             discount_type: coupon.discount_type,
             discount_value: coupon.discount_value,
-            applicable_products: matchedSlugs // Return slugs of applicable products
+            applicable_products: applicableUUIDs // CRITICAL: Return UUIDs for CartContext
         }
     };
 }
