@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/data/products';
+import { formatPrice, allProducts } from '@/data/products';
 import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import Link from 'next/link';
 import OrderSuccessModal from '@/components/ui/OrderSuccessModal';
@@ -63,7 +63,15 @@ export default function CheckoutPage() {
                 return;
             }
 
-            const productSlugs = cartItems.map(item => item.slug || item.id);
+            const productSlugs = cartItems.map(item => {
+                // If slug is present, use it
+                if (item.slug) return item.slug;
+                // If not, try to find it in allProducts using the ID
+                const product = allProducts.find(p => p.id === item.id);
+                return product ? product.slug : item.id;
+            });
+
+            console.log('Validating coupon against slugs:', productSlugs);
             const result = await validateCoupon(couponCode, productSlugs);
 
             if (result.isValid && result.coupon) {
