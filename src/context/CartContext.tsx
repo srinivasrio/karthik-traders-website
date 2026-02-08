@@ -22,6 +22,19 @@ type CartContextType = {
     removeFromCart: (itemId: string) => void;
     updateQuantity: (itemId: string, quantity: number) => void;
     clearCart: () => void;
+
+    // Coupon Logic
+    coupon: Coupon | null;
+    applyCoupon: (coupon: Coupon | null) => void;
+    discountAmount: number;
+    finalPrice: number;
+};
+
+export type Coupon = {
+    code: string;
+    discount_type: 'percentage' | 'flat';
+    discount_value: number;
+    applicable_products: string[]; // Product IDs
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -30,6 +43,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [cartCount, setCartCount] = useState(0);
     const [totalPrice, setTotalPrice] = useState(0);
+
+    const [coupon, setCoupon] = useState<Coupon | null>(null);
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [finalPrice, setFinalPrice] = useState(0);
+
     const [isInitialized, setIsInitialized] = useState(false);
 
     // Initialize from localStorage
@@ -65,12 +83,51 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }, 0);
         setTotalPrice(total);
 
+        setTotalPrice(total);
+
+        // Calculate Discount
+        let discount = 0;
+        if (coupon) {
+            // Check applicability
+            // "Coupon applies only to selected aerators" implies discount calculates ONLY on those items.
+            // Loop through cart, check if item is in coupon.applicable_products
+
+            const applicableItemsTotal = cartItems.reduce((acc, item) => {
+                if (coupon.applicable_products.includes(item.id)) {
+                    const rawPrice = item.salePrice !== undefined ? item.salePrice : item.price;
+                    const price = typeof rawPrice === 'string'
+                        ? parseFloat(rawPrice.replace(/[^\d.]/g, ''))
+                        : (typeof rawPrice === 'number' ? rawPrice : 0);
+                    return acc + (price * (item.quantity || 1));
+                }
+                return acc;
+            }, 0);
+
+            if (applicableItemsTotal > 0) {
+                if (coupon.discount_type === 'percentage') {
+                    discount = (applicableItemsTotal * coupon.discount_value) / 100;
+                } else {
+                    discount = Math.min(coupon.discount_value, applicableItemsTotal);
+                }
+            } else {
+                // Cart changed and no applicable items? Should we remove coupon? 
+                // For now, keep it but 0 discount.
+                discount = 0;
+            }
+        }
+        setDiscountAmount(discount);
+        setFinalPrice(Math.max(0, total - discount));
+
         // Persist to localStorage
         localStorage.setItem('cart', JSON.stringify(cartItems));
 
         // Dispatch event for legacy listeners (optional, but good for transition)
         window.dispatchEvent(new Event('cartUpdated'));
-    }, [cartItems, isInitialized]);
+    }, [cartItems, isInitialized, coupon]);
+
+    const applyCoupon = (newCoupon: Coupon | null) => {
+        setCoupon(newCoupon);
+    };
 
     const addToCart = (newItem: CartItem) => {
         // Global out of stock prevention
@@ -132,7 +189,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             addToCart,
             removeFromCart,
             updateQuantity,
-            clearCart
+            clearCart,
+            coupon,
+            applyCoupon,
+            discountAmount,
+            finalPrice
         }}>
             {children}
         </CartContext.Provider>

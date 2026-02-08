@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice, Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
+import { validateCoupon } from '@/app/actions/validateCoupon'; // Import server action
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
@@ -14,8 +15,12 @@ interface CartItem extends Product {
 }
 
 export default function CartPage() {
-    const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
+    const { cartItems, updateQuantity, removeFromCart, clearCart, applyCoupon, coupon, discountAmount, finalPrice } = useCart();
     const [isLoading, setIsLoading] = useState(true);
+    const [couponInput, setCouponInput] = useState('');
+    const [couponError, setCouponError] = useState('');
+    const [isValidating, setIsValidating] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         const timer = setTimeout(() => setIsLoading(false), 500);
@@ -24,6 +29,42 @@ export default function CartPage() {
 
     const removeItem = (productId: string) => {
         removeFromCart(productId);
+        if (cartItems.length <= 1) {
+            applyCoupon(null); // Clear coupon if cart becomes empty
+        }
+    };
+
+    const handleApplyCoupon = async () => {
+        if (!couponInput.trim()) return;
+        setIsValidating(true);
+        setCouponError('');
+        setSuccessMessage('');
+
+        try {
+            const productIds = cartItems.map(item => item.id);
+            const result = await validateCoupon(couponInput, productIds);
+
+            if (result.isValid && result.coupon) {
+                applyCoupon(result.coupon);
+                setSuccessMessage(`Coupon '${result.coupon.code}' applied!`);
+                setCouponInput('');
+            } else {
+                setCouponError(result.error || 'Invalid coupon');
+                applyCoupon(null);
+            }
+        } catch (err) {
+            setCouponError('Failed to validate coupon');
+            console.error(err);
+        } finally {
+            setIsValidating(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        applyCoupon(null);
+        setCouponInput('');
+        setSuccessMessage('');
+        setCouponError('');
     };
 
     const handlePullDown = () => {
@@ -156,27 +197,34 @@ export default function CartPage() {
                                     <span>Savings</span>
                                     <span className="font-medium">- {formatPrice(totalSavings)}</span>
                                 </div>
+                                {discountAmount > 0 && (
+                                    <div className="flex justify-between text-emerald-600">
+                                        <span>Coupon Discount</span>
+                                        <span className="font-medium">- {formatPrice(discountAmount)}</span>
+                                    </div>
+                                )}
                                 <div className="w-full h-px bg-steel-50 my-1.5"></div>
                                 <div className="flex justify-between items-end">
-                                    <span className="text-deep-blue-900 font-bold text-sm">Total</span>
-                                    <span className="text-base font-bold text-deep-blue-900">
-                                        {formatPrice(subtotal)}
+                                    <span className="text-deep-blue-900 font-bold text-sm">Total Pay</span>
+                                    <span className="text-xl font-bold text-deep-blue-900">
+                                        {formatPrice(finalPrice)}
                                     </span>
                                 </div>
                             </div>
-
-                            <Link href="/bulk-orders" className="block mt-3">
-                                <motion.button
-                                    whileTap={{ scale: 0.98 }}
-                                    className="w-full py-3 rounded-xl bg-deep-blue-900 text-white font-bold text-sm shadow-lg shadow-deep-blue-900/20 btn-ripple"
-                                >
-                                    Proceed to Buy
-                                </motion.button>
-                            </Link>
                         </div>
+
+                        <Link href="/bulk-orders" className="block mt-3">
+                            <motion.button
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full py-3 rounded-xl bg-deep-blue-900 text-white font-bold text-sm shadow-lg shadow-deep-blue-900/20 btn-ripple"
+                            >
+                                Proceed to Buy
+                            </motion.button>
+                        </Link>
+                    </div>
                     </div>
                 )}
-            </div>
-        </MobileGestureLayout>
+        </div>
+        </MobileGestureLayout >
     );
 }

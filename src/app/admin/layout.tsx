@@ -15,6 +15,7 @@ import {
     XMarkIcon,
     UserIcon,
 
+    TicketIcon,
     ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
@@ -23,6 +24,7 @@ const navigation = [
     { name: 'Overview', href: '/admin', icon: HomeIcon },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingBagIcon },
     { name: 'Products', href: '/admin/products', icon: CubeIcon },
+    { name: 'Coupons', href: '/admin/coupons', icon: TicketIcon },
     { name: 'Customers', href: '/admin/customers', icon: UsersIcon },
     { name: 'Settings', href: '/admin/settings', icon: CogIcon },
 ];
