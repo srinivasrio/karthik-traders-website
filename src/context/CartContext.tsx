@@ -57,6 +57,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             const savedCart = localStorage.getItem('cart');
             if (savedCart) {
                 const parsedCart = JSON.parse(savedCart);
+                console.log('--- CartContext Initial Load ---');
+                console.log('Raw LocalStorage Cart:', parsedCart);
                 setCartItems(parsedCart);
             }
         } catch (error) {

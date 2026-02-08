@@ -1,6 +1,7 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createClient } from '@/lib/supabase/server';
+import { allProducts } from '@/data/products';
 
 export type CouponValidationResult = {
     isValid: boolean;
@@ -79,6 +80,7 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
         .map(i => i.uuid)
         .filter(id => id && uuidRegex.test(id));
 
+    // RE-IMPLEMENTATION TO fix Scope:
     // We need to map UUID -> Slug
     const uuidToSlugMap = new Map<string, string>();
     if (cartUUIDs.length > 0) {
@@ -101,13 +103,24 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
     // 2. Is item.slug in list?
     // 3. Is item.shortId in list?
     // 4. Is the DB-resolved Slug for this item's UUID in the list?
+    // 5. Is the Resolved Short ID (from static data via Slug) in the list? (Legacy Coupon Fallback)
+
     const finalApplicableItems = cartItems.filter(item => {
         const uuidSlug = uuidToSlugMap.get(item.uuid);
+        const effectiveSlug = item.slug || uuidSlug;
+
+        // If we have a slug, lookup the static Short ID
+        let staticShortId = '';
+        if (effectiveSlug) {
+            const staticProduct = allProducts.find(p => p.slug === effectiveSlug);
+            if (staticProduct) staticShortId = staticProduct.id;
+        }
 
         const isMatch = applicableIdentifiers.includes(item.uuid) ||
             applicableIdentifiers.includes(item.slug) ||
             (item.shortId && applicableIdentifiers.includes(item.shortId)) ||
-            (uuidSlug && applicableIdentifiers.includes(uuidSlug));
+            (uuidSlug && applicableIdentifiers.includes(uuidSlug)) ||
+            (staticShortId && applicableIdentifiers.includes(staticShortId));
 
         if (isMatch) console.log(`Item Match: ${item.slug || item.uuid}`);
         return isMatch;
@@ -125,11 +138,22 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
     // Also include the resolved slugs from DB
     const resolvedSlugs = finalApplicableItems.map(i => uuidToSlugMap.get(i.uuid)).filter((s): s is string => !!s);
 
+    // Also include resolved Short IDs from static data (crucial if Context uses Short IDs)
+    const resolvedShortIds = finalApplicableItems.map(item => {
+        const effectiveSlug = item.slug || uuidToSlugMap.get(item.uuid);
+        if (effectiveSlug) {
+            const staticProduct = allProducts.find(p => p.slug === effectiveSlug);
+            return staticProduct?.id;
+        }
+        return undefined;
+    }).filter((s): s is string => !!s);
+
     const allApplicableIdentifiers = [...new Set([
         ...applicableUUIDs,
         ...applicableSlugs,
         ...applicableShortIds,
-        ...resolvedSlugs
+        ...resolvedSlugs,
+        ...resolvedShortIds
     ])];
 
     console.log('Returning Identifiers:', allApplicableIdentifiers);
