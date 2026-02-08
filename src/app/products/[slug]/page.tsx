@@ -4,7 +4,7 @@ import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { motors, allGearboxes, formatPrice, calculateSavings } from '@/data/products';
+import { allProducts, formatPrice, calculateSavings } from '@/data/products';
 import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,15 +15,18 @@ interface ProductPageProps {
     params: Promise<{ slug: string }>;
 }
 
+import ImageModal from '@/components/ui/ImageModal';
+
 export default function ProductDetailPage({ params }: ProductPageProps) {
     const { slug } = use(params);
     const searchParams = useSearchParams();
     const { cartItems, addToCart, removeFromCart, updateQuantity } = useCart();
     const [isSpecsOpen, setIsSpecsOpen] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
     // Synchronous Data Lookup
-    const initialProduct = [...motors, ...allGearboxes].find(p => p.slug === slug);
+    const initialProduct = allProducts.find(p => p.slug === slug);
     const { product, loading: productLoading } = useLiveProduct(initialProduct);
 
     // Reset Image Index on Change
@@ -147,6 +150,18 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                                                 className="object-contain"
                                                 priority
                                             />
+                                            {/* Zoom Hint Overlay */}
+                                            <div
+                                                className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors cursor-zoom-in flex items-center justify-center group-hover:opacity-100 opacity-0"
+                                                onClick={() => setIsImageModalOpen(true)}
+                                            >
+                                                <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg text-sm font-medium text-deep-blue-900 flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                    </svg>
+                                                    Tap to Zoom
+                                                </div>
+                                            </div>
                                         </motion.div>
                                     </AnimatePresence>
 
@@ -307,6 +322,13 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                     </div>
                 </div>
             </div>
+
+            <ImageModal
+                isOpen={isImageModalOpen}
+                images={product.images || []}
+                initialIndex={currentImageIndex}
+                onClose={() => setIsImageModalOpen(false)}
+            />
         </MobileGestureLayout>
     );
 }
