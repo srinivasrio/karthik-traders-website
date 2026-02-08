@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { formatPrice, Product } from '@/data/products';
+import { formatPrice, Product, allProducts } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import { validateCoupon } from '@/app/actions/validateCoupon'; // Import server action
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,8 +41,36 @@ export default function CartPage() {
         setSuccessMessage('');
 
         try {
-            const productIds = cartItems.map(item => item.id);
-            const result = await validateCoupon(couponInput, productIds);
+            // Construct robust identifiers for validation
+            // This matches the logic in bulk-orders/page.tsx
+            const cartItemIdentifiers = cartItems.map(item => {
+                let slug = item.slug || '';
+                const uuid = item.id;
+                let shortId = '';
+
+                // Lookup strict Short ID from allProducts using Slug or UUID
+                if (slug) {
+                    // @ts-ignore - allProducts might not have explicit type here, but runtime is fine
+                    const product = (allProducts as any[]).find(p => p.slug === slug);
+                    if (product) shortId = product.id;
+                } else {
+                    // @ts-ignore
+                    const product = (allProducts as any[]).find(p => p.id === uuid);
+                    if (product) {
+                        shortId = product.id;
+                        slug = product.slug;
+                    }
+                }
+
+                return {
+                    uuid: uuid || '',
+                    slug: slug || '',
+                    shortId: shortId
+                };
+            });
+
+            console.log('Cart Page: Validating coupon against:', cartItemIdentifiers);
+            const result = await validateCoupon(couponInput, cartItemIdentifiers);
 
             if (result.isValid && result.coupon) {
                 applyCoupon(result.coupon);
