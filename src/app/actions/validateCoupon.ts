@@ -65,28 +65,70 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
     // coupon_aerators.product_id can be UUID, SLUG, or SHORT_ID depending on when/how it was saved.
     const applicableIdentifiers = coupon.coupon_aerators.map((ca: any) => ca.product_id);
 
-    // Filter cart items that are applicable by checking ALL possible identifiers
-    const applicableItems = cartItems.filter(item =>
-        applicableIdentifiers.includes(item.uuid) ||
-        applicableIdentifiers.includes(item.slug) ||
-        (item.shortId && applicableIdentifiers.includes(item.shortId))
-    );
+    // DEBUG LOGGING
+    console.log('--- validateCoupon Debug ---');
+    console.log('Coupon Code:', normalizeCode);
+    console.log('Coupon Identifiers (DB):', applicableIdentifiers);
+    console.log('Cart Items Input:', JSON.stringify(cartItems, null, 2));
 
-    if (applicableItems.length === 0) {
+    // CRITICAL ENHANCEMENT: Lookup Slugs for provided UUIDs from DB
+    // This handles cases where client-side only had UUID and couldn't match strict Slug.
+    const cartUUIDs = cartItems.map(i => i.uuid).filter(Boolean);
+
+    // We need to map UUID -> Slug
+    const uuidToSlugMap = new Map<string, string>();
+    if (cartUUIDs.length > 0) {
+        const { data: productData, error: productError } = await supabase
+            .from('products')
+            .select('id, slug')
+            .in('id', cartUUIDs);
+
+        if (!productError && productData) {
+            productData.forEach(p => uuidToSlugMap.set(p.id, p.slug));
+            console.log('Fetched Slugs from DB for UUIDs:', productData);
+        } else if (productError) {
+            console.error('Error fetching product slugs:', productError);
+        }
+    }
+
+    // Now Filter
+    // We check:
+    // 1. Is item.uuid in list?
+    // 2. Is item.slug in list?
+    // 3. Is item.shortId in list?
+    // 4. Is the DB-resolved Slug for this item's UUID in the list?
+    const finalApplicableItems = cartItems.filter(item => {
+        const uuidSlug = uuidToSlugMap.get(item.uuid);
+
+        const isMatch = applicableIdentifiers.includes(item.uuid) ||
+            applicableIdentifiers.includes(item.slug) ||
+            (item.shortId && applicableIdentifiers.includes(item.shortId)) ||
+            (uuidSlug && applicableIdentifiers.includes(uuidSlug));
+
+        if (isMatch) console.log(`Item Match: ${item.slug || item.uuid}`);
+        return isMatch;
+    });
+
+    if (finalApplicableItems.length === 0) {
+        console.log('No applicable items found.');
         return { isValid: false, error: 'This coupon is not applicable to any items in your cart.' };
     }
 
     // Return ALL identifiers (UUID, Slug, ShortID) to ensure CartContext finds a match
-    // regardless of what it's using as the item key.
-    const applicableUUIDs = applicableItems.map(i => i.uuid).filter(Boolean);
-    const applicableSlugs = applicableItems.map(i => i.slug).filter(Boolean);
-    const applicableShortIds = applicableItems.map(i => i.shortId).filter(Boolean);
+    const applicableUUIDs = finalApplicableItems.map(i => i.uuid).filter(Boolean);
+    const applicableSlugs = finalApplicableItems.map(i => i.slug).filter(Boolean);
+    const applicableShortIds = finalApplicableItems.map(i => i.shortId).filter(Boolean);
+    // Also include the resolved slugs from DB
+    const resolvedSlugs = finalApplicableItems.map(i => uuidToSlugMap.get(i.uuid)).filter(Boolean) as string[];
 
     const allApplicableIdentifiers = [...new Set([
         ...applicableUUIDs,
         ...applicableSlugs,
-        ...applicableShortIds
+        ...applicableShortIds,
+        ...resolvedSlugs
     ])];
+
+    console.log('Returning Identifiers:', allApplicableIdentifiers);
 
     return {
         isValid: true,
