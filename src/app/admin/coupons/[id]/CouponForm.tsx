@@ -230,10 +230,12 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                                 )}
                             </div>
                             <div>
-                                <h3 className="text-sm font-semibold text-deep-blue-900 leading-tight mb-1">
-                                    {(product.brand === 'seaboss' ? 'SEA BOSS' : product.brand.toUpperCase())} {product.model}
+                                <h3 className="text-sm font-bold text-deep-blue-900 leading-tight mb-0.5">
+                                    {(product.brand === 'seaboss' ? 'SEA BOSS' : product.brand.toUpperCase())}
                                 </h3>
-                                <p className="text-xs font-mono text-slate-400 mt-1">{product.id}</p>
+                                <p className="text-sm font-semibold text-deep-blue-900">
+                                    {product.model}
+                                </p>
                             </div>
                         </div>
                     ))}
