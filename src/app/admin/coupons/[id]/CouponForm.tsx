@@ -29,6 +29,12 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
 
     const [selectedAerators, setSelectedAerators] = useState<string[]>(initialSelectedAerators);
 
+    // Sync state with props when initialSelectedAerators changes (e.g. navigation)
+    useEffect(() => {
+        console.log('Syncing selectedAerators from props:', initialSelectedAerators);
+        setSelectedAerators(initialSelectedAerators);
+    }, [initialSelectedAerators]);
+
     const handleAeratorToggle = (productId: string) => {
         setSelectedAerators(prev =>
             prev.includes(productId)
