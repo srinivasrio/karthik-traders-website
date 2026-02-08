@@ -26,16 +26,21 @@ export default async function CouponDetailPage({ params }: { params: Promise<{ i
         } else {
             coupon = couponData;
 
-            // Fetch associated aerators
-            const { data: relationData, error: relationError } = await supabase
-                .from('coupon_aerators')
-                .select('product_id')
-                .eq('coupon_id', id);
-
-            if (relationError) {
-                console.error('Error fetching coupon aerators:', relationError);
+            // Priority: Check 'applicable_products' column first (New Schema)
+            if (couponData.applicable_products && Array.isArray(couponData.applicable_products) && couponData.applicable_products.length > 0) {
+                selectedProductIds = couponData.applicable_products;
             } else {
-                selectedProductIds = relationData.map((r: any) => r.product_id);
+                // Fallback: Fetch associated aerators (Old Schema)
+                const { data: relationData, error: relationError } = await supabase
+                    .from('coupon_aerators')
+                    .select('product_id')
+                    .eq('coupon_id', id);
+
+                if (relationError) {
+                    console.error('Error fetching coupon aerators:', relationError);
+                } else if (relationData) {
+                    selectedProductIds = relationData.map((r: any) => r.product_id);
+                }
             }
         }
     }

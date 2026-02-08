@@ -80,6 +80,7 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                 start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
                 end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
                 is_active: formData.is_active,
+                applicable_products: selectedAerators.length > 0 ? selectedAerators : null, // New Schema: Store array directly
                 updated_at: new Date().toISOString(),
             };
 
@@ -101,27 +102,13 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                 couponId = data.id;
             }
 
-            // 2. Update Aerator Relations
-            // First, delete existing relations for this coupon
+            // 2. Legacy Support (Optional): We can stop writing to coupon_aerators now.
+            // The new system relies on 'applicable_products' column.
+            // If you want to keep legacy tables clean, we could delete relations, but let's just leave it alone 
+            // or clear it to avoid confusion.
             if (initialCoupon) {
-                const { error: deleteError } = await supabase
-                    .from('coupon_aerators')
-                    .delete()
-                    .eq('coupon_id', couponId);
-                if (deleteError) throw deleteError;
-            }
-
-            // Then insert new ones
-            if (selectedAerators.length > 0) {
-                const relations = selectedAerators.map(productId => ({
-                    coupon_id: couponId,
-                    product_id: productId,
-                }));
-
-                const { error: insertError } = await supabase
-                    .from('coupon_aerators')
-                    .insert(relations);
-                if (insertError) throw insertError;
+                // Clean up legacy relations if they exist, so we don't have mixed states
+                await supabase.from('coupon_aerators').delete().eq('coupon_id', couponId);
             }
 
             // Redirect
