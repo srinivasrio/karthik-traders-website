@@ -64,7 +64,7 @@ export default function CheckoutPage() {
             }
 
             const cartItemIdentifiers = cartItems.map(item => {
-                const slug = item.slug || '';
+                let slug = item.slug || '';
                 const uuid = item.id; // Correct assumption: item.id in cart is the UUID from DB
 
                 let shortId = '';
