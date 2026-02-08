@@ -230,10 +230,9 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                                 )}
                             </div>
                             <div>
-                                <h3 className="text-sm font-semibold text-deep-blue-900 leading-tight mb-1">{product.name}</h3>
-                                {product.model && (
-                                    <p className="text-xs text-slate-500">Model: {product.model}</p>
-                                )}
+                                <h3 className="text-sm font-semibold text-deep-blue-900 leading-tight mb-1">
+                                    {(product.brand === 'seaboss' ? 'SEA BOSS' : product.brand.toUpperCase())} {product.model}
+                                </h3>
                                 <p className="text-xs font-mono text-slate-400 mt-1">{product.id}</p>
                             </div>
                         </div>
