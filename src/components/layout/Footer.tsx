@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import BrandInfoModal from '@/components/ui/BrandInfoModal';
 
 const footerLinks = {
     products: [
@@ -33,6 +35,7 @@ const footerLinks = {
 export default function Footer() {
     const pathname = usePathname();
     const isHomePage = pathname === '/';
+    const [brandModal, setBrandModal] = useState<'aqualion' | 'seaboss' | null>(null);
 
     return (
         <footer className="relative bg-[#C2E2FA] text-deep-blue-900 overflow-hidden">
@@ -75,14 +78,20 @@ export default function Footer() {
                         </p>
                         {/* Brand Badges */}
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-amber-500/30 backdrop-blur-sm">
+                            <button
+                                onClick={() => setBrandModal('aqualion')}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-amber-500/30 backdrop-blur-sm hover:bg-white hover:scale-105 transition-all duration-300"
+                            >
                                 <img src="/images/logos/aqualion-logo.svg" alt="Aqualion" className="h-8 w-auto" />
                                 <span className="text-amber-700 text-sm font-bold">Aqualion</span>
-                            </div>
-                            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-aqua-600/30 backdrop-blur-sm">
+                            </button>
+                            <button
+                                onClick={() => setBrandModal('seaboss')}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-aqua-600/30 backdrop-blur-sm hover:bg-white hover:scale-105 transition-all duration-300"
+                            >
                                 <img src="/images/logos/seaboss-logo.svg" alt="Sea Boss" className="h-8 w-auto" />
                                 <span className="text-deep-blue-700 text-sm font-bold">Sea Boss</span>
-                            </div>
+                            </button>
                         </div>
                     </div>
 
@@ -299,6 +308,12 @@ export default function Footer() {
             </div>
             {/* Explicit Spacer for Mobile Bottom Nav - Increased Height */}
             <div className="h-32 md:h-0 w-full" aria-hidden="true" />
+
+            <BrandInfoModal
+                isOpen={!!brandModal}
+                onClose={() => setBrandModal(null)}
+                brand={brandModal}
+            />
         </footer>
     );
 }
