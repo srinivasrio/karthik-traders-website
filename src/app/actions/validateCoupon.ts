@@ -115,11 +115,11 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
     }
 
     // Return ALL identifiers (UUID, Slug, ShortID) to ensure CartContext finds a match
-    const applicableUUIDs = finalApplicableItems.map(i => i.uuid).filter(Boolean);
-    const applicableSlugs = finalApplicableItems.map(i => i.slug).filter(Boolean);
-    const applicableShortIds = finalApplicableItems.map(i => i.shortId).filter(Boolean);
+    const applicableUUIDs = finalApplicableItems.map(i => i.uuid).filter((s): s is string => !!s);
+    const applicableSlugs = finalApplicableItems.map(i => i.slug).filter((s): s is string => !!s);
+    const applicableShortIds = finalApplicableItems.map(i => i.shortId).filter((s): s is string => !!s);
     // Also include the resolved slugs from DB
-    const resolvedSlugs = finalApplicableItems.map(i => uuidToSlugMap.get(i.uuid)).filter(Boolean) as string[];
+    const resolvedSlugs = finalApplicableItems.map(i => uuidToSlugMap.get(i.uuid)).filter((s): s is string => !!s);
 
     const allApplicableIdentifiers = [...new Set([
         ...applicableUUIDs,
