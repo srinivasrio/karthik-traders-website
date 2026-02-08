@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 import { allProducts } from '@/data/products';
 
 export type CouponValidationResult = {
@@ -23,7 +23,7 @@ export type CartItemIdentifiers = {
 };
 
 export async function validateCoupon(code: string, cartItems: CartItemIdentifiers[]): Promise<CouponValidationResult> {
-    const supabase = await createClient();
+    const supabase = createClient();
     const normalizeCode = code.trim().toUpperCase();
 
     // 1. Fetch Coupon
