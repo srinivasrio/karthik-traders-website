@@ -62,6 +62,8 @@ const STATUS_COLORS: Record<string, string> = {
     cancelled: 'bg-gray-100 text-gray-800',
 };
 
+import { allProducts } from '@/data/products';
+
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -94,9 +96,9 @@ export default function AdminOrdersPage() {
                     *,
                     profile:profiles(full_name, mobile),
                     order_items(
+                        product_id,
                         quantity,
-                        price_at_purchase,
-                        product:products(name, slug)
+                        price_at_purchase
                     )
                 `)
                 .order('created_at', { ascending: false });
@@ -362,12 +364,15 @@ export default function AdminOrdersPage() {
                                                         <td colSpan={6} className="px-6 py-4">
                                                             <div className="space-y-2">
                                                                 <p className="text-xs font-semibold text-slate-600 uppercase">Order Items:</p>
-                                                                {order.order_items?.map((item, idx) => (
-                                                                    <div key={idx} className="flex justify-between text-sm">
-                                                                        <span>{item.product?.name || 'Unknown Product'} × {item.quantity}</span>
-                                                                        <span className="font-medium">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
-                                                                    </div>
-                                                                ))}
+                                                                {order.order_items?.map((item: any, idx) => {
+                                                                    const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id);
+                                                                    return (
+                                                                        <div key={idx} className="flex justify-between text-sm">
+                                                                            <span>{productDetails?.name || item.product_id || 'Unknown Product'} × {item.quantity}</span>
+                                                                            <span className="font-medium">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                                 {/* Show address on mobile */}
                                                                 <div className="md:hidden pt-2 border-t border-slate-200 mt-2">
                                                                     <p className="text-xs font-semibold text-slate-600 uppercase">Delivery Address:</p>

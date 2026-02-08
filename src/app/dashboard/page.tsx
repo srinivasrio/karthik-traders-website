@@ -29,6 +29,8 @@ interface Order {
     order_items?: OrderItem[];
 }
 
+import { allProducts } from '@/data/products';
+
 export default function DashboardPage() {
     const { user, profile, logout, loading } = useAuth();
     const router = useRouter();
@@ -67,9 +69,9 @@ export default function DashboardPage() {
                     shipping_address,
                     created_by_admin,
                     order_items(
+                        product_id,
                         quantity,
-                        price_at_purchase,
-                        product:products(name, slug)
+                        price_at_purchase
                     )
                 `)
                 .or(`user_id.eq.${user?.id},customer_mobile.eq.${profile?.mobile}`)
@@ -264,15 +266,18 @@ export default function DashboardPage() {
                                                             <DownloadInvoiceBtn order={order} variant="customer" />
                                                         </div>
                                                         <div className="space-y-2">
-                                                            {order.order_items?.map((item, idx) => (
-                                                                <div key={idx} className="flex justify-between items-center text-sm bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/50">
-                                                                    <div className="flex flex-col">
-                                                                        <span className="font-semibold text-slate-800">{item.product?.name || 'Unknown Product'}</span>
-                                                                        <span className="text-[11px] text-slate-500">Qty: {item.quantity}</span>
+                                                            {order.order_items?.map((item: any, idx) => {
+                                                                const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id);
+                                                                return (
+                                                                    <div key={idx} className="flex justify-between items-center text-sm bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/50">
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-semibold text-slate-800">{productDetails?.name || item.product_id || 'Unknown Product'}</span>
+                                                                            <span className="text-[11px] text-slate-500">Qty: {item.quantity}</span>
+                                                                        </div>
+                                                                        <span className="font-bold text-slate-700">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
                                                                     </div>
-                                                                    <span className="font-bold text-slate-700">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
-                                                                </div>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </div>
                                                     </div>
                                                 </motion.div>

@@ -11,6 +11,8 @@ import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 import InvoiceViewer from '@/components/invoice/InvoiceViewer';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
+import { allProducts } from '@/data/products';
+
 export default function OrderDetailPage() {
     const { id } = useParams();
     const [order, setOrder] = useState<any>(null);
@@ -39,10 +41,7 @@ export default function OrderDetailPage() {
                 .select(`
             *,
             profile:profiles(*),
-            order_items(
-                *,
-                product:products(name, slug)
-            )
+            order_items(*)
         `)
                 .eq('id', id)
                 .single();
@@ -257,22 +256,27 @@ export default function OrderDetailPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 bg-white">
-                            {order.order_items?.map((item: any) => (
-                                <tr key={item.id}>
-                                    <td className="py-4 px-4 text-sm text-slate-900 font-medium">
-                                        <div className="flex items-center">
-                                            {/* Optional Image */}
-                                            {item.product?.image_url && (
-                                                <img src={item.product.image_url} alt="" className="h-10 w-10 rounded mr-3 object-cover" />
-                                            )}
-                                            {item.product?.name || 'Deleted Product'}
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-4 text-sm text-slate-500 text-right">₹{item.price_at_purchase}</td>
-                                    <td className="py-4 px-4 text-sm text-slate-500 text-right">{item.quantity}</td>
-                                    <td className="py-4 px-4 text-sm text-slate-900 text-right font-medium">₹{item.price_at_purchase * item.quantity}</td>
-                                </tr>
-                            ))}
+                            {order.order_items?.map((item: any) => {
+                                // Manual lookup for product details to handle both legacy IDs and new Slugs
+                                const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
+
+                                return (
+                                    <tr key={item.id}>
+                                        <td className="py-4 px-4 text-sm text-slate-900 font-medium">
+                                            <div className="flex items-center">
+                                                {/* Optional Image */}
+                                                {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
+                                                    <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className="h-10 w-10 rounded mr-3 object-cover" />
+                                                )}
+                                                {productDetails?.name || item.product_id}
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-4 text-sm text-slate-500 text-right">₹{item.price_at_purchase}</td>
+                                        <td className="py-4 px-4 text-sm text-slate-500 text-right">{item.quantity}</td>
+                                        <td className="py-4 px-4 text-sm text-slate-900 text-right font-medium">₹{item.price_at_purchase * item.quantity}</td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
