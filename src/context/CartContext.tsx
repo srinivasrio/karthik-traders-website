@@ -56,10 +56,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
             const savedCart = localStorage.getItem('cart');
             if (savedCart) {
+                // The following lines are from the user's instruction.
+                // Note: `validateCoupon`, `code`, `cartItemIdentifiers`, and `result` are not defined in the original context.
+                // To maintain syntactic correctness and avoid introducing undefined variables or breaking `useEffect`'s async nature,
+                // these lines are commented out. If coupon validation is intended here, the surrounding logic needs to be added.
+                // const result = await validateCoupon(code, cartItemIdentifiers);
+                //
+                // console.log('--- CartContext: Coupon Validation Result ---');
+                // console.log(result);
+                //
+                // if (result.isValid && result.coupon) {
                 const parsedCart = JSON.parse(savedCart);
                 console.log('--- CartContext Initial Load ---');
                 console.log('Raw LocalStorage Cart:', parsedCart);
                 setCartItems(parsedCart);
+                // }
             }
         } catch (error) {
             console.error('Failed to load cart from localStorage:', error);

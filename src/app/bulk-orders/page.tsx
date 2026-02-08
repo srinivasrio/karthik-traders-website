@@ -146,7 +146,8 @@ export default function CheckoutPage() {
                     items: cartItems,
                     totalAmount: currentTotal,
                     shippingAddress: formData,
-                    couponCode: coupon?.code // Optional: Send coupon code if backend needs it
+                    couponCode: coupon?.code,
+                    discountAmount: coupon ? (simulationTotal - currentTotal) : 0
                 })
             });
 

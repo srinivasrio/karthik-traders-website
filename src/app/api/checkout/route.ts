@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { items, shippingAddress, totalAmount } = body;
+        const { items, shippingAddress, totalAmount, couponCode, discountAmount } = body;
 
         if (!items || !shippingAddress || !totalAmount) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -74,6 +74,8 @@ export async function POST(request: Request) {
                 customer_mobile: profile?.mobile || shippingAddress.mobile,
                 customer_name: profile?.full_name || shippingAddress.fullName,
                 total_amount: totalAmount,
+                discount_amount: discountAmount || 0,
+                coupon_code: couponCode || null,
                 shipping_address: shippingAddress,
                 status: 'pending',
                 payment_status: 'pending',
