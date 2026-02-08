@@ -222,9 +222,8 @@ export default function CartPage() {
                             </motion.button>
                         </Link>
                     </div>
-                    </div>
                 )}
-        </div>
+            </div>
         </MobileGestureLayout >
     );
 }
