@@ -76,8 +76,17 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
         return { isValid: false, error: 'This coupon is not applicable to any items in your cart.' };
     }
 
-    // Return the UUIDs so CartContext can correctly identify the items to discount
-    const applicableUUIDs = applicableItems.map(i => i.uuid);
+    // Return ALL identifiers (UUID, Slug, ShortID) to ensure CartContext finds a match
+    // regardless of what it's using as the item key.
+    const applicableUUIDs = applicableItems.map(i => i.uuid).filter(Boolean);
+    const applicableSlugs = applicableItems.map(i => i.slug).filter(Boolean);
+    const applicableShortIds = applicableItems.map(i => i.shortId).filter(Boolean);
+
+    const allApplicableIdentifiers = [...new Set([
+        ...applicableUUIDs,
+        ...applicableSlugs,
+        ...applicableShortIds
+    ])];
 
     return {
         isValid: true,
@@ -86,7 +95,7 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
             code: coupon.code,
             discount_type: coupon.discount_type,
             discount_value: coupon.discount_value,
-            applicable_products: applicableUUIDs // CRITICAL: Return UUIDs for CartContext
+            applicable_products: allApplicableIdentifiers
         }
     };
 }

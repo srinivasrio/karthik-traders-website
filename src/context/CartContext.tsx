@@ -94,7 +94,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             // Loop through cart, check if item is in coupon.applicable_products
 
             const applicableItemsTotal = cartItems.reduce((acc, item) => {
-                if (coupon.applicable_products.includes(item.id)) {
+                // Check if current item ID or Slug is in the authorized list
+                const isApplicable = coupon.applicable_products.includes(item.id) ||
+                    (item.slug && coupon.applicable_products.includes(item.slug));
+
+                if (isApplicable) {
                     const rawPrice = item.salePrice !== undefined ? item.salePrice : item.price;
                     const price = typeof rawPrice === 'string'
                         ? parseFloat(rawPrice.replace(/[^\d.]/g, ''))
