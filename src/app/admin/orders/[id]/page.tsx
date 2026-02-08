@@ -237,6 +237,14 @@ export default function OrderDetailPage() {
                     <h3 className="text-lg font-medium text-slate-900 border-b pb-2 mb-4">Order Summary</h3>
                     <div className="text-base text-slate-600 space-y-2">
                         <p><span className="font-semibold text-slate-700">Date:</span> {new Date(order.created_at).toLocaleString()}</p>
+
+                        {order.discount_amount > 0 && (
+                            <>
+                                <p><span className="font-semibold text-slate-700">Subtotal:</span> ₹{(order.total_amount + order.discount_amount).toLocaleString()}</p>
+                                <p className="text-green-600"><span className="font-semibold">Discount:</span> -₹{order.discount_amount.toLocaleString()} {order.coupon_code && <span className="text-xs bg-green-100 px-1 rounded">({order.coupon_code})</span>}</p>
+                            </>
+                        )}
+
                         <p><span className="font-semibold text-slate-700">Total Amount:</span> <span className="text-xl font-bold text-aqua-600">₹{order.total_amount}</span></p>
                         <p><span className="font-semibold text-slate-700">Payment Method:</span> {order.payment_method || 'COD'}</p>
                     </div>

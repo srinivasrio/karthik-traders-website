@@ -147,7 +147,7 @@ export default function CheckoutPage() {
                     totalAmount: currentTotal,
                     shippingAddress: formData,
                     couponCode: coupon?.code,
-                    discountAmount: coupon ? (simulationTotal - currentTotal) : 0
+                    discountAmount: discountAmount
                 })
             });
 

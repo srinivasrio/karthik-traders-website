@@ -301,6 +301,18 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
 
                 {/* Totals */}
                 <View style={styles.totalsSection}>
+                    {Number(order.discount_amount) > 0 && (
+                        <>
+                            <View style={styles.totalRow}>
+                                <Text style={styles.totalLabel}>Subtotal:</Text>
+                                <Text style={styles.totalValue}>Rs. {(Number(order.total_amount || 0) + Number(order.discount_amount || 0)).toLocaleString()}</Text>
+                            </View>
+                            <View style={styles.totalRow}>
+                                <Text style={[styles.totalLabel, { color: '#15803d' }]}>Discount {order.coupon_code ? `(${order.coupon_code})` : ''}:</Text>
+                                <Text style={[styles.totalValue, { color: '#15803d' }]}>- Rs. {Number(order.discount_amount || 0).toLocaleString()}</Text>
+                            </View>
+                        </>
+                    )}
                     <View style={[styles.totalRow, styles.grandTotal]}>
                         <Text style={styles.totalLabel}>Grand Total:</Text>
                         <Text style={styles.totalValue}>Rs. {Number(order.total_amount || 0).toLocaleString()}</Text>
