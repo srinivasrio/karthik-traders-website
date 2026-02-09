@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server';
 import CouponForm from './CouponForm';
-import { aeratorSets, allProducts } from '@/data/products'; // Assuming static data is the source of truth for products
+import { aeratorSets } from '@/data/products'; // Assuming static data is the source of truth for products
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +53,7 @@ export default async function CouponDetailPage({ params }: { params: Promise<{ i
             <CouponForm
                 initialCoupon={coupon}
                 initialSelectedAerators={selectedProductIds}
-                allAerators={allProducts} // Pass FULL product list (Aerators, Motors, Spares)
+                allAerators={aeratorSets} // Reverted to Aerators only per user request
             />
         </div>
     );
