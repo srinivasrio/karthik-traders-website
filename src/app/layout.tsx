@@ -50,36 +50,35 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icons: {
-      icon: '/favicon-v3.png',
-      apple: '/favicon-v3.png',
-    },
-  };
+    icon: '/favicon-v3.png',
+    apple: '/favicon-v3.png',
+  },
+};
 
-  export const viewport: Viewport = {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
-  export default function RootLayout({
-    children,
-  }: Readonly<{
-    children: React.ReactNode;
-  }>) {
-    return (
-      <html lang="en" className={inter.variable} suppressHydrationWarning>
-        <body className={`${inter.className} antialiased min-h-screen`} suppressHydrationWarning>
-          <AuthProvider>
-            <CartProvider>
-              <ScrollToTop />
-              <LayoutWrapper>
-                {children}
-              </LayoutWrapper>
-            </CartProvider>
-          </AuthProvider>
-        </body>
-      </html>
-    );
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className={`${inter.className} antialiased min-h-screen`} suppressHydrationWarning>
+        <AuthProvider>
+          <CartProvider>
+            <ScrollToTop />
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+          </CartProvider>
+        </AuthProvider>
+      </body>
+    </html>
+  );
 }
