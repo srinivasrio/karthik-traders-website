@@ -308,7 +308,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                                 <Text style={styles.totalValue}>Rs. {(Number(order.total_amount || 0) + Number(order.discount_amount || 0)).toLocaleString()}</Text>
                             </View>
                             <View style={styles.totalRow}>
-                                <Text style={[styles.totalLabel, { color: '#15803d' }]}>Discount:</Text>
+                                <Text style={[styles.totalLabel, { color: '#15803d', width: 120 }]}>Coupon Discount:</Text>
                                 <Text style={[styles.totalValue, { color: '#15803d' }]}>- Rs. {Number(order.discount_amount || 0).toLocaleString()}</Text>
                             </View>
                         </>
