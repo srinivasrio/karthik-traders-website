@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase-server';
 import CouponsListClient from './CouponsListClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CouponsPage() {
     const supabase = await createClient();
     const { data: coupons, error } = await supabase
