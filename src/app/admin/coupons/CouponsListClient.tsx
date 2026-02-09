@@ -45,6 +45,23 @@ export default function CouponsListClient({ initialCoupons }: { initialCoupons: 
         if (!confirm('Are you sure you want to delete this coupon?')) return;
 
         setLoading(true);
+
+        // 1. Delete relations first (to avoid Foreign Key constraint errors)
+        const { error: relationError } = await supabase
+            .from('coupon_aerators')
+            .delete()
+            .eq('coupon_id', id);
+
+        if (relationError) {
+            console.error('Error deleting relations:', relationError);
+            // Verify if error is just "doesn't exist" or real DB error. 
+            // Usually delete works even if no rows match, so real error is bad.
+            alert('Failed to cleanup associated products. Try again.');
+            setLoading(false);
+            return;
+        }
+
+        // 2. Delete the coupon
         const { error } = await supabase
             .from('coupons')
             .delete()
@@ -52,7 +69,9 @@ export default function CouponsListClient({ initialCoupons }: { initialCoupons: 
 
         if (error) {
             console.error('Error deleting coupon:', error);
-            alert('Failed to delete coupon');
+            alert('Failed to delete coupon: ' + error.message);
+            // Revert optimistic update if we had one? 
+            // We didn't do optimistic delete here (we waited), so just list remains.
         } else {
             setCoupons(coupons.filter(c => c.id !== id));
             router.refresh();
