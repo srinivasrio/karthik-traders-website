@@ -106,8 +106,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             // "Coupon applies only to selected aerators" implies discount calculates ONLY on those items.
             // Loop through cart, check if item is in coupon.applicable_products
 
+            let applicableItemsQuantity = 0;
+
             const applicableItemsTotal = cartItems.reduce((acc, item) => {
                 // Check if current item ID or Slug is in the authorized list
+                // For a specific coupon returned by validateCoupon, applicable_products contains the IDs/Slugs of valid items.
+                // If applicable_products is empty (storewide?), we might need to handle, but validateCoupon usually populates it.
+                // Let's assume if applicable_products is provided, we check it.
+
                 const isApplicable = coupon.applicable_products.includes(item.id) ||
                     (item.slug && coupon.applicable_products.includes(item.slug));
 
@@ -116,7 +122,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     const price = typeof rawPrice === 'string'
                         ? parseFloat(rawPrice.replace(/[^\d.]/g, ''))
                         : (typeof rawPrice === 'number' ? rawPrice : 0);
-                    return acc + (price * (item.quantity || 1));
+
+                    const qty = item.quantity || 1;
+                    applicableItemsQuantity += qty;
+                    return acc + (price * qty);
                 }
                 return acc;
             }, 0);
@@ -125,7 +134,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 if (coupon.discount_type === 'percentage') {
                     discount = (applicableItemsTotal * coupon.discount_value) / 100;
                 } else {
-                    discount = Math.min(coupon.discount_value, applicableItemsTotal);
+                    // CHANGE: Apply flat discount PER QUANTITY of applicable items
+                    // Old: discount = Math.min(coupon.discount_value, applicableItemsTotal);
+                    const totalFlatDiscount = coupon.discount_value * applicableItemsQuantity;
+                    discount = Math.min(totalFlatDiscount, applicableItemsTotal);
                 }
             } else {
                 // Cart changed and no applicable items? Should we remove coupon? 
