@@ -41,9 +41,20 @@ export default function CouponsListClient({ initialCoupons }: { initialCoupons: 
         }
     };
 
-    const deleteCoupon = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this coupon?')) return;
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
+    const confirmDelete = (id: string) => {
+        setDeleteId(id);
+    };
+
+    const cancelDelete = () => {
+        setDeleteId(null);
+    };
+
+    const proceedDelete = async () => {
+        if (!deleteId) return;
+
+        const id = deleteId;
         setLoading(true);
 
         // 1. Delete relations first (to avoid Foreign Key constraint errors)
@@ -54,10 +65,9 @@ export default function CouponsListClient({ initialCoupons }: { initialCoupons: 
 
         if (relationError) {
             console.error('Error deleting relations:', relationError);
-            // Verify if error is just "doesn't exist" or real DB error. 
-            // Usually delete works even if no rows match, so real error is bad.
             alert('Failed to cleanup associated products. Try again.');
             setLoading(false);
+            setDeleteId(null);
             return;
         }
 
@@ -70,106 +80,150 @@ export default function CouponsListClient({ initialCoupons }: { initialCoupons: 
         if (error) {
             console.error('Error deleting coupon:', error);
             alert('Failed to delete coupon: ' + error.message);
-            // Revert optimistic update if we had one? 
-            // We didn't do optimistic delete here (we waited), so just list remains.
         } else {
             setCoupons(coupons.filter(c => c.id !== id));
             router.refresh();
         }
         setLoading(false);
+        setDeleteId(null);
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h2 className="font-semibold text-slate-700">All Coupons</h2>
-                <Link
-                    href="/admin/coupons/new"
-                    className="flex items-center gap-2 bg-aqua-600 hover:bg-aqua-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                    <PlusIcon className="w-4 h-4" />
-                    New Coupon
-                </Link>
-            </div>
+        <>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative">
+                {/* Deleting Overlay */}
+                {loading && (
+                    <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aqua-600"></div>
+                    </div>
+                )}
 
-            <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-                        <tr>
-                            <th className="px-6 py-3">Code</th>
-                            <th className="px-6 py-3">Discount</th>
-                            <th className="px-6 py-3">Validity</th>
-                            <th className="px-6 py-3 text-center">Status</th>
-                            <th className="px-6 py-3 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {coupons.length === 0 ? (
+                <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <h2 className="font-semibold text-slate-700">All Coupons</h2>
+                    <Link
+                        href="/admin/coupons/new"
+                        className="flex items-center gap-2 bg-aqua-600 hover:bg-aqua-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                        <PlusIcon className="w-4 h-4" />
+                        New Coupon
+                    </Link>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                             <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                                    No coupons found. Create one to get started.
-                                </td>
+                                <th className="px-6 py-3">Code</th>
+                                <th className="px-6 py-3">Discount</th>
+                                <th className="px-6 py-3">Validity</th>
+                                <th className="px-6 py-3 text-center">Status</th>
+                                <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
-                        ) : (
-                            coupons.map((coupon) => (
-                                <tr key={coupon.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-6 py-4 font-mono font-bold text-slate-700">
-                                        {coupon.code}
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {coupons.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                        No coupons found. Create one to get started.
                                     </td>
-                                    <td className="px-6 py-4 text-slate-600">
-                                        {coupon.discount_type === 'percentage' ? (
-                                            <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">
-                                                {coupon.discount_value}% OFF
-                                            </span>
-                                        ) : (
-                                            <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">
-                                                ₹{coupon.discount_value} OFF
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-500 text-xs">
-                                        {coupon.start_date ? new Date(coupon.start_date).toLocaleDateString() : 'Now'}
-                                        {' - '}
-                                        {coupon.end_date ? new Date(coupon.end_date).toLocaleDateString() : 'Forever'}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <button
-                                            onClick={() => toggleStatus(coupon.id, coupon.is_active)}
-                                            className={`
+                                </tr>
+                            ) : (
+                                coupons.map((coupon) => (
+                                    <tr key={coupon.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                                            {coupon.code}
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-600">
+                                            {coupon.discount_type === 'percentage' ? (
+                                                <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">
+                                                    {coupon.discount_value}% OFF
+                                                </span>
+                                            ) : (
+                                                <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">
+                                                    ₹{coupon.discount_value} OFF
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500 text-xs">
+                                            {coupon.start_date ? new Date(coupon.start_date).toLocaleDateString() : 'Now'}
+                                            {' - '}
+                                            {coupon.end_date ? new Date(coupon.end_date).toLocaleDateString() : 'Forever'}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <button
+                                                onClick={() => toggleStatus(coupon.id, coupon.is_active)}
+                                                className={`
                                                 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-aqua-500 focus:ring-offset-2
                                                 ${coupon.is_active ? 'bg-aqua-600' : 'bg-slate-200'}
                                             `}
-                                        >
-                                            <span
-                                                className={`
+                                            >
+                                                <span
+                                                    className={`
                                                     inline-block h-4 w-4 transform rounded-full bg-white transition-transform
                                                     ${coupon.is_active ? 'translate-x-6' : 'translate-x-1'}
                                                 `}
-                                            />
-                                        </button>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Link
-                                                href={`/admin/coupons/${coupon.id}`}
-                                                className="p-1.5 text-slate-400 hover:text-aqua-600 hover:bg-aqua-50 rounded transition-colors"
-                                            >
-                                                <PencilSquareIcon className="w-5 h-5" />
-                                            </Link>
-                                            <button
-                                                onClick={() => deleteCoupon(coupon.id)}
-                                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
-                                            >
-                                                <TrashIcon className="w-5 h-5" />
+                                                />
                                             </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Link
+                                                    href={`/admin/coupons/${coupon.id}`}
+                                                    className="p-1.5 text-slate-400 hover:text-aqua-600 hover:bg-aqua-50 rounded transition-colors"
+                                                >
+                                                    <PencilSquareIcon className="w-5 h-5" />
+                                                </Link>
+                                                <button
+                                                    onClick={() => confirmDelete(coupon.id)}
+                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                                                >
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+
+            {/* Custom Colorful Delete Popup */}
+            {deleteId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden scale-100 animate-in zoom-in-95 duration-200">
+                        {/* Colorful Header */}
+                        <div className="bg-gradient-to-r from-rose-500 to-orange-500 p-6 text-center">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-md">
+                                <TrashIcon className="w-8 h-8 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white">Delete Coupon?</h3>
+                        </div>
+
+                        <div className="p-6 text-center">
+                            <p className="text-slate-600 mb-8">
+                                Are you sure you want to delete this coupon? This action cannot be undone.
+                            </p>
+
+                            <div className="flex gap-3 justify-center">
+                                <button
+                                    onClick={cancelDelete}
+                                    className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={proceedDelete}
+                                    className="px-5 py-2.5 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/30 transition-all hover:scale-105"
+                                >
+                                    Yes, Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
