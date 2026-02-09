@@ -246,10 +246,10 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                                     </h3>
                                     {/* Brand Logo */}
                                     {product.brand === 'seaboss' && (
-                                        <img src="/images/logos/seaboss-logo.svg" alt="Seaboss" className="h-4 w-auto object-contain" />
+                                        <img src="/images/logos/seaboss-logo.svg" alt="Seaboss" className="h-12 w-auto object-contain" />
                                     )}
                                     {product.brand === 'aqualion' && (
-                                        <img src="/images/logos/aqualion-logo.svg" alt="Aqualion" className="h-4 w-auto object-contain" />
+                                        <img src="/images/logos/aqualion-logo.svg" alt="Aqualion" className="h-12 w-auto object-contain" />
                                     )}
                                 </div>
                                 <p className="text-sm font-semibold text-deep-blue-900">
