@@ -21,7 +21,7 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
     const [formData, setFormData] = useState({
         code: initialCoupon?.code || '',
         discount_type: initialCoupon?.discount_type || 'percentage',
-        discount_value: initialCoupon?.discount_value || 0,
+        discount_value: initialCoupon?.discount_value ?? '', // Empty string for new, value for edit
         start_date: initialCoupon?.start_date ? new Date(initialCoupon.start_date).toISOString().split('T')[0] : '',
         end_date: initialCoupon?.end_date ? new Date(initialCoupon.end_date).toISOString().split('T')[0] : '',
         is_active: initialCoupon?.is_active ?? true,
