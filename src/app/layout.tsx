@@ -50,8 +50,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon-v3.png',
-    apple: '/favicon-v3.png',
+    icon: '/favicon-v6.png',
+    apple: '/favicon-v6.png',
   },
 };
 
