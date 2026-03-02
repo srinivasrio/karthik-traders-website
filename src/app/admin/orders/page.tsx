@@ -90,6 +90,19 @@ export default function AdminOrdersPage() {
 
     const fetchOrders = async () => {
         try {
+            // First fetch products for name mapping (Invoice PDF fix)
+            const { data: productsData } = await supabase
+                .from('products')
+                .select('id, name, slug');
+
+            const productMap = new Map();
+            if (productsData) {
+                productsData.forEach(p => {
+                    productMap.set(p.id, p);
+                    productMap.set(p.slug, p);
+                });
+            }
+
             const { data, error } = await supabase
                 .from('orders')
                 .select(`
@@ -98,15 +111,24 @@ export default function AdminOrdersPage() {
                     order_items(
                         product_id,
                         quantity,
-                        price_at_purchase,
-                        product:products(name, slug)
+                        price_at_purchase
                     )
                 `)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
+
+            // Append product_name so InvoicePDF works
+            const mappedOrders = (data || []).map(order => ({
+                ...order,
+                order_items: order.order_items?.map((item: any) => ({
+                    ...item,
+                    product_name: productMap.get(item.product_id)?.name || 'Item'
+                })) || []
+            }));
+
             // @ts-ignore
-            setOrders(data || []);
+            setOrders(mappedOrders);
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {

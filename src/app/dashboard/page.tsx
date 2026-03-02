@@ -56,6 +56,19 @@ export default function DashboardPage() {
 
     const fetchOrders = async () => {
         try {
+            // Fetch products for name mapping
+            const { data: productsData } = await supabase
+                .from('products')
+                .select('id, name, slug');
+
+            const productMap = new Map();
+            if (productsData) {
+                productsData.forEach(p => {
+                    productMap.set(p.id, p);
+                    productMap.set(p.slug, p);
+                });
+            }
+
             // Fetch orders by user_id OR customer_mobile
             const { data, error } = await supabase
                 .from('orders')
@@ -75,8 +88,7 @@ export default function DashboardPage() {
                     order_items(
                         product_id,
                         quantity,
-                        price_at_purchase,
-                        product:products(name, slug)
+                        price_at_purchase
                     )
                 `)
                 .or(`user_id.eq.${user?.id},customer_mobile.eq.${profile?.mobile}`)
@@ -84,8 +96,15 @@ export default function DashboardPage() {
                 .limit(10);
 
             if (!error && data) {
+                const mappedOrders = data.map(order => ({
+                    ...order,
+                    order_items: order.order_items?.map((item: any) => ({
+                        ...item,
+                        product_name: productMap.get(item.product_id)?.name || 'Item'
+                    })) || []
+                }));
                 // @ts-ignore
-                setOrders(data);
+                setOrders(mappedOrders);
             }
         } catch (err) {
             console.error('Error fetching orders:', err);

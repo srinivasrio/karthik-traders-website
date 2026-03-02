@@ -135,6 +135,19 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
+        // Fetch products for name mapping (Invoice PDF fix)
+        const { data: productsData } = await supabaseAdmin
+            .from('products')
+            .select('id, name, slug');
+
+        const productMap = new Map();
+        if (productsData) {
+            productsData.forEach(p => {
+                productMap.set(p.id, p);
+                productMap.set(p.slug, p);
+            });
+        }
+
         // Fetch all orders with customer info
         const { data: orders, error } = await supabaseAdmin
             .from('orders')
@@ -144,7 +157,7 @@ export async function GET(request: Request) {
                 order_items(
                     quantity,
                     price_at_purchase,
-                    product:products(name, slug)
+                    product_id
                 )
             `)
             .order('created_at', { ascending: false });
@@ -153,7 +166,15 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json({ orders });
+        const mappedOrders = (orders || []).map(order => ({
+            ...order,
+            order_items: order.order_items?.map((item: any) => ({
+                ...item,
+                product_name: productMap.get(item.product_id)?.name || 'Item'
+            })) || []
+        }));
+
+        return NextResponse.json({ orders: mappedOrders });
     } catch (err: any) {
         console.error('Internal error:', err);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -36,12 +36,25 @@ export default function OrderDetailPage() {
         const fetchOrder = async () => {
             if (!id) return;
 
+            // Fetch products for name mapping (Invoice PDF fix)
+            const { data: productsData } = await supabase
+                .from('products')
+                .select('id, name, slug');
+
+            const productMap = new Map();
+            if (productsData) {
+                productsData.forEach(p => {
+                    productMap.set(p.id, p);
+                    productMap.set(p.slug, p);
+                });
+            }
+
             const { data, error } = await supabase
                 .from('orders')
                 .select(`
             *,
             profile:profiles(*),
-            order_items(*, product:products(*))
+            order_items(*)
         `)
                 .eq('id', id)
                 .single();
@@ -52,6 +65,12 @@ export default function OrderDetailPage() {
                 setOrder(null);
                 alert(`Error fetching order: ${error.message}`);
             } else {
+                if (data && data.order_items) {
+                    data.order_items = data.order_items.map((item: any) => ({
+                        ...item,
+                        product_name: productMap.get(item.product_id)?.name || 'Item'
+                    }));
+                }
                 setOrder(data);
             }
             setLoading(false);
