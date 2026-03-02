@@ -98,7 +98,8 @@ export default function AdminOrdersPage() {
                     order_items(
                         product_id,
                         quantity,
-                        price_at_purchase
+                        price_at_purchase,
+                        product:products(name, slug)
                     )
                 `)
                 .order('created_at', { ascending: false });

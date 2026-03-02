@@ -75,7 +75,8 @@ export default function DashboardPage() {
                     order_items(
                         product_id,
                         quantity,
-                        price_at_purchase
+                        price_at_purchase,
+                        product:products(name, slug)
                     )
                 `)
                 .or(`user_id.eq.${user?.id},customer_mobile.eq.${profile?.mobile}`)

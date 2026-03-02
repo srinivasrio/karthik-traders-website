@@ -41,7 +41,7 @@ export default function OrderDetailPage() {
                 .select(`
             *,
             profile:profiles(*),
-            order_items(*)
+            order_items(*, product:products(*))
         `)
                 .eq('id', id)
                 .single();
