@@ -1,5 +1,6 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Image, Font } from '@react-pdf/renderer';
+import { allProducts } from '@/data/products';
 
 // Define styles
 const styles = StyleSheet.create({
@@ -285,12 +286,13 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
 
                     {/* Rows */}
                     {order.order_items?.map((item: any, idx: number) => {
+                        const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
                         const price = Number(item.price_at_purchase || 0);
                         const qty = Number(item.quantity || 0);
                         const total = price * qty;
                         return (
                             <View key={idx} style={styles.tableRow}>
-                                <Text style={styles.cellItems}>{item.product?.name || 'Item'}</Text>
+                                <Text style={styles.cellItems}>{productDetails?.name || item.product_name || 'Item'}</Text>
                                 <Text style={styles.cellPrice}>Rs. {price.toLocaleString()}</Text>
                                 <Text style={styles.cellQty}>{qty}</Text>
                                 <Text style={styles.cellTotal}>Rs. {total.toLocaleString()}</Text>
