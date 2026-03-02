@@ -358,6 +358,7 @@ export const aeratorSets: Product[] = [
       'Country of Origin': 'MADE IN INDIA'
     },
     images: ['/images/products/Aerator sets/Aqualion/AQUA LION 2HP 4 Paddle Wheel Aerator Set.png'],
+    warranty: '1 Year Warranty',
     inStock: true,
     stockStatus: 'in-stock'
   },
