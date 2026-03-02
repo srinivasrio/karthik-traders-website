@@ -308,7 +308,7 @@ export const aeratorSets: Product[] = [
       { item: 'FLOAT', spec: '7KG - Virgin HDPE (UV)', quantity: 3 },
       { item: 'MOULDING FAN', spec: '2.2 Kg APX - Virgin PPCP (UV)', quantity: 4 },
       { item: 'MOTOR COVER / DOOM', spec: 'HDPE Handle Dom', quantity: 1 },
-      { item: 'STAINLESS-STEEL FRAME', spec: 'SS 202 CR Finishing - 9 Kg - 2 MM', quantity: 1 },
+      { item: 'STAINLESS-STEEL FRAME', spec: 'SS 202 CR Finishing - 8 Kg - 2 MM', quantity: 1 },
       { item: 'STAINLESS-STEEL FAN ROD', spec: 'SS 202 CR Finishing', quantity: 2 },
       { item: 'KITBOX', spec: 'BOLT & NUTS, RUBBERS, GLANDS, BUSH STAND', quantity: 1 },
       { item: 'STARTER', spec: 'no', quantity: 0 },
