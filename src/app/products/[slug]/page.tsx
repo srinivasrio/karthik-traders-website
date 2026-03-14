@@ -264,14 +264,14 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                                     <div className="flex gap-3">
                                         <button
                                             onClick={handleAddToCart}
-                                            disabled={product.stock !== undefined ? product.stock <= 0 : !product.inStock}
-                                            className={`flex-1 btn btn-primary py-3.5 shadow-lg active:scale-95 transition-transform ${product.stock !== undefined ? (product.stock <= 0 ? 'bg-slate-100 text-slate-400 border-slate-200 shadow-none cursor-not-allowed' : 'bg-aqua-500 hover:bg-aqua-600 border-aqua-500 shadow-aqua-500/20') : (!product.inStock ? 'bg-slate-100 text-slate-400 border-slate-200 shadow-none cursor-not-allowed' : 'bg-aqua-500 hover:bg-aqua-600 border-aqua-500 shadow-aqua-500/20')}`}
+                                            disabled={(product.stock !== undefined && product.stock <= 0) || product.inStock === false}
+                                            className={`flex-1 btn btn-primary py-3.5 shadow-lg active:scale-95 transition-transform ${((product.stock !== undefined && product.stock <= 0) || product.inStock === false) ? 'bg-slate-100 text-slate-400 border-slate-200 shadow-none cursor-not-allowed' : 'bg-aqua-500 hover:bg-aqua-600 border-aqua-500 shadow-aqua-500/20'}`}
                                         >
-                                            {(product.stock !== undefined ? product.stock <= 0 : !product.inStock) ? 'Out of Stock' : 'Add to Cart'}
+                                            {((product.stock !== undefined && product.stock <= 0) || product.inStock === false) ? 'Out of Stock' : 'Add to Cart'}
                                         </button>
                                     </div>
                                 )}
-                                {(product.stock !== undefined ? product.stock <= 0 : !product.inStock) && (
+                                {((product.stock !== undefined && product.stock <= 0) || product.inStock === false) && (
                                     <p className="text-center text-xs text-rose-500 font-bold mt-2 uppercase tracking-tight">Currently Unavailable</p>
                                 )}
                             </div>

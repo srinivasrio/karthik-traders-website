@@ -33,29 +33,6 @@ export default function ProductGrid({
     cardVariant = 'default',
     backContext,
 }: ProductGridProps) {
-    const [stockData, setStockData] = useState<Record<string, StockInfo>>({});
-
-    useEffect(() => {
-        const fetchStockData = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('slug, stock, is_active');
-
-                if (data && !error) {
-                    const stockMap: Record<string, StockInfo> = {};
-                    data.forEach((item: StockInfo) => {
-                        stockMap[item.slug] = item;
-                    });
-                    setStockData(stockMap);
-                }
-            } catch (err) {
-                console.error('Error fetching stock:', err);
-            }
-        };
-
-        fetchStockData();
-    }, []);
 
     if (products.length === 0) {
         return (
@@ -81,7 +58,6 @@ export default function ProductGrid({
                     onAddToCart={onAddToCart}
                     variant={cardVariant}
                     backContext={backContext}
-                    stockInfo={stockData[product.slug] || null}
                 />
             ))}
         </div>
