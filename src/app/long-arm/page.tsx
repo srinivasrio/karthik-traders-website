@@ -4,6 +4,8 @@ import { longArmProducts } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import LongArmClient from './LongArmClient';
 
+export const revalidate = 0;
+
 export default async function LongArmPage() {
     // Fetch live data on the server
     const products = await getLiveProductsAction(longArmProducts);

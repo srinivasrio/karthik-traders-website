@@ -4,6 +4,8 @@ import { motors, allGearboxes } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import ProductsClient from './ProductsClient';
 
+export const revalidate = 0;
+
 export default async function ProductsPage() {
     const initialStaticProducts = [...motors, ...allGearboxes];
     // Fetch live data on the server

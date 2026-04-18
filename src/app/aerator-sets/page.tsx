@@ -4,6 +4,8 @@ import { aeratorSets } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import AeratorSetsClient from './AeratorSetsClient';
 
+export const revalidate = 0;
+
 // Server Component
 export default async function AeratorSetsPage() {
     // Fetch live data on the server

@@ -11,6 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { useLiveProduct } from '@/hooks/useLiveProducts';
 
+export const revalidate = 0;
+
 interface ProductPageProps {
     params: Promise<{ slug: string }>;
 }
@@ -27,7 +29,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
 
     // Synchronous Data Lookup
     const initialProduct = allProducts.find(p => p.slug === slug);
-    const { product, loading: productLoading } = useLiveProduct(initialProduct);
+    const { product, loading: productLoading } = useLiveProduct(initialProduct, slug);
 
     // Reset Image Index on Change
     useEffect(() => {

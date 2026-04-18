@@ -4,6 +4,8 @@ import { allSpares } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import SparesClient from './SparesClient';
 
+export const revalidate = 0;
+
 export default async function SparesPage() {
     // Fetch live data on the server
     const products = await getLiveProductsAction(allSpares);
