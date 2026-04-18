@@ -154,7 +154,7 @@ function CompareContent() {
                                             <h4 className="text-xs md:text-sm font-bold text-deep-blue-900 leading-tight mb-1 group-hover:text-aqua-700 transition-colors line-clamp-2">
                                                 {product.model}
                                             </h4>
-                                            {product.specifications?.['Gearbox'] && (
+                                            {product.specifications?.['Gearbox'] && typeof product.specifications['Gearbox'] === 'string' && (
                                                 <p className="text-[10px] md:text-xs text-steel-500 font-medium mb-1">
                                                     {product.specifications['Gearbox'].replace(' Gearbox', '')}
                                                 </p>

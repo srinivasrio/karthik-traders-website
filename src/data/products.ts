@@ -1803,6 +1803,9 @@ export function getProductsByBrand(brand: Brand): Product[] {
 }
 
 export function formatPrice(price: number): string {
+  if (price === undefined || price === null || isNaN(price)) {
+    return '₹0';
+  }
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
