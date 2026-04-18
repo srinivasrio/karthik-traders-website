@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatPrice } from '@/data/products';
@@ -10,7 +10,7 @@ import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import FilterDropdown, { SortOption } from '@/components/ui/FilterDropdown';
 import { motion } from 'framer-motion';
 import { Product } from '@/data/products';
-import { useRef } from 'react';
+
 
 type LongArmCategory = 'all' | 'gearbox' | 'spare';
 

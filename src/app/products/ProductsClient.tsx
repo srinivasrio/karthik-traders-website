@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatPrice } from '@/data/products';
@@ -10,9 +10,8 @@ import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import FilterDropdown, { SortOption } from '@/components/ui/FilterDropdown';
 import { motion } from 'framer-motion';
 import { Product } from '@/data/products';
-import { useRef } from 'react';
 
-type CategoryFilter = 'all' | 'motors' | 'gearboxes';
+type CategoryFilter = 'all' | 'motor' | 'gearbox' | 'combo';
 
 interface ProductsClientProps {
     initialProducts: Product[];
@@ -32,7 +31,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             const cat = params.get('category');
-            if (cat === 'motors' || cat === 'gearboxes') return cat;
+            if (['motor', 'gearbox', 'combo'].includes(cat || '')) return cat as CategoryFilter;
         }
         return 'all';
     });
