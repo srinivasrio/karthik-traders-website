@@ -35,18 +35,32 @@ const mobileNavItems = [
 
 export default function MobileBottomNav() {
     const pathname = usePathname();
+    const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
+
+    // Sync optimistic path with actual pathname when navigation completes
+    useEffect(() => {
+        setOptimisticPath(null);
+    }, [pathname]);
+
+    const activePath = optimisticPath || pathname;
 
     const isActive = (href: string) => {
         if (href === '/') {
-            return pathname === '/';
+            return activePath === '/';
         }
-        return pathname.startsWith(href);
+        return activePath.startsWith(href);
+    };
+
+    const handleNavClick = (href: string) => {
+        setOptimisticPath(href);
     };
 
     const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         if (pathname === '/') {
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            handleNavClick('/');
         }
     };
 
@@ -64,7 +78,7 @@ export default function MobileBottomNav() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            onClick={isHome ? handleHomeClick : undefined}
+                            onClick={isHome ? handleHomeClick : () => handleNavClick(item.href)}
                             className={`flex flex-col items-center justify-center flex-1 h-full min-w-[64px] relative transition-colors duration-300 ${active ? 'text-aqua-600' : 'text-steel-400'
                                 }`}
                         >

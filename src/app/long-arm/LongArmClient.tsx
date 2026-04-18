@@ -10,6 +10,7 @@ import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import FilterDropdown, { SortOption } from '@/components/ui/FilterDropdown';
 import { motion } from 'framer-motion';
 import { Product } from '@/data/products';
+import { useRef } from 'react';
 
 type LongArmCategory = 'all' | 'gearbox' | 'spare';
 
@@ -29,12 +30,15 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
     const [category, setCategory] = useState<LongArmCategory>('all');
     const [sortBy, setSortBy] = useState<SortOption>('price-low');
     const [isLoading, setIsLoading] = useState(false);
+    const manualChangeRef = useRef(false);
 
     // Use hook for live data with skipLoading option
     const { products: liveProducts, loading: productsLoading } = useLiveProducts(initialProducts, { skipLoading: true });
 
     // Sync with URL params on mount
     useEffect(() => {
+        if (manualChangeRef.current) return;
+        
         const catParam = searchParams.get('category');
         if (catParam === 'long-arm-gearbox' || catParam === 'long-arm-spare') {
             setCategory(catParam as LongArmCategory);
@@ -49,6 +53,8 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
 
     const handleCategorySelect = (cat: LongArmCategory) => {
         if (cat === category) return;
+        
+        manualChangeRef.current = true;
         setIsLoading(true);
         setCategory(cat);
         // Update URL to preserve state on navigation
@@ -60,7 +66,10 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
         }
         router.replace(`/long-arm?${params.toString()}`, { scroll: false });
 
-        setTimeout(() => setIsLoading(false), 600);
+        setTimeout(() => {
+            setIsLoading(false);
+            manualChangeRef.current = false;
+        }, 600);
     };
 
     const handleSortChange = (newSort: SortOption) => {

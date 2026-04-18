@@ -10,6 +10,7 @@ import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import FilterDropdown, { SortOption } from '@/components/ui/FilterDropdown';
 import { motion } from 'framer-motion';
 import { Product } from '@/data/products';
+import { useRef } from 'react';
 
 type CategoryFilter = 'all' | 'motors' | 'gearboxes';
 
@@ -37,12 +38,15 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     });
     const [sortBy, setSortBy] = useState<SortOption>('price-low');
     const [isLoading, setIsLoading] = useState(false);
+    const manualChangeRef = useRef(false);
 
     // Use hook for live data with skipLoading options
     const { products: liveProducts, loading: productsLoading } = useLiveProducts(initialProducts, { skipLoading: true });
 
     // Sync with URL params on mount
     useEffect(() => {
+        if (manualChangeRef.current) return;
+        
         const catParam = searchParams.get('category');
         if (catParam === 'motors' || catParam === 'gearboxes' || catParam === 'combo') {
             setCategory(catParam as CategoryFilter);
@@ -57,6 +61,8 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
     const handleCategorySelect = (cat: CategoryFilter) => {
         if (cat === category) return;
+        
+        manualChangeRef.current = true;
         setIsLoading(true);
         setCategory(cat);
         // Update URL to preserve state on navigation
@@ -68,7 +74,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         }
         router.replace(`/products?${params.toString()}`, { scroll: false });
 
-        setTimeout(() => setIsLoading(false), 600);
+        setTimeout(() => {
+            setIsLoading(false);
+            manualChangeRef.current = false;
+        }, 600);
     };
 
     const handleSortChange = (newSort: SortOption) => {
@@ -79,13 +88,14 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
     // Filter products
     const filteredProducts = liveProducts.filter(product => {
-        // Base filter: Only process motors and standard gearboxes
-        const isMotorOrGearbox = ['motor', 'motors', 'worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(product.category as string);
+        // Base filter: Only process motors, gearboxes and combo deals
+        const isMotorOrGearbox = ['motor', 'motors', 'worm-gearbox', 'bevel-gearbox', 'gearboxes', 'combo'].includes(product.category as string);
         if (!isMotorOrGearbox) return false;
 
         if (category === 'all') return true;
-        if (category === 'motors') return ['motor', 'motors'].includes(product.category as string);
-        if (category === 'gearboxes') return ['worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(product.category as string);
+        if (category === 'motor') return ['motor', 'motors'].includes(product.category as string);
+        if (category === 'gearbox') return ['worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(product.category as string);
+        if (category === 'combo') return product.category === 'combo';
         return true;
     });
 
