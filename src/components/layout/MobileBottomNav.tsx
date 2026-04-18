@@ -73,7 +73,6 @@ export default function MobileBottomNav() {
                                 <motion.div
                                     layoutId="activeTab"
                                     className="absolute inset-0 bg-aqua-500 rounded-xl shadow-lg shadow-aqua-500/30"
-                                    initial={false}
                                     transition={{
                                         type: "spring",
                                         stiffness: 500,

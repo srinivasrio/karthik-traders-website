@@ -17,6 +17,16 @@ interface SparesClientProps {
     initialProducts: Product[];
 }
 
+const SPARES_CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'motor-cover', label: 'Doms' },
+    { id: 'float', label: 'Floats' },
+    { id: 'fan', label: 'Fans' },
+    { id: 'frame', label: 'Frames' },
+    { id: 'rod', label: 'Rods' },
+    { id: 'kit-box', label: 'Kit boxes' },
+] as const;
+
 export default function SparesClient({ initialProducts }: SparesClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -98,15 +108,7 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
         setTimeout(() => setIsLoading(false), 1000);
     };
 
-    const categoriesList = [
-        { id: 'all', label: 'All' },
-        { id: 'motor-cover', label: 'Doms' },
-        { id: 'float', label: 'Floats' },
-        { id: 'fan', label: 'Fans' },
-        { id: 'frame', label: 'Frames' },
-        { id: 'rod', label: 'Rods' },
-        { id: 'kit-box', label: 'Kit boxes' },
-    ];
+
 
     return (
         <div className="min-h-screen bg-white pb-24">
@@ -119,11 +121,11 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
                     </div>
                     {/* Mobile Grid (4 cols = 2 rows for 7 items) / Desktop Scroll */}
                     <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:overflow-x-auto md:no-scrollbar md:px-1 md:min-w-max">
-                        {categoriesList.map((cat) => (
+                        {SPARES_CATEGORIES.map((cat) => (
                             <button
                                 key={cat.id}
                                 onClick={() => handleCategorySelect(cat.id as CategoryFilter)}
-                                className={`relative px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap ${category === cat.id
+                                className={`relative px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${category === cat.id
                                     ? 'text-white'
                                     : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
                                     }`}
@@ -131,8 +133,7 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
                                 {category === cat.id && (
                                     <motion.div
                                         layoutId="activeCategorySpare"
-                                        className="absolute inset-0 bg-purple-600 rounded-full shadow-lg shadow-purple-500/30"
-                                        initial={false}
+                                        className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
                                         transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                     />
                                 )}

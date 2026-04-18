@@ -33,7 +33,6 @@ export default function BrandFilter({ selectedBrand, onSelectBrand, children }: 
                                 <motion.div
                                     layoutId="activeBrand"
                                     className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
-                                    initial={false}
                                     transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                 />
                             )}

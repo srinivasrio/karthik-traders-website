@@ -17,6 +17,12 @@ interface LongArmClientProps {
     initialProducts: Product[];
 }
 
+const LONG_ARM_CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'long-arm-gearbox', label: 'Gearboxes' },
+    { id: 'long-arm-spare', label: 'Spares' }
+] as const;
+
 export default function LongArmClient({ initialProducts }: LongArmClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -107,12 +113,6 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
         else if (category === 'gearbox') handleCategorySelect('all');
     };
 
-    const categoriesList = [
-        { id: 'all', label: 'All' },
-        { id: 'gearbox', label: 'Gearboxes' },
-        { id: 'spare', label: 'Spares' },
-    ];
-
     return (
         <div className="min-h-screen bg-white pb-24">
             {/* Sticky Header with Categories and Filter */}
@@ -125,7 +125,7 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
 
                     <div className="overflow-x-auto no-scrollbar py-2">
                         <div className="flex gap-2 px-1 min-w-max">
-                            {categoriesList.map((cat) => (
+                            {LONG_ARM_CATEGORIES.map((cat) => (
                                 <button
                                     key={cat.id}
                                     onClick={() => handleCategorySelect(cat.id as LongArmCategory)}
@@ -138,7 +138,6 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
                                         <motion.div
                                             layoutId="activeCategoryLongArm"
                                             className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
-                                            initial={false}
                                             transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                         />
                                     )}

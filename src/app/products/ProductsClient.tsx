@@ -17,6 +17,13 @@ interface ProductsClientProps {
     initialProducts: Product[];
 }
 
+const PRODUCTS_CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'motor', label: 'Motors' },
+    { id: 'gearbox', label: 'Gearboxes' },
+    { id: 'combo', label: 'Combo Deals' }
+] as const;
+
 export default function ProductsClient({ initialProducts }: ProductsClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -116,14 +123,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         setTimeout(() => setIsLoading(false), 1000);
     };
 
-
-
-    const categoriesList = [
-        { id: 'all', label: 'All' },
-        { id: 'motors', label: 'Motors' },
-        { id: 'gearboxes', label: 'Gearboxes' },
-    ];
-
     return (
         <div className="min-h-screen bg-white pb-24">
             {/* Sticky Category Filter */}
@@ -136,7 +135,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 </div>
                 <div className="container-custom overflow-x-auto no-scrollbar py-2">
                     <div className="flex gap-2 px-1 min-w-max">
-                        {categoriesList.map((cat) => (
+                        {PRODUCTS_CATEGORIES.map((cat) => (
                             <button
                                 key={cat.id}
                                 onClick={() => handleCategorySelect(cat.id as CategoryFilter)}
@@ -149,7 +148,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                     <motion.div
                                         layoutId="activeCategory"
                                         className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
-                                        initial={false}
                                         transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                     />
                                 )}
