@@ -11,7 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { useLiveProduct } from '@/hooks/useLiveProducts';
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface ProductPageProps {
     params: Promise<{ slug: string }>;

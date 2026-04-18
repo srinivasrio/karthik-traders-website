@@ -4,7 +4,8 @@ import { motors, allGearboxes } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import ProductsClient from './ProductsClient';
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 export default async function ProductsPage() {
     const initialStaticProducts = [...motors, ...allGearboxes];
