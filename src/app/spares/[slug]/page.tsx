@@ -299,7 +299,23 @@ export default function SpareDetailPage({ params }: ProductPageProps) {
                                                                             {key}
                                                                         </td>
                                                                         <td className="px-4 py-3 font-medium text-deep-blue-900">
-                                                                            {(value as string)}
+                                                                            {typeof (value as any) === 'object' ? (
+                                                                                Array.isArray(value as any) ? (
+                                                                                    <ul className="list-disc pl-4 space-y-1">
+                                                                                        {(value as any).map((v: any, i: number) => (
+                                                                                            <li key={i}>
+                                                                                                {typeof v === 'object' && v !== null 
+                                                                                                    ? Object.values(v).filter(Boolean).join(' - ')
+                                                                                                    : String(v)}
+                                                                                            </li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                ) : (
+                                                                                    JSON.stringify(value)
+                                                                                )
+                                                                            ) : (
+                                                                                String(value)
+                                                                            )}
                                                                         </td>
                                                                     </tr>
                                                                 ))}
