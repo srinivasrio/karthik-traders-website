@@ -309,7 +309,8 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
                                     <div className="mb-6">
                                         <h3 className="text-lg font-bold text-deep-blue-900 mb-3">Set Components</h3>
                                         <div className="bg-white rounded-xl border border-steel-200 overflow-hidden shadow-sm">
-                                            <div className="overflow-x-auto">
+                                            {/* Desktop Table View */}
+                                            <div className="hidden md:block overflow-x-auto">
                                                 <table className="w-full text-left text-sm border-collapse">
                                                     <thead className="bg-steel-50 text-steel-500 font-semibold uppercase text-xs tracking-wider border-b border-steel-200">
                                                         <tr>
@@ -328,6 +329,21 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
                                                         ))}
                                                     </tbody>
                                                 </table>
+                                            </div>
+
+                                            {/* Mobile Card List View */}
+                                            <div className="md:hidden divide-y divide-steel-100">
+                                                {product.components.map((comp: any, idx: number) => (
+                                                    <div key={idx} className="p-4 flex items-start gap-3">
+                                                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-steel-50 text-deep-blue-800 font-bold text-xs shrink-0 border border-steel-100">
+                                                            {comp.quantity}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-bold text-deep-blue-900 text-sm mb-0.5">{comp.item}</h4>
+                                                            <p className="text-xs text-steel-600 font-medium leading-relaxed">{comp.spec}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
@@ -357,32 +373,37 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
                                                     <div className="bg-white/80 backdrop-blur rounded-xl overflow-hidden mt-3 border border-steel-200">
                                                         <table className="w-full text-sm border-collapse">
                                                             <tbody>
-                                                                {Object.entries(product.specifications).map(([key, value], index) => (
-                                                                    <tr key={key} className="border-b border-steel-200 last:border-0 hover:bg-steel-50/50 transition-colors">
-                                                                        <td className="px-4 py-3 font-semibold text-steel-600 bg-steel-50/30 border-r border-steel-200 w-1/3">
-                                                                            {key}
-                                                                        </td>
-                                                                        <td className="px-4 py-3 font-medium text-deep-blue-900">
-                                                                            {typeof (value as any) === 'object' ? (
-                                                                                Array.isArray(value as any) ? (
-                                                                                    <ul className="list-disc pl-4 space-y-1">
-                                                                                        {(value as any).map((v: any, i: number) => (
-                                                                                            <li key={i}>
-                                                                                                {typeof v === 'object' && v !== null 
-                                                                                                    ? Object.values(v).filter(Boolean).join(' - ')
-                                                                                                    : String(v)}
-                                                                                            </li>
-                                                                                        ))}
-                                                                                    </ul>
+                                                                {Object.entries(product.specifications)
+                                                                    .filter(([key]) => {
+                                                                        const hiddenKeys = ['components', 'features', 'warranty', 'brand', 'model', 'Model number', 'isActive'];
+                                                                        return !hiddenKeys.includes(key);
+                                                                    })
+                                                                    .map(([key, value], index) => (
+                                                                        <tr key={key} className="border-b border-steel-200 last:border-0 hover:bg-steel-50/50 transition-colors">
+                                                                            <td className="px-3 py-3 font-semibold text-steel-600 bg-steel-50/30 border-r border-steel-200 w-[110px] md:w-1/3 text-xs md:text-sm">
+                                                                                {key}
+                                                                            </td>
+                                                                            <td className="px-3 py-3 font-medium text-deep-blue-900 text-xs md:text-sm">
+                                                                                {typeof (value as any) === 'object' ? (
+                                                                                    Array.isArray(value as any) ? (
+                                                                                        <ul className="list-disc pl-4 space-y-1">
+                                                                                            {(value as any).map((v: any, i: number) => (
+                                                                                                <li key={i}>
+                                                                                                    {typeof v === 'object' && v !== null 
+                                                                                                        ? Object.values(v).filter(Boolean).join(' - ')
+                                                                                                        : String(v)}
+                                                                                                </li>
+                                                                                            ))}
+                                                                                        </ul>
+                                                                                    ) : (
+                                                                                        JSON.stringify(value)
+                                                                                    )
                                                                                 ) : (
-                                                                                    JSON.stringify(value)
-                                                                                )
-                                                                            ) : (
-                                                                                String(value)
-                                                                            )}
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
+                                                                                    String(value)
+                                                                                )}
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
                                                             </tbody>
                                                         </table>
                                                     </div>
