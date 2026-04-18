@@ -26,7 +26,7 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
 
     // Fetch Product Data
     const initialProduct = getProductBySlug(slug);
-    const { product, loading } = useLiveProduct(initialProduct);
+    const { product, loading } = useLiveProduct(initialProduct, slug);
 
     // Reset Image Index on Change
     useEffect(() => {

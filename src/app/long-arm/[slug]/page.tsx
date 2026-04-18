@@ -28,7 +28,7 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
 
     // Fetch Product Data
     const initialProduct = longArmProducts.find(p => p.slug === slug);
-    const { product, loading } = useLiveProduct(initialProduct);
+    const { product, loading } = useLiveProduct(initialProduct, slug);
 
     // Derived cart state
     const cartItem = cartItems.find(item => item.id === product?.id);

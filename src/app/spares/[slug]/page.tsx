@@ -25,7 +25,7 @@ export default function SpareDetailPage({ params }: ProductPageProps) {
 
     // Synchronous Data Lookup
     const initialProduct = allSpares.find(p => p.slug === slug);
-    const { product, loading: productLoading } = useLiveProduct(initialProduct);
+    const { product, loading: productLoading } = useLiveProduct(initialProduct, slug);
 
     // Reset Image Index on Change
     useEffect(() => {
