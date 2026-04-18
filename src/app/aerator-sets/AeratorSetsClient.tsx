@@ -46,8 +46,8 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
         if (brand === selectedBrand) return;
         setIsLoading(true);
         setSelectedBrand(brand);
-        // Simulate network latency for skeleton effect
-        setTimeout(() => setIsLoading(false), 600);
+        // Shortened timeout for smoother transition with snappy spring
+        setTimeout(() => setIsLoading(false), 400);
     };
 
     const handleSortChange = (newSort: SortOption) => {

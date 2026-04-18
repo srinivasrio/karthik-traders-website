@@ -72,9 +72,14 @@ export default function MobileBottomNav() {
                             {active && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute inset-1 bg-aqua-200 rounded-2xl -z-10 shadow-[0_0_15px_rgba(78,215,241,0.4)] border border-aqua-300/30"
+                                    className="absolute inset-0 bg-aqua-500 rounded-xl shadow-lg shadow-aqua-500/30"
                                     initial={false}
-                                    transition={{ type: "spring", stiffness: 600, damping: 35, mass: 0.8 }}
+                                    transition={{
+                                        type: "spring",
+                                        stiffness: 500,
+                                        damping: 35,
+                                        mass: 0.8
+                                    }}
                                 />
                             )}
 
@@ -87,14 +92,14 @@ export default function MobileBottomNav() {
                                     filter: active ? 'drop-shadow(0 2px 4px rgba(78, 215, 241, 0.3))' : 'none'
                                 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                                className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all duration-300`}
+                                className={`flex flex-col items-center gap-1 p-1 rounded-xl`}
                             >
                                 <div className="relative w-6 h-6">
                                     <Image
                                         src={item.iconSrc}
                                         alt={item.name}
                                         fill
-                                        className={`object-contain transition-all duration-300 ${active ? 'brightness-110 saturate-100' : 'grayscale brightness-90 opacity-60'}`}
+                                        className={`object-contain ${active ? 'brightness-110 saturate-100' : 'grayscale brightness-90 opacity-60'}`}
                                     />
                                 </div>
                                 <span className={`text-[10px] font-extrabold tracking-wide transition-colors duration-300 ${active ? 'text-deep-blue-800' : 'text-steel-400'}`}>
