@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 import { Product } from '@/data/products';
 
 
-type LongArmCategory = 'all' | 'gearbox' | 'spare';
+type LongArmCategory = 'all' | 'long-arm-gearbox' | 'long-arm-spare';
 
 interface LongArmClientProps {
     initialProducts: Product[];
@@ -85,8 +85,8 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
         if (!isLongArm) return false;
 
         if (category === 'all') return true;
-        if (category === 'gearbox') return ['long-arm-gearbox', 'long-arm'].includes(product.category as string);
-        if (category === 'spare') return ['long-arm-spare', 'long-arm'].includes(product.category as string);
+        if (category === 'long-arm-gearbox') return ['long-arm-gearbox', 'long-arm'].includes(product.category as string);
+        if (category === 'long-arm-spare') return ['long-arm-spare', 'long-arm'].includes(product.category as string);
         return true;
     });
 
@@ -112,13 +112,13 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
     };
 
     const handleSwipeLeft = () => {
-        if (category === 'all') handleCategorySelect('gearbox');
-        else if (category === 'gearbox') handleCategorySelect('spare');
+        if (category === 'all') handleCategorySelect('long-arm-gearbox');
+        else if (category === 'long-arm-gearbox') handleCategorySelect('long-arm-spare');
     };
 
     const handleSwipeRight = () => {
-        if (category === 'spare') handleCategorySelect('gearbox');
-        else if (category === 'gearbox') handleCategorySelect('all');
+        if (category === 'long-arm-spare') handleCategorySelect('long-arm-gearbox');
+        else if (category === 'long-arm-gearbox') handleCategorySelect('all');
     };
 
     return (
