@@ -62,15 +62,23 @@ function CompareContent() {
         setSelectedIds(prev => prev.filter(id => id !== productId && id !== staticId));
     };
 
-    // All specification keys
+    // All specification keys (filtered to exclude complex types and metadata)
     const allSpecKeys = useMemo(() => {
+        const excludedKeys = [
+            'features', 'components', 'images', 'slug', 'id', 'name', 
+            'model', 'brand', 'category', 'mrp', 'salePrice', 
+            'description', 'specifications', 'warranty', 'inStock', 
+            'stock', 'stockStatus', 'isActive', 'badge', 'Warranty',
+            'Model number', 'Technical Specifications'
+        ];
+        
         return Array.from(
             new Set(
                 selectedProducts.flatMap(p =>
                     p.specifications ? Object.keys(p.specifications) : []
                 )
             )
-        ).filter(key => key !== 'Warranty');
+        ).filter(key => !excludedKeys.includes(key));
     }, [selectedProducts]);
 
     if (productsLoading) {
@@ -291,7 +299,12 @@ function CompareContent() {
                                 </div>
                                 {selectedProducts.map((product, idx) => (
                                     <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 text-xs md:text-sm text-deep-blue-800 ${idx >= 2 ? 'hidden md:block' : ''}`}>
-                                        {product.specifications?.[key] || '-'}
+                                        {(() => {
+                                            const val = product.specifications?.[key];
+                                            if (val === null || val === undefined) return '-';
+                                            if (typeof val === 'object') return '-'; // Skip complex types
+                                            return String(val);
+                                        })()}
                                     </div>
                                 ))}
                                 {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
