@@ -19,49 +19,34 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                 }
 
                 if (data) {
-                    const updatedProducts = initialProducts.map(staticProduct => {
-                        const liveData = data.find(p => p.slug === staticProduct.slug); // Match by slug
-                        if (liveData) {
-                            return {
-                                ...staticProduct,
-                                id: liveData.id, // Ensure ID matches DB
-                                name: liveData.name || staticProduct.name,
-                                mrp: liveData.mrp || staticProduct.mrp,
-                                salePrice: liveData.price || staticProduct.salePrice,
-                                stock: liveData.stock,
-                                inStock: liveData.stock > 0,
-                                stockStatus: (liveData.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
-                                images: (liveData.images && liveData.images.length > 0) ? liveData.images : staticProduct.images,
-                                specifications: liveData.specifications || staticProduct.specifications,
-                                description: liveData.description || staticProduct.description,
-                                isActive: liveData.is_active // Add active status
-                            };
-                        }
-                        return staticProduct;
+                    // Database is the absolute source of truth
+                    const combined = data.map(dbProduct => {
+                        // Find matching static product for fallback badges, features, etc.
+                        const staticMatch = initialProducts.find(p => 
+                            p.slug === dbProduct.slug || 
+                            p.name === dbProduct.name || 
+                            (p.model && (dbProduct.specifications?.['Model number'] === p.model || dbProduct.specifications?.model === p.model))
+                        );
+
+                        return {
+                            ...(staticMatch || {}), // Fallback properties like badge
+                            id: dbProduct.id,
+                            slug: dbProduct.slug,
+                            name: dbProduct.name,
+                            brand: staticMatch?.brand || 'generic',
+                            category: dbProduct.category,
+                            mrp: dbProduct.mrp || dbProduct.price,
+                            salePrice: dbProduct.price,
+                            features: staticMatch?.features || dbProduct.specifications?.features || [],
+                            specifications: dbProduct.specifications || staticMatch?.specifications || {},
+                            description: dbProduct.description || staticMatch?.description,
+                            inStock: dbProduct.stock > 0,
+                            stock: dbProduct.stock,
+                            stockStatus: (dbProduct.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
+                            images: (dbProduct.images && dbProduct.images.length > 0) ? dbProduct.images : (staticMatch?.images || []),
+                            isActive: dbProduct.is_active
+                        } as Product;
                     });
-
-                    // Add new products from DB that are not in initialProducts
-                    const newDbProducts = data
-                        .filter(liveData => !initialProducts.some(p => p.slug === liveData.slug))
-                        .map(liveData => ({
-                            id: liveData.id,
-                            slug: liveData.slug,
-                            name: liveData.name,
-                            brand: 'generic',
-                            category: liveData.category,
-                            mrp: liveData.mrp || liveData.price,
-                            salePrice: liveData.price,
-                            features: [],
-                            specifications: liveData.specifications || {},
-                            description: liveData.description,
-                            inStock: liveData.stock > 0,
-                            stock: liveData.stock,
-                            stockStatus: (liveData.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
-                            images: liveData.images || [],
-                            isActive: liveData.is_active
-                        } as Product));
-
-                    const combined = [...updatedProducts, ...newDbProducts];
 
                     // Filter out inactive products
                     const activeProducts = combined.filter(p => p.isActive !== false);
