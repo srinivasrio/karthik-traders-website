@@ -5,9 +5,12 @@ export type Brand = 'aqualion' | 'seaboss' | 'generic';
 
 export type ProductCategory =
   | 'aerator-set'
+  | 'aerators' // Added from DB
   | 'motor'
+  | 'motors' // Added from DB
   | 'worm-gearbox'
   | 'bevel-gearbox'
+  | 'gearboxes' // Added from DB
   | 'motor-cover'
   | 'float'
   | 'fan'
@@ -16,7 +19,8 @@ export type ProductCategory =
   | 'kit-box'
   | 'long-arm-gearbox'
   | 'long-arm-spare'
-  | 'warranty';
+  | 'warranty'
+  | string; // Fallback to string to prevent any DB un-mapped type errors
 
 export interface Product {
   id: string;
