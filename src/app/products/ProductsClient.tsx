@@ -44,10 +44,8 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     // Sync with URL params on mount
     useEffect(() => {
         const catParam = searchParams.get('category');
-        if (catParam === 'motors' || catParam === 'gearboxes') {
+        if (catParam === 'motors' || catParam === 'gearboxes' || catParam === 'combo') {
             setCategory(catParam as CategoryFilter);
-        } else {
-            setCategory('all');
         }
     }, [searchParams]);
 
@@ -148,6 +146,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                     <motion.div
                                         layoutId="activeCategory"
                                         className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
+                                        initial={false}
                                         transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                     />
                                 )}

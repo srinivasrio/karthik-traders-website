@@ -33,12 +33,11 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
     // Use hook for live data with skipLoading option
     const { products: liveProducts, loading: productsLoading } = useLiveProducts(initialProducts, { skipLoading: true });
 
+    // Sync with URL params on mount
     useEffect(() => {
         const catParam = searchParams.get('category');
-        if (catParam && ['gearbox', 'spare'].includes(catParam)) {
+        if (catParam === 'long-arm-gearbox' || catParam === 'long-arm-spare') {
             setCategory(catParam as LongArmCategory);
-        } else {
-            setCategory('all');
         }
     }, [searchParams]);
 
@@ -138,6 +137,7 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
                                         <motion.div
                                             layoutId="activeCategoryLongArm"
                                             className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
+                                            initial={false}
                                             transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                         />
                                     )}

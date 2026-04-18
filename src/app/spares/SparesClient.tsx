@@ -42,8 +42,6 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
         const catParam = searchParams.get('category');
         if (catParam && ['motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'].includes(catParam)) {
             setCategory(catParam as CategoryFilter);
-        } else {
-            setCategory('all');
         }
     }, [searchParams]);
 
@@ -125,7 +123,7 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
                             <button
                                 key={cat.id}
                                 onClick={() => handleCategorySelect(cat.id as CategoryFilter)}
-                                className={`relative px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${category === cat.id
+                                className={`relative px-2 py-4 md:px-6 rounded-xl md:rounded-full text-xs md:text-base font-bold transition-colors duration-200 flex items-center justify-center ${category === cat.id
                                     ? 'text-white'
                                     : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
                                     }`}
@@ -133,11 +131,12 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
                                 {category === cat.id && (
                                     <motion.div
                                         layoutId="activeCategorySpare"
-                                        className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
+                                        className="absolute inset-0 bg-aqua-500 rounded-xl md:rounded-full shadow-lg shadow-aqua-500/30"
+                                        initial={false}
                                         transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                     />
                                 )}
-                                <span className="relative z-10">{cat.label}</span>
+                                <span className="relative z-10 text-center">{cat.label}</span>
                             </button>
                         ))}
                     </div>
