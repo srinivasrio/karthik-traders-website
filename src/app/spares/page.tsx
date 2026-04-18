@@ -4,8 +4,8 @@ import { allSpares } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import SparesClient from './SparesClient';
 
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
+export const revalidate = 60;
+export const fetchCache = 'auto';
 
 export default async function SparesPage() {
     // Fetch live data on the server

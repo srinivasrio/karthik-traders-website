@@ -4,12 +4,9 @@ import { Product } from '@/data/products';
 export async function getLiveProductsAction(staticProducts: Product[]): Promise<Product[]> {
     try {
         // Run fetch and minimum delay in parallel to ensure loading screen shows for at least 1s
-        const [response] = await Promise.all([
-            supabase
-                .from('products')
-                .select('*'),
-            new Promise(resolve => setTimeout(resolve, 1000))
-        ]);
+        const response = await supabase
+            .from('products')
+            .select('*');
 
         const { data, error } = response;
 

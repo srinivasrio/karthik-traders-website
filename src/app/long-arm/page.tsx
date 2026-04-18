@@ -4,8 +4,8 @@ import { longArmProducts } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import LongArmClient from './LongArmClient';
 
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
+export const revalidate = 60;
+export const fetchCache = 'auto';
 
 export default async function LongArmPage() {
     // Fetch live data on the server

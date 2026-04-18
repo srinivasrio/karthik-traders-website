@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 const mobileNavItems = [
@@ -35,7 +35,17 @@ const mobileNavItems = [
 
 export default function MobileBottomNav() {
     const pathname = usePathname();
+    const router = useRouter();
     const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
+
+    // Prefetch all main routes on mount for instant transitions
+    useEffect(() => {
+        mobileNavItems.forEach(item => {
+            if (item.href !== '/') {
+                router.prefetch(item.href);
+            }
+        });
+    }, [router]);
 
     // Sync optimistic path with actual pathname when navigation completes
     useEffect(() => {

@@ -4,8 +4,8 @@ import { aeratorSets } from '@/data/products';
 import { getLiveProductsAction } from '@/lib/products-server';
 import AeratorSetsClient from './AeratorSetsClient';
 
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
+export const revalidate = 60; // Revalidate every minute
+export const fetchCache = 'auto';
 
 // Server Component
 export default async function AeratorSetsPage() {
