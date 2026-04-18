@@ -11,7 +11,7 @@ import FilterDropdown, { SortOption } from '@/components/ui/FilterDropdown';
 import { motion } from 'framer-motion';
 import { Product } from '@/data/products';
 
-type CategoryFilter = 'all' | 'motor' | 'gearbox' | 'combo';
+type CategoryFilter = 'all' | 'motor' | 'gearbox';
 
 interface ProductsClientProps {
     initialProducts: Product[];
@@ -20,8 +20,7 @@ interface ProductsClientProps {
 const PRODUCTS_CATEGORIES = [
     { id: 'all', label: 'All' },
     { id: 'motor', label: 'Motors' },
-    { id: 'gearbox', label: 'Gearboxes' },
-    { id: 'combo', label: 'Combo Deals' }
+    { id: 'gearbox', label: 'Gearboxes' }
 ] as const;
 
 export default function ProductsClient({ initialProducts }: ProductsClientProps) {
@@ -31,7 +30,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             const cat = params.get('category');
-            if (['motor', 'gearbox', 'combo'].includes(cat || '')) return cat as CategoryFilter;
+            if (['motor', 'gearbox'].includes(cat || '')) return cat as CategoryFilter;
         }
         return 'all';
     });
@@ -87,14 +86,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
     // Filter products
     const filteredProducts = liveProducts.filter(product => {
-        // Base filter: Only process motors, gearboxes and combo deals
-        const isMotorOrGearbox = ['motor', 'motors', 'worm-gearbox', 'bevel-gearbox', 'gearboxes', 'combo'].includes(product.category as string);
+        // Base filter: Only process motors and gearboxes
+        const isMotorOrGearbox = ['motor', 'motors', 'worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(product.category as string);
         if (!isMotorOrGearbox) return false;
 
         if (category === 'all') return true;
         if (category === 'motor') return ['motor', 'motors'].includes(product.category as string);
         if (category === 'gearbox') return ['worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(product.category as string);
-        if (category === 'combo') return product.category === 'combo';
         return true;
     });
 
