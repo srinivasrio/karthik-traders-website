@@ -68,11 +68,13 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
     // Filter products
     const filteredProducts = liveProducts.filter(product => {
         // Base filter: Only process spares
-        const isSpare = ['motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'].includes(product.category);
+        const isSpare = ['spares', 'motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'].includes(product.category as string);
         if (!isSpare) return false;
 
         if (category === 'all') return true;
-        return product.category === category;
+        // If a DB item only says 'spares', it shows in 'all', but can't be specifically filtered 
+        // unless we mapped the granular category correctly (which we will).
+        return product.category === category || (product.category === 'spares' && category === 'all');
     });
 
     // Sort products

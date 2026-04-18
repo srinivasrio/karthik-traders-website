@@ -67,12 +67,12 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
     // Filter products
     const filteredProducts = liveProducts.filter(product => {
         // Base filter: Only process long arm gearboxes and spares
-        const isLongArm = product.category === 'long-arm-gearbox' || product.category === 'long-arm-spare';
+        const isLongArm = ['long-arm', 'long-arm-gearbox', 'long-arm-spare'].includes(product.category as string);
         if (!isLongArm) return false;
 
         if (category === 'all') return true;
-        if (category === 'gearbox') return product.category === 'long-arm-gearbox';
-        if (category === 'spare') return product.category === 'long-arm-spare';
+        if (category === 'gearbox') return ['long-arm-gearbox', 'long-arm'].includes(product.category as string);
+        if (category === 'spare') return ['long-arm-spare', 'long-arm'].includes(product.category as string);
         return true;
     });
 

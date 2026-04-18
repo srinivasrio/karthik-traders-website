@@ -75,12 +75,12 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     // Filter products
     const filteredProducts = liveProducts.filter(product => {
         // Base filter: Only process motors and standard gearboxes
-        const isMotorOrGearbox = product.category === 'motor' || product.category === 'worm-gearbox' || product.category === 'bevel-gearbox';
+        const isMotorOrGearbox = ['motor', 'motors', 'worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(product.category as string);
         if (!isMotorOrGearbox) return false;
 
         if (category === 'all') return true;
-        if (category === 'motors') return product.category === 'motor';
-        if (category === 'gearboxes') return product.category === 'worm-gearbox' || product.category === 'bevel-gearbox';
+        if (category === 'motors') return ['motor', 'motors'].includes(product.category as string);
+        if (category === 'gearboxes') return ['worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(product.category as string);
         return true;
     });
 

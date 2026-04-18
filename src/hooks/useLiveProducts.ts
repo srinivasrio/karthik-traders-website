@@ -34,7 +34,7 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                             slug: dbProduct.slug,
                             name: dbProduct.name,
                             brand: staticMatch?.brand || 'generic',
-                            category: dbProduct.category,
+                            category: staticMatch?.category || dbProduct.category,
                             mrp: dbProduct.mrp || dbProduct.price,
                             salePrice: dbProduct.price,
                             features: staticMatch?.features || dbProduct.specifications?.features || [],
