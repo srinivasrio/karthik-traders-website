@@ -123,16 +123,17 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
                             <button
                                 key={cat.id}
                                 onClick={() => handleCategorySelect(cat.id as CategoryFilter)}
-                                className={`relative px-2 py-4 md:px-6 rounded-xl md:rounded-full text-xs md:text-base font-bold transition-all duration-300 flex items-center justify-center ${category === cat.id
-                                    ? 'text-white shadow-lg shadow-aqua-500/30'
+                                className={`relative px-2 py-4 md:px-6 rounded-xl md:rounded-full text-xs md:text-base font-bold transition-colors duration-200 flex items-center justify-center ${category === cat.id
+                                    ? 'text-white'
                                     : 'text-black bg-steel-200 hover:bg-steel-300 border border-steel-200'
                                     }`}
                             >
                                 {category === cat.id && (
                                     <motion.div
                                         layoutId="activeCategorySpare"
-                                        className="absolute inset-0 bg-aqua-500 rounded-xl md:rounded-full"
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        className="absolute inset-0 bg-aqua-500 rounded-xl md:rounded-full shadow-lg shadow-aqua-500/30"
+                                        initial={false}
+                                        transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                     />
                                 )}
                                 <span className="relative z-10 text-center">{cat.label}</span>

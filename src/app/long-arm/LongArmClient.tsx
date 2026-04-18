@@ -129,16 +129,17 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
                                 <button
                                     key={cat.id}
                                     onClick={() => handleCategorySelect(cat.id as LongArmCategory)}
-                                    className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${category === cat.id
-                                        ? 'text-white shadow-lg shadow-aqua-500/30'
+                                    className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 ${category === cat.id
+                                        ? 'text-white'
                                         : 'text-black bg-steel-200 hover:bg-steel-300'
                                         }`}
                                 >
                                     {category === cat.id && (
                                         <motion.div
                                             layoutId="activeCategoryLongArm"
-                                            className="absolute inset-0 bg-aqua-500 rounded-full"
-                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                            className="absolute inset-0 bg-aqua-500 rounded-full shadow-lg shadow-aqua-500/30"
+                                            initial={false}
+                                            transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                                         />
                                     )}
                                     <span className="relative z-10">{cat.label}</span>

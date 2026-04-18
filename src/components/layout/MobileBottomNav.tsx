@@ -74,7 +74,7 @@ export default function MobileBottomNav() {
                                     layoutId="activeTab"
                                     className="absolute inset-1 bg-aqua-200 rounded-2xl -z-10 shadow-[0_0_15px_rgba(78,215,241,0.4)] border border-aqua-300/30"
                                     initial={false}
-                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    transition={{ type: "spring", stiffness: 600, damping: 35, mass: 0.8 }}
                                 />
                             )}
 
