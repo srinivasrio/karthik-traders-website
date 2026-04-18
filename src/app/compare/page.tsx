@@ -18,6 +18,13 @@ function CompareContent() {
     // Fetch live data from Supabase
     const { products: liveAeratorSets, loading: productsLoading } = useLiveProducts(aeratorSets);
 
+    // Only show Aerator Sets for comparison (filter out spares, motors, etc.)
+    const filteredLiveProducts = useMemo(() => {
+        return liveAeratorSets.filter(p => 
+            p.category === 'aerator-set' || p.category === 'aerators'
+        );
+    }, [liveAeratorSets]);
+
     useEffect(() => {
         if (idsParam) {
             const ids = idsParam.split(',');
@@ -105,7 +112,7 @@ function CompareContent() {
                         </h3>
 
                         <div className="grid grid-cols-3 gap-2 md:gap-4">
-                            {liveAeratorSets.map((product) => {
+                            {filteredLiveProducts.map((product) => {
                                 const staticId = aeratorSets.find(as => as.slug === product.slug)?.id;
                                 const isSelected = selectedIds.includes(product.id) || (staticId ? selectedIds.includes(staticId) : false);
                                 const isDisabled = selectedProducts.length >= 2 && !isSelected;
