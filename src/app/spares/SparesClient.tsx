@@ -67,6 +67,10 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
 
     // Filter products
     const filteredProducts = liveProducts.filter(product => {
+        // Base filter: Only process spares
+        const isSpare = ['motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'].includes(product.category);
+        if (!isSpare) return false;
+
         if (category === 'all') return true;
         return product.category === category;
     });

@@ -58,6 +58,10 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
 
     // Filter products
     const filteredProducts = products.filter(product => {
+        // Base filter: Only process aerator sets
+        const isAerator = product.category === 'aerator-set' || product.category === 'aerators';
+        if (!isAerator) return false;
+
         if (selectedBrand === 'all') return true;
         return product.brand === selectedBrand;
     });
