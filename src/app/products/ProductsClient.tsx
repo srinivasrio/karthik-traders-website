@@ -116,13 +116,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
     // Gestures
     const handleSwipeLeft = () => {
-        if (category === 'all') handleCategorySelect('motors');
-        else if (category === 'motors') handleCategorySelect('gearboxes');
+        if (category === 'all') handleCategorySelect('motor');
+        else if (category === 'motor') handleCategorySelect('gearbox');
     };
 
     const handleSwipeRight = () => {
-        if (category === 'gearboxes') handleCategorySelect('motors');
-        else if (category === 'motors') handleCategorySelect('all');
+        if (category === 'gearbox') handleCategorySelect('motor');
+        else if (category === 'motor') handleCategorySelect('all');
     };
 
     const handlePullDown = () => {
