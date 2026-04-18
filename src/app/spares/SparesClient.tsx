@@ -74,7 +74,7 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
         if (category === 'all') return true;
         // If a DB item only says 'spares', it shows in 'all', but can't be specifically filtered 
         // unless we mapped the granular category correctly (which we will).
-        return product.category === category || (product.category === 'spares' && category === 'all');
+        return product.category === category;
     });
 
     // Sort products
