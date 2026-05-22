@@ -47,7 +47,8 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                             stock: dbProduct.stock,
                             stockStatus: (dbProduct.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
                             images: (dbProduct.images && dbProduct.images.length > 0) ? dbProduct.images : (staticMatch?.images || []),
-                            isActive: dbProduct.is_active
+                            isActive: dbProduct.is_active,
+                            is_best_selling: dbProduct.is_best_selling ?? staticMatch?.is_best_selling ?? false
                         } as Product;
                     });
 
@@ -113,7 +114,8 @@ export function useLiveProduct(staticProduct: Product | null | undefined, slugFa
                         inStock: data.stock > 0,
                         stockStatus: (data.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
                         images: (data.images && data.images.length > 0) ? data.images : (staticProduct?.images || []),
-                        isActive: data.is_active
+                        isActive: data.is_active,
+                        is_best_selling: data.is_best_selling ?? staticProduct?.is_best_selling ?? false
                     } as Product);
                 } else if (!data && !staticProduct) {
                     // Not in DB and not in static

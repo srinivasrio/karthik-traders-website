@@ -13,6 +13,7 @@ interface ProductPreviewCardProps {
     stockStatus: string;
     images: string[];
     features: string[];
+    isBestSelling?: boolean;
 }
 
 export default function ProductPreviewCard({
@@ -26,6 +27,7 @@ export default function ProductPreviewCard({
     stockStatus,
     images,
     features,
+    isBestSelling = false,
 }: ProductPreviewCardProps) {
     const brandDef = BRANDS.find(b => b.value === brand);
     const mrpNum = parseFloat(mrp) || 0;
@@ -126,22 +128,33 @@ export default function ProductPreviewCard({
                     </p>
                 )}
 
-                {/* Stock Status */}
-                <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${
-                        stockStatus === 'in-stock' ? 'bg-green-500' :
-                        stockStatus === 'limited' ? 'bg-amber-500' :
-                        'bg-red-500'
-                    }`} />
-                    <span className={`text-[10px] font-medium ${
-                        stockStatus === 'in-stock' ? 'text-green-600' :
-                        stockStatus === 'limited' ? 'text-amber-600' :
-                        'text-red-600'
-                    }`}>
-                        {stockStatus === 'in-stock' ? 'In Stock' :
-                         stockStatus === 'limited' ? 'Limited Stock' :
-                         'Out of Stock'}
-                    </span>
+                {/* Stock Status & Badge */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                            stockStatus === 'in-stock' ? 'bg-green-500' :
+                            stockStatus === 'limited' ? 'bg-amber-500' :
+                            'bg-red-500'
+                        }`} />
+                        <span className={`text-[10px] font-medium ${
+                            stockStatus === 'in-stock' ? 'text-green-600' :
+                            stockStatus === 'limited' ? 'text-amber-600' :
+                            'text-red-600'
+                        }`}>
+                            {stockStatus === 'in-stock' ? 'In Stock' :
+                             stockStatus === 'limited' ? 'Limited Stock' :
+                             'Out of Stock'}
+                        </span>
+                    </div>
+
+                    {isBestSelling && (
+                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wide bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm shadow-indigo-500/20">
+                            <svg className="w-3 h-3 mr-1 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            Best Selling
+                        </span>
+                    )}
                 </div>
 
                 {/* Features */}

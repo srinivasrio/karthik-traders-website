@@ -44,7 +44,8 @@ export async function getLiveProductsAction(staticProducts: Product[]): Promise<
                     stock: dbProduct.stock,
                     stockStatus: (dbProduct.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
                     images: (dbProduct.images && dbProduct.images.length > 0) ? dbProduct.images : (staticMatch?.images || []),
-                    isActive: dbProduct.is_active
+                    isActive: dbProduct.is_active,
+                    is_best_selling: dbProduct.is_best_selling ?? staticMatch?.is_best_selling ?? false
                 } as Product;
             });
 

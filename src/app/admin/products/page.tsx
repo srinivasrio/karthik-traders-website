@@ -32,6 +32,7 @@ interface Product {
     images: string[] | null;
     specifications?: any;
     warranty?: string;
+    is_best_selling?: boolean;
     created_at?: string;
 }
 

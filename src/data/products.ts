@@ -47,6 +47,7 @@ export interface Product {
   stock?: number;
   isActive?: boolean;
   badge?: string;
+  is_best_selling?: boolean;
 }
 
 // ==========================================

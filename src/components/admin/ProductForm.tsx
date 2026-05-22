@@ -207,6 +207,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
     const [warranty, setWarranty] = useState('');
     const [description, setDescription] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [isBestSelling, setIsBestSelling] = useState(false);
     const [images, setImages] = useState<string[]>([]);
     const [specs, setSpecs] = useState<SpecRow[]>([
         { id: Math.random().toString(36).substring(2, 9), key: '', value: '' }
@@ -260,6 +261,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                 setWarranty(data.warranty || specsData.warranty || '');
                 setDescription(data.description || '');
                 setIsActive(data.is_active ?? true);
+                setIsBestSelling(data.is_best_selling ?? false);
                 setImages(parseImages(data.images));
 
                 // Extract brand
@@ -436,6 +438,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                 images,
                 specifications: buildSpecifications(),
                 is_active: isActive,
+                is_best_selling: isBestSelling,
             };
 
             if (mode === 'create') {
@@ -675,19 +678,37 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                                     </div>
                                 </div>
 
-                                {/* Visibility toggle */}
-                                <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <input
-                                        type="checkbox"
-                                        checked={isActive}
-                                        onChange={e => setIsActive(e.target.checked)}
-                                        className="h-4 w-4 text-aqua-600 focus:ring-aqua-500 border-slate-300 rounded"
-                                    />
-                                    <div>
-                                        <span className="text-sm font-medium text-slate-700">Visible on store</span>
-                                        <p className="text-[10px] text-slate-500">Uncheck to hide from customers</p>
-                                    </div>
-                                </label>
+                                {/* Visibility & Best Selling toggles */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={isActive}
+                                            onChange={e => setIsActive(e.target.checked)}
+                                            className="h-4 w-4 text-aqua-600 focus:ring-aqua-500 border-slate-300 rounded"
+                                        />
+                                        <div>
+                                            <span className="text-sm font-medium text-slate-700">Visible on store</span>
+                                            <p className="text-[10px] text-slate-500">Uncheck to hide from customers</p>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={isBestSelling}
+                                            onChange={e => setIsBestSelling(e.target.checked)}
+                                            className="h-4 w-4 text-violet-600 focus:ring-violet-500 border-slate-300 rounded"
+                                        />
+                                        <div>
+                                            <span className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                                                Best Selling
+                                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                                            </span>
+                                            <p className="text-[10px] text-slate-500">Mark product as best selling</p>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </SectionCard>
 
@@ -863,6 +884,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                                     stockStatus={stockStatus}
                                     images={images}
                                     features={existingFeatures}
+                                    isBestSelling={isBestSelling}
                                 />
                             </div>
                         </div>
