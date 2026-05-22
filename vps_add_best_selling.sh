@@ -19,9 +19,9 @@ fi
 echo "Targeting Container: $DB_CONTAINER"
 
 # SQL to apply
-MIGRATION_SQL="ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_best_selling BOOLEAN DEFAULT false;"
+MIGRATION_SQL="ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_best_selling BOOLEAN DEFAULT false; NOTIFY pgrst, 'reload schema';"
 
-echo "Applying SQL migration..."
+echo "Applying SQL migration and reloading PostgREST schema cache..."
 docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -c "$MIGRATION_SQL"
 
 echo "--- Migration Complete ---"
