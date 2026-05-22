@@ -117,10 +117,12 @@ export default function ProductCard({
     const getCategoryLink = () => {
         const baseLink = (() => {
             switch (product.category) {
+                case 'aerators':
                 case 'aerator-set': return `/aerator-sets/${product.slug}`;
                 case 'motor':
                 case 'worm-gearbox':
                 case 'bevel-gearbox': return `/products/${product.slug}`;
+                case 'spares':
                 case 'motor-cover':
                 case 'float':
                 case 'fan':

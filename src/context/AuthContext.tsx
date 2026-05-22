@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     const fetchProfile = async (userId: string) => {
+        console.log('[AuthContext] fetchProfile start for userId:', userId);
         try {
             // Add timeout to prevent hanging (4 seconds)
             const timeoutPromise = new Promise((_, reject) => {
@@ -48,17 +49,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .eq('id', userId)
                 .maybeSingle();
 
-            const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+            console.log('[AuthContext] fetchProfile - racing supabase query...');
+            const res = await Promise.race([fetchPromise, timeoutPromise]) as any;
+            console.log('[AuthContext] fetchProfile - race finished, res:', res);
+
+            const { data, error } = res;
 
             if (error) {
-                // Silent fail
-                console.warn('Error fetching profile:', error.message);
+                console.warn('[AuthContext] Error fetching profile:', error.message);
                 setProfile(null);
             } else {
+                console.log('[AuthContext] Profile fetched successfully:', data);
                 setProfile(data); // data will be null if no row found, which is what we want
             }
-        } catch (err) {
-            // Silent fail on timeout
+        } catch (err: any) {
+            console.error('[AuthContext] Error in fetchProfile:', err);
             setProfile(null);
         }
     };
@@ -67,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check active Supabase session
         const initSession = async () => {
             try {
+                console.log('[AuthContext] initSession - fetching session from supabase...');
                 const { data: { session } } = await supabase.auth.getSession();
+                console.log('[AuthContext] initSession - session retrieved:', session ? 'YES' : 'NO');
                 setSession(session);
                 setUser(session?.user ?? null);
                 if (session?.user) {
@@ -75,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     fetchProfile(session.user.id);
                 }
             } catch (err) {
-                console.error('Session init error:', err);
+                console.error('[AuthContext] Session init error:', err);
                 setSession(null);
                 setUser(null);
                 setProfile(null);
@@ -88,7 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[AuthContext] onAuthStateChange event:', event, 'session:', session ? 'YES' : 'NO');
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {

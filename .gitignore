@@ -50,3 +50,22 @@ node_modules/
 scripts/update_vps_env.sh
 scripts/reset_db_orders.js
 scripts/watch_orders.js
+
+# Custom debug scripts and mock screenshots
+*.png
+/scripts/check_admin.mjs
+/scripts/check_admin_profile.mjs
+/scripts/check_tables.js
+/scripts/create_bucket.mjs
+/scripts/inspect_auth.mjs
+/scripts/list_functions.mjs
+/scripts/reset_admin_password.mjs
+/scripts/run-migration.js
+/scripts/test_anon_fetch.js
+/scripts/test_auth.mjs
+/scripts/test_auth_upload.mjs
+/scripts/test_db.mjs
+/scripts/test_derived_auth.mjs
+/scripts/test_formatting_logic.js
+/scripts/test_upload.mjs
+/scripts/test_user_profile_fetch.mjs

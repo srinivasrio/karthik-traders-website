@@ -51,9 +51,8 @@ export default function LoginPage() {
 
     // Helpers
     const formatPhone = (phone: string) => {
-        let p = phone.trim();
-        if (!p.startsWith('+')) p = '+91' + p;
-        return p;
+        const normalized = phone.replace(/\D/g, '').slice(-10);
+        return `+91${normalized}`;
     };
 
     const getEmail = (phone: string) => {
@@ -101,27 +100,146 @@ export default function LoginPage() {
         setError('');
         setLoading(true);
 
-        try {
-            const email = getEmail(phoneNumber);
-            const { data: authData, error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
+        const mobile = phoneNumber;
+        const normalized = mobile.replace(/\D/g, '').slice(-10);
+        console.log('[Auth Flow] Login initiated. Raw phone:', mobile, 'Normalized:', normalized);
 
-            if (error) {
-                // Handle auth errors without console.error
-                setError(error.message === 'Invalid login credentials'
+        if (!normalized || normalized.length !== 10) {
+            setError('Please enter a valid 10-digit mobile number.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // 1. Verify user details & retrieve exact registered email via server API
+            let emailToUse = '';
+            let expectedRole = '';
+            
+            try {
+                console.log('[Auth Flow] Checking user details in database...');
+                const checkRes = await fetch('/api/auth/check-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mobile: normalized })
+                });
+
+                if (checkRes.ok) {
+                    const checkData = await checkRes.json();
+                    console.log('[Auth Flow] Check user API response:', checkData);
+                    if (checkData.exists && checkData.email) {
+                        emailToUse = checkData.email;
+                        expectedRole = checkData.role;
+                        console.log(`[Auth Flow] User found in DB. Using email: "${emailToUse}", Expected role: "${expectedRole}"`);
+                    } else if (checkData.exists) {
+                        console.log('[Auth Flow] User exists in DB, but email not returned. Will try fallbacks.');
+                        expectedRole = checkData.role;
+                    } else {
+                        console.log('[Auth Flow] User not found in DB. Will try fallbacks.');
+                    }
+                } else {
+                    console.warn('[Auth Flow] Check user API returned status:', checkRes.status);
+                }
+            } catch (checkErr) {
+                console.error('[Auth Flow] Failed to query check-user API:', checkErr);
+            }
+
+            // 2. Perform authentication attempts
+            let loginSuccess = false;
+            let finalAuthData: any = null;
+            let finalError: any = null;
+
+            if (emailToUse) {
+                // If we retrieved the exact registered email, try signing in with it
+                console.log(`[Auth Flow] Attempting sign-in with retrieved email: "${emailToUse}"`);
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: emailToUse,
+                    password
+                });
+
+                if (!error) {
+                    loginSuccess = true;
+                    finalAuthData = data;
+                } else {
+                    finalError = error;
+                    console.warn('[Auth Flow] Sign-in with retrieved email failed:', error.message);
+                }
+            }
+
+            // 3. Fallback attempts if check-user was not available or direct attempt failed
+            if (!loginSuccess) {
+                // Try format 1: 91${normalized}@karthiktraders.com
+                const primaryEmail = `91${normalized}@karthiktraders.com`;
+                console.log(`[Auth Flow] Attempting sign-in with primary fallback email: "${primaryEmail}"`);
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: primaryEmail,
+                    password
+                });
+
+                if (!error) {
+                    loginSuccess = true;
+                    finalAuthData = data;
+                } else {
+                    console.warn('[Auth Flow] Primary email sign-in failed:', error.message);
+                    
+                    // Try format 2: ${normalized}@karthiktraders.com (legacy / old records)
+                    const legacyEmail = `${normalized}@karthiktraders.com`;
+                    console.log(`[Auth Flow] Attempting sign-in with legacy fallback email: "${legacyEmail}"`);
+                    const { data: legacyData, error: legacyError } = await supabase.auth.signInWithPassword({
+                        email: legacyEmail,
+                        password
+                    });
+
+                    if (!legacyError) {
+                        loginSuccess = true;
+                        finalAuthData = legacyData;
+                    } else {
+                        console.error('[Auth Flow] Legacy email sign-in failed:', legacyError.message);
+                        finalError = legacyError;
+                    }
+                }
+            }
+
+            // Handle login failure
+            if (!loginSuccess || !finalAuthData) {
+                const errMsg = finalError?.message === 'Invalid login credentials'
                     ? 'Invalid phone number or password'
-                    : error.message);
+                    : (finalError?.message || 'An unexpected authentication error occurred');
+                setError(errMsg);
                 setLoading(false);
                 return;
             }
 
+            // 4. Role Validation & Redirect
+            console.log('[Auth Flow] Sign-in successful! User ID:', finalAuthData.user?.id);
+            let userRole = expectedRole;
 
+            if (!userRole) {
+                // Fetch role from profile table to double check
+                console.log('[Auth Flow] Querying profile role for user ID:', finalAuthData.user?.id);
+                const { data: profile, error: roleError } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', finalAuthData.user?.id)
+                    .maybeSingle();
 
-            router.push(redirectUrl);
+                if (roleError) {
+                    console.error('[Auth Flow] Error fetching user role from profiles:', roleError.message);
+                } else if (profile) {
+                    userRole = profile.role;
+                    console.log('[Auth Flow] Retrieved profile role:', userRole);
+                }
+            }
+
+            if (userRole === 'admin') {
+                console.log('[Auth Flow] Access granted: Admin role verified. Redirecting to /admin');
+                router.push('/admin');
+            } else {
+                console.log(`[Auth Flow] Access granted: Customer role (${userRole}). Redirecting to:`, redirectUrl);
+                router.push(redirectUrl);
+            }
+
         } catch (err: any) {
-            // Only catch unexpected errors
+            console.error('[Auth Flow] Unexpected error in handleLogin:', err);
             setError(err.message || 'An unexpected error occurred');
         } finally {
             setLoading(false);

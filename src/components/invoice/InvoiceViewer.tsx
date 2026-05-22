@@ -5,7 +5,7 @@ import InvoicePDF from './InvoicePDF';
 
 // Dynamically import PDFViewer to avoid SSR issues
 const PDFViewer = dynamic(
-    () => import('@react-pdf/renderer').then((mod) => mod.PDFViewer),
+    () => import('./PDFViewerWrapper'),
     {
         ssr: false,
         loading: () => (
@@ -26,9 +26,7 @@ export default function InvoiceViewer({ order }: InvoiceViewerProps) {
             <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex justify-between items-center">
                 <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Invoice Preview</h3>
             </div>
-            <PDFViewer width="100%" height="100%" className="border-0">
-                <InvoicePDF order={order} />
-            </PDFViewer>
+            <PDFViewer width="100%" height="100%" className="border-0" order={order} />
         </div>
     );
 }

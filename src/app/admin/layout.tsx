@@ -41,7 +41,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setMounted(true);
     }, []);
 
+    const bypassAuth = false; // Temporary bypass for local debugging
+
     useEffect(() => {
+        if (bypassAuth) return;
         if (!loading && mounted) {
             if (!user) {
                 router.push('/login');
@@ -59,7 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    if (!user || !profile || profile.role !== 'admin') {
+    if (!bypassAuth && (!user || !profile || profile.role !== 'admin')) {
         // If user exists but profile is explicitly loading/missing, show loading
         if (user && !profile) {
             return (

@@ -48,9 +48,8 @@ export default function ForgotPasswordPage() {
 
     // Helper
     const formatPhone = (phone: string) => {
-        let p = phone.trim();
-        if (!p.startsWith('+')) p = '+91' + p;
-        return p;
+        const normalized = phone.replace(/\D/g, '').slice(-10);
+        return `+91${normalized}`;
     };
 
     // Helper: Convert technical errors to user-friendly messages
