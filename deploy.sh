@@ -1,36 +1,35 @@
 #!/bin/bash
 
-# Deployment Script for Karthik Traders Website
-# Usage: ./deploy.sh
-
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-echo "🚀 Starting Deployment..."
+echo "======================================================="
+echo "   Starting Karthik Traders Website VPS Deployment     "
+echo "======================================================="
 
-# 1. Force Pull latest changes (Discards local VPS changes to tracked files)
-echo "📥 Forcing sync with GitHub..."
-git fetch --all
-git reset --hard origin/main
+# Navigate to the directory where this script is located
+cd "$(dirname "$0")"
 
-# 2. Install dependencies
-echo "📦 Installing dependencies..."
+echo "1. Stashing any local changes on the VPS..."
+git stash || true
+
+echo "2. Pulling the latest changes from GitHub..."
+git pull origin main
+
+echo "3. Installing npm packages..."
 npm install
 
-# 3. Build the application
-echo "🏗️ Building Next.js app..."
+echo "4. Compiling production Next.js build..."
 npm run build
 
-# 4. Restart PM2 process
-echo "🔄 Restarting application..."
-if command -v pm2 &> /dev/null; then
-    pm2 restart karthik-traders || pm2 start ecosystem.config.js
-    pm2 save
+echo "5. Restarting the PM2 application..."
+if pm2 show karthik-traders-website > /dev/null 2>&1; then
+    pm2 restart karthik-traders-website
 else
-    echo "⚠️ PM2 not found. Installing global PM2..."
-    npm install -g pm2
-    pm2 start ecosystem.config.js
-    pm2 save
+    echo "PM2 process 'karthik-traders-website' not found. Starting a new process..."
+    pm2 start npm --name "karthik-traders-website" -- start
 fi
 
-echo "✅ Deployment Complete! App is updated to the latest version."
+echo "======================================================="
+echo "   Deployment Completed Successfully!                  "
+echo "======================================================="
