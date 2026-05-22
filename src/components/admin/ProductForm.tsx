@@ -211,7 +211,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
     const [specs, setSpecs] = useState<SpecRow[]>([
         { id: Math.random().toString(36).substring(2, 9), key: '', value: '' }
     ]);
-    const [features, setFeatures] = useState<string[]>(['']);
+    const [existingFeatures, setExistingFeatures] = useState<string[]>([]);
     const [components, setComponents] = useState<ComponentRow[]>([
         { item: '', spec: '', quantity: '' },
     ]);
@@ -290,11 +290,10 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                     setSpecs([{ id: Math.random().toString(36).substring(2, 9), key: '', value: '' }]);
                 }
 
-                // Extract features
+                // Extract features (preserved for backward compatibility, not managed in UI)
                 const feats = parseFeatures(specsData.features || data.features);
                 if (feats.length > 0) {
-                    setFeatures(feats);
-                    setSections(prev => ({ ...prev, features: true }));
+                    setExistingFeatures(feats);
                 }
 
                 // Extract components
@@ -355,12 +354,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
         });
     };
 
-    // Feature handlers
-    const updateFeature = (index: number, val: string) => {
-        setFeatures(prev => prev.map((f, i) => i === index ? val : f));
-    };
-    const addFeature = () => setFeatures(prev => [...prev, '']);
-    const removeFeature = (index: number) => setFeatures(prev => prev.filter((_, i) => i !== index));
+    // Feature handlers removed. Existing features preserved on load.
 
     // Component handlers
     const updateComponent = (index: number, field: keyof ComponentRow, val: string) => {
@@ -388,10 +382,9 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
         result.brand = brand;
         if (model) result.model = model;
 
-        // Add features array
-        const cleanFeatures = features.filter(f => f.trim());
-        if (cleanFeatures.length > 0) {
-            result.features = cleanFeatures;
+        // Add existing features array for backward compatibility
+        if (existingFeatures && existingFeatures.length > 0) {
+            result.features = existingFeatures;
         }
 
         // Add components array
@@ -775,43 +768,6 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                             </div>
                         </SectionCard>
 
-                        {/* === FEATURES === */}
-                        <SectionCard
-                            title="Features"
-                            open={sections.features}
-                            onToggle={() => toggleSection('features')}
-                            badge={features.filter(f => f.trim()).length > 0 ? `${features.filter(f => f.trim()).length} items` : undefined}
-                        >
-                            <div className="space-y-2">
-                                {features.map((feat, i) => (
-                                    <div key={i} className="flex gap-2 items-center">
-                                        <span className="text-xs text-slate-400 w-5 text-center">{i + 1}.</span>
-                                        <input
-                                            type="text"
-                                            value={feat}
-                                            onChange={e => updateFeature(i, e.target.value)}
-                                            placeholder="Feature description"
-                                            className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeFeature(i)}
-                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                                        >
-                                            <TrashIcon className="h-3.5 w-3.5" />
-                                        </button>
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={addFeature}
-                                    className="flex items-center gap-1 text-xs text-aqua-600 hover:text-aqua-700 font-medium py-1"
-                                >
-                                    <PlusIcon className="h-3.5 w-3.5" /> Add Feature
-                                </button>
-                            </div>
-                        </SectionCard>
-
                         {/* === SET COMPONENTS (Aerator sets only) === */}
                         {isAeratorSet && (
                             <SectionCard
@@ -906,7 +862,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                                     warranty={warranty}
                                     stockStatus={stockStatus}
                                     images={images}
-                                    features={features}
+                                    features={existingFeatures}
                                 />
                             </div>
                         </div>
