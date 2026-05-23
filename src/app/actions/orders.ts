@@ -47,6 +47,8 @@ export async function updateOrderFulfillmentAction(
 ) {
     try {
         console.log(`Server Action: Updating fulfillment for order ${orderId}...`);
+        
+        let columnsExist = true;
         // 1. Update each order item
         for (const item of items) {
             const { error: itemError } = await supabaseAdmin
@@ -59,9 +61,42 @@ export async function updateOrderFulfillmentAction(
                 .eq('id', item.id);
 
             if (itemError) {
+                const errMsg = itemError.message || '';
+                if (
+                    itemError.code === '42703' || 
+                    itemError.code === 'PGRST200' || 
+                    errMsg.includes('fulfilled_quantity') ||
+                    errMsg.includes('is_available') ||
+                    errMsg.includes('out_of_stock_reason') ||
+                    errMsg.includes('column')
+                ) {
+                    columnsExist = false;
+                    console.warn('[Server Action] Columns for partial fulfillment do not exist. Falling back to status-only update.');
+                    break;
+                }
                 console.error(`Error updating order item ${item.id}:`, itemError);
                 return { success: false, error: itemError.message };
             }
+        }
+
+        if (!columnsExist) {
+            // Fallback: update status of the order only (without new fields like include_oos_in_invoice or total recalculations that rely on fulfilled_quantity)
+            const { error: updateOrderError } = await supabaseAdmin
+                .from('orders')
+                .update({
+                    status: status
+                })
+                .eq('id', orderId);
+
+            if (updateOrderError) {
+                console.error('Error updating order status in fallback:', updateOrderError);
+                return { success: false, error: updateOrderError.message };
+            }
+
+            return { 
+                success: true, 
+                warning: 'Migration required: The "partial stock order management" columns (is_available, fulfilled_quantity, out_of_stock_reason) do not exist in your database schema cache. The order status has been updated, but out-of-stock items and recalculated totals could not be saved. Please run the migration script (vps_partial_fulfillment.sh) on your VPS or execute the SQL in your Supabase SQL Editor.' 
+            };
         }
 
         // 2. Fetch updated order items to recalculate total

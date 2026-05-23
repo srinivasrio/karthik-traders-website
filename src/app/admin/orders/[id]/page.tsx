@@ -282,7 +282,11 @@ export default function OrderDetailPage() {
                 }
                 setOrder(data);
                 setIsEditingFulfillment(false);
-                alert('Order fulfillment updated successfully!');
+                if (result.warning) {
+                    alert(result.warning);
+                } else {
+                    alert('Order fulfillment updated successfully!');
+                }
             } else {
                 alert('Failed to update fulfillment: ' + result.error);
             }
