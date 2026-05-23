@@ -16,6 +16,41 @@ interface ProductPageProps {
 }
 
 import ImageModal from '@/components/ui/ImageModal';
+import { getSortedSpecifications } from '@/lib/specs';
+
+const renderSpecValue = (value: any) => {
+    if (typeof value === 'object' && value !== null) {
+        if (Array.isArray(value)) {
+            return (
+                <ul className="list-disc pl-4 space-y-1">
+                    {value.map((v: any, i: number) => (
+                        <li key={i}>
+                            {typeof v === 'object' && v !== null 
+                                ? Object.values(v).filter(Boolean).join(' - ')
+                                : String(v)}
+                        </li>
+                    ))}
+                </ul>
+            );
+        }
+        return JSON.stringify(value);
+    }
+    
+    const strValue = String(value || '');
+    const lines = strValue.split('\n').map(line => line.trim()).filter(Boolean);
+    
+    if (lines.length > 1) {
+        return (
+            <ul className="list-disc pl-4 space-y-1">
+                {lines.map((line, i) => (
+                    <li key={i}>{line}</li>
+                ))}
+            </ul>
+        );
+    }
+    
+    return strValue;
+};
 
 export default function LongArmDetailPage({ params }: ProductPageProps) {
     const { slug } = use(params);
@@ -290,29 +325,13 @@ export default function LongArmDetailPage({ params }: ProductPageProps) {
                                                     <div className="bg-white/80 backdrop-blur rounded-xl overflow-hidden mt-3 border border-steel-200">
                                                         <table className="w-full text-sm border-collapse">
                                                             <tbody>
-                                                                {Object.entries(product.specifications).map(([key, value], index) => (
+                                                                {getSortedSpecifications(product).map(([key, value], index) => (
                                                                     <tr key={key} className="border-b border-steel-200 last:border-0 hover:bg-steel-50/50 transition-colors">
                                                                         <td className="px-4 py-3 font-semibold text-steel-600 bg-steel-50/30 border-r border-steel-200 w-1/3">
                                                                             {key}
                                                                         </td>
                                                                         <td className="px-4 py-3 font-medium text-deep-blue-900">
-                                                                            {typeof (value as any) === 'object' ? (
-                                                                                Array.isArray(value as any) ? (
-                                                                                    <ul className="list-disc pl-4 space-y-1">
-                                                                                        {(value as any).map((v: any, i: number) => (
-                                                                                            <li key={i}>
-                                                                                                {typeof v === 'object' && v !== null 
-                                                                                                    ? Object.values(v).filter(Boolean).join(' - ')
-                                                                                                    : String(v)}
-                                                                                            </li>
-                                                                                        ))}
-                                                                                    </ul>
-                                                                                ) : (
-                                                                                    JSON.stringify(value)
-                                                                                )
-                                                                            ) : (
-                                                                                String(value)
-                                                                            )}
+                                                                            {renderSpecValue(value)}
                                                                         </td>
                                                                     </tr>
                                                                 ))}

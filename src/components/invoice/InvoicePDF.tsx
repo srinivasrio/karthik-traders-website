@@ -204,6 +204,26 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 5,
         textDecoration: 'none',
+    },
+    oosSection: {
+        marginTop: 15,
+        padding: 8,
+        borderWidth: 1,
+        borderColor: '#fca5a5',
+        borderStyle: 'solid',
+        backgroundColor: '#fef2f2',
+    },
+    oosTitle: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: '#b91c1c',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+    },
+    oosItemText: {
+        fontSize: 9,
+        color: '#374151',
+        marginBottom: 2,
     }
 });
 
@@ -212,6 +232,42 @@ interface InvoiceProps {
 }
 
 const InvoicePDF = ({ order }: InvoiceProps) => {
+    const items = order.order_items || [];
+    
+    // Filter fulfilled items (available and quantity > 0)
+    const fulfilledItems = items.filter((item: any) => {
+        const isAvailable = item.is_available !== false;
+        const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null 
+            ? item.fulfilled_quantity 
+            : item.quantity;
+        return isAvailable && fulfilledQty > 0;
+    });
+
+    // Compute out of stock items
+    const outOfStockItems: Array<{ name: string; qty: number; reason?: string }> = [];
+    items.forEach((item: any) => {
+        const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
+        const name = productDetails?.name || item.product_name || item.product_id || 'Item';
+        const isAvailable = item.is_available !== false;
+        const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null 
+            ? item.fulfilled_quantity 
+            : item.quantity;
+        
+        if (!isAvailable) {
+            outOfStockItems.push({
+                name,
+                qty: item.quantity,
+                reason: item.out_of_stock_reason || 'Out of stock'
+            });
+        } else if (fulfilledQty < item.quantity) {
+            outOfStockItems.push({
+                name,
+                qty: item.quantity - fulfilledQty,
+                reason: 'Out of stock'
+            });
+        }
+    });
+
     return (
         <Document>
             <Page size="A4" style={styles.page}>
@@ -287,10 +343,10 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                     </View>
 
                     {/* Rows */}
-                    {order.order_items?.map((item: any, idx: number) => {
+                    {fulfilledItems.map((item: any, idx: number) => {
                         const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
                         const price = Number(item.price_at_purchase || 0);
-                        const qty = Number(item.quantity || 0);
+                        const qty = Number(item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null ? item.fulfilled_quantity : item.quantity);
                         const total = price * qty;
                         return (
                             <View key={idx} style={styles.tableRow}>
@@ -302,6 +358,18 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                         );
                     })}
                 </View>
+
+                {/* Out of Stock Section */}
+                {order.include_oos_in_invoice && outOfStockItems.length > 0 && (
+                    <View style={styles.oosSection}>
+                        <Text style={styles.oosTitle}>Out Of Stock Items</Text>
+                        {outOfStockItems.map((oosItem, idx) => (
+                            <Text key={idx} style={styles.oosItemText}>
+                                • {oosItem.name} x{oosItem.qty} ({oosItem.reason})
+                            </Text>
+                        ))}
+                    </View>
+                )}
 
                 {/* Totals */}
                 <View style={styles.totalsSection}>

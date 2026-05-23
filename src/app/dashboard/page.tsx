@@ -88,7 +88,10 @@ export default function DashboardPage() {
                     order_items(
                         product_id,
                         quantity,
-                        price_at_purchase
+                        price_at_purchase,
+                        is_available,
+                        fulfilled_quantity,
+                        out_of_stock_reason
                     )
                 `)
                 .or(`user_id.eq.${user?.id},customer_mobile.eq.${profile?.mobile}`)
@@ -100,7 +103,10 @@ export default function DashboardPage() {
                     ...order,
                     order_items: order.order_items?.map((item: any) => ({
                         ...item,
-                        product_name: productMap.get(item.product_id)?.name || item.product_id
+                        product_name: productMap.get(item.product_id)?.name || item.product_id,
+                        is_available: item.is_available !== null && item.is_available !== undefined ? item.is_available : true,
+                        fulfilled_quantity: item.fulfilled_quantity !== null && item.fulfilled_quantity !== undefined ? item.fulfilled_quantity : item.quantity,
+                        out_of_stock_reason: item.out_of_stock_reason || ''
                     })) || []
                 }));
                 // @ts-ignore
@@ -116,8 +122,9 @@ export default function DashboardPage() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'completed':
+                return 'bg-emerald-100 text-emerald-800';
             case 'delivered':
-                return 'bg-green-100 text-green-800';
+                return 'bg-green-200 text-green-900';
             case 'pending':
                 return 'bg-yellow-100 text-yellow-800';
             case 'processing':
@@ -125,6 +132,10 @@ export default function DashboardPage() {
                 return 'bg-blue-100 text-blue-800';
             case 'shipped':
                 return 'bg-purple-100 text-purple-800';
+            case 'partially_fulfilled':
+                return 'bg-sky-100 text-sky-800';
+            case 'out_of_stock':
+                return 'bg-rose-100 text-rose-800';
             case 'cancelled':
             case 'rejected':
                 return 'bg-red-100 text-red-800';
@@ -141,8 +152,14 @@ export default function DashboardPage() {
                 return 'Order Confirmed';
             case 'rejected':
                 return 'Order Rejected';
+            case 'partially_fulfilled':
+                return 'Partially Fulfilled';
+            case 'out_of_stock':
+                return 'Out Of Stock';
+            case 'completed':
+                return 'Completed';
             default:
-                return status.charAt(0).toUpperCase() + status.slice(1);
+                return status.replace(/_/g, ' ').charAt(0).toUpperCase() + status.replace(/_/g, ' ').slice(1);
         }
     };
 
@@ -292,13 +309,29 @@ export default function DashboardPage() {
                                                         <div className="space-y-2">
                                                             {order.order_items?.map((item: any, idx) => {
                                                                 const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id);
+                                                                const isAvailable = item.is_available !== false;
+                                                                const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null ? item.fulfilled_quantity : item.quantity;
+                                                                const hasFulfillmentDiff = fulfilledQty !== item.quantity;
+
                                                                 return (
-                                                                    <div key={idx} className="flex justify-between items-center text-sm bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/50">
+                                                                    <div key={idx} className={`flex justify-between items-center text-sm p-2.5 rounded-lg border ${!isAvailable ? 'bg-rose-50/30 border-rose-100/50 text-slate-400' : 'bg-slate-50/50 border-slate-100/50'}`}>
                                                                         <div className="flex flex-col">
-                                                                            <span className="font-semibold text-slate-800">{productDetails?.name || item.product_name || item.product_id || 'Unknown Product'}</span>
-                                                                            <span className="text-[11px] text-slate-500">Qty: {item.quantity}</span>
+                                                                            <span className={`font-semibold ${!isAvailable ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                                                                {productDetails?.name || item.product_name || item.product_id || 'Unknown Product'}
+                                                                            </span>
+                                                                            <span className="text-[11px] text-slate-500">
+                                                                                {!isAvailable ? (
+                                                                                    <span className="text-rose-600 font-semibold">Out of Stock {item.out_of_stock_reason ? `(${item.out_of_stock_reason})` : ''}</span>
+                                                                                ) : hasFulfillmentDiff ? (
+                                                                                    <span>Fulfilled: <strong className="text-slate-800">{fulfilledQty}</strong> / {item.quantity}</span>
+                                                                                ) : (
+                                                                                    <span>Qty: {item.quantity}</span>
+                                                                                )}
+                                                                            </span>
                                                                         </div>
-                                                                        <span className="font-bold text-slate-700">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
+                                                                        <span className={`font-bold ${!isAvailable ? 'text-slate-400' : 'text-slate-700'}`}>
+                                                                            ₹{(item.price_at_purchase * (isAvailable ? fulfilledQty : 0)).toLocaleString()}
+                                                                        </span>
                                                                     </div>
                                                                 );
                                                             })}

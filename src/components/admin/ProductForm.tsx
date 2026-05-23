@@ -763,12 +763,12 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                                             placeholder="Spec name"
                                             className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500"
                                         />
-                                        <input
-                                            type="text"
+                                        <textarea
                                             value={spec.value}
                                             onChange={e => updateSpec(spec.id, 'value', e.target.value)}
-                                            placeholder="Value"
-                                            className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500"
+                                            placeholder="Value (can be multiline)"
+                                            rows={Math.max(1, (spec.value || '').split('\n').length)}
+                                            className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500 min-h-[32px] resize-none"
                                         />
                                         <button
                                             type="button"

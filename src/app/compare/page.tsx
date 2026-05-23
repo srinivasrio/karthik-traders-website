@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { aeratorSets, Product, formatPrice, calculateSavings } from '@/data/products';
 import { useLiveProducts } from '@/hooks/useLiveProducts';
+import { sortSpecificationKeys } from '@/lib/specs';
 
 function CompareContent() {
     const searchParams = useSearchParams();
@@ -72,13 +73,16 @@ function CompareContent() {
             'Model number', 'Technical Specifications'
         ];
         
-        return Array.from(
+        const rawKeys = Array.from(
             new Set(
                 selectedProducts.flatMap(p =>
                     p.specifications ? Object.keys(p.specifications) : []
                 )
             )
         ).filter(key => !excludedKeys.includes(key));
+
+        const referenceProduct = selectedProducts[0];
+        return sortSpecificationKeys(rawKeys, referenceProduct);
     }, [selectedProducts]);
 
     if (productsLoading) {

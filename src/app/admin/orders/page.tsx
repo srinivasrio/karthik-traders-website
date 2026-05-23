@@ -48,6 +48,9 @@ const STATUS_TABS = [
     { id: 'processing', label: 'Processing' },
     { id: 'shipped', label: 'Shipped' },
     { id: 'delivered', label: 'Delivered' },
+    { id: 'completed', label: 'Completed' },
+    { id: 'partially_fulfilled', label: 'Partially Fulfilled' },
+    { id: 'out_of_stock', label: 'Out of Stock' },
     { id: 'rejected', label: 'Rejected' },
 ];
 
@@ -57,7 +60,9 @@ const STATUS_COLORS: Record<string, string> = {
     processing: 'bg-blue-100 text-blue-800',
     shipped: 'bg-purple-100 text-purple-800',
     delivered: 'bg-green-200 text-green-900',
-    completed: 'bg-green-200 text-green-900',
+    completed: 'bg-emerald-100 text-emerald-800',
+    partially_fulfilled: 'bg-sky-100 text-sky-800',
+    out_of_stock: 'bg-rose-100 text-rose-800',
     rejected: 'bg-red-100 text-red-800',
     cancelled: 'bg-gray-100 text-gray-800',
 };
@@ -76,12 +81,14 @@ export default function AdminOrdersPage() {
         message: string;
         onConfirm: () => void;
         type: 'danger' | 'success' | 'warning';
+        confirmText?: string;
     }>({
         isOpen: false,
         title: '',
         message: '',
         onConfirm: () => { },
-        type: 'warning'
+        type: 'warning',
+        confirmText: 'Confirm'
     });
 
     useEffect(() => {
@@ -141,6 +148,7 @@ export default function AdminOrdersPage() {
             title: 'Confirm Order?',
             message: 'Are you sure you want to accept this order? Product stock will be deducted automatically.',
             type: 'success',
+            confirmText: 'Accept Order',
             onConfirm: () => executeAccept(orderId)
         });
     };
@@ -181,6 +189,7 @@ export default function AdminOrdersPage() {
             title: 'Reject Order?',
             message: 'Are you sure you want to reject this order? This action cannot be undone.',
             type: 'danger',
+            confirmText: 'Reject Order',
             onConfirm: () => executeReject(orderId)
         });
     };
@@ -207,6 +216,35 @@ export default function AdminOrdersPage() {
             setOrders(prev => prev.map(o =>
                 o.id === orderId ? { ...o, status: 'rejected' } : o
             ));
+        } catch (err: any) {
+            alert('Error: ' + err.message);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleDeleteOrderClick = (orderId: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Order?',
+            message: 'Are you sure you want to permanently delete this order? All items, invoices, and associated data will be deleted. This action cannot be undone.',
+            type: 'danger',
+            confirmText: 'Delete Order',
+            onConfirm: () => executeDeleteOrder(orderId)
+        });
+    };
+
+    const executeDeleteOrder = async (orderId: string) => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        setActionLoading(orderId);
+        try {
+            const { deleteOrderAction } = await import('@/app/actions/orders');
+            const result = await deleteOrderAction(orderId);
+            if (result.success) {
+                setOrders(prev => prev.filter(o => o.id !== orderId));
+            } else {
+                alert('Failed to delete order: ' + result.error);
+            }
         } catch (err: any) {
             alert('Error: ' + err.message);
         } finally {
@@ -347,37 +385,49 @@ export default function AdminOrdersPage() {
                                                     </td>
                                                     <td className="px-3 py-4">
                                                         <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${STATUS_COLORS[order.status] || 'bg-slate-100 text-slate-800'}`}>
-                                                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                            {order.status.replace(/_/g, ' ').charAt(0).toUpperCase() + order.status.replace(/_/g, ' ').slice(1)}
                                                         </span>
                                                     </td>
                                                     <td className="px-3 py-4">
-                                                        {order.status === 'pending' ? (
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => handleAccept(order.id)}
-                                                                    disabled={actionLoading === order.id}
-                                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
+                                                        <div className="flex items-center gap-3">
+                                                            {order.status === 'pending' ? (
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        onClick={() => handleAccept(order.id)}
+                                                                        disabled={actionLoading === order.id}
+                                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
+                                                                    >
+                                                                        <CheckIcon className="w-3 h-3" />
+                                                                        Accept
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleReject(order.id)}
+                                                                        disabled={actionLoading === order.id}
+                                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 disabled:opacity-50"
+                                                                    >
+                                                                        <XMarkIcon className="w-3 h-3" />
+                                                                        Reject
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <Link
+                                                                    href={`/admin/orders/${order.id}`}
+                                                                    className="text-sm text-aqua-600 hover:text-aqua-900 font-medium"
                                                                 >
-                                                                    <CheckIcon className="w-3 h-3" />
-                                                                    Accept
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleReject(order.id)}
-                                                                    disabled={actionLoading === order.id}
-                                                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 disabled:opacity-50"
-                                                                >
-                                                                    <XMarkIcon className="w-3 h-3" />
-                                                                    Reject
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <Link
-                                                                href={`/admin/orders/${order.id}`}
-                                                                className="text-sm text-aqua-600 hover:text-aqua-900 font-medium"
+                                                                    View Invoice
+                                                                </Link>
+                                                            )}
+                                                            <button
+                                                                onClick={() => handleDeleteOrderClick(order.id)}
+                                                                disabled={actionLoading === order.id}
+                                                                className="text-red-600 hover:text-red-900 text-xs font-semibold flex items-center gap-1 ml-auto"
+                                                                title="Delete Order"
                                                             >
-                                                                View Invoice
-                                                            </Link>
-                                                        )}
+                                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                                 {/* Expanded Order Items */}
@@ -421,7 +471,7 @@ export default function AdminOrdersPage() {
                 title={confirmModal.title}
                 message={confirmModal.message}
                 type={confirmModal.type}
-                confirmText={confirmModal.type === 'danger' ? 'Reject Order' : 'Accept Order'}
+                confirmText={confirmModal.confirmText}
             />
         </div>
     );
