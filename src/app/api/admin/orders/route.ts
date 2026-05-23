@@ -170,7 +170,7 @@ export async function GET(request: Request) {
             ...order,
             order_items: order.order_items?.map((item: any) => ({
                 ...item,
-                product_name: productMap.get(item.product_id)?.name || 'Item'
+                product_name: productMap.get(item.product_id)?.name || item.product_id
             })) || []
         }));
 

@@ -294,7 +294,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                         const total = price * qty;
                         return (
                             <View key={idx} style={styles.tableRow}>
-                                <Text style={styles.cellItems}>{productDetails?.name || item.product_name || 'Item'}</Text>
+                                <Text style={styles.cellItems}>{productDetails?.name || item.product_name || item.product_id || 'Item'}</Text>
                                 <Text style={styles.cellPrice}>Rs. {price.toLocaleString()}</Text>
                                 <Text style={styles.cellQty}>{qty}</Text>
                                 <Text style={styles.cellTotal}>Rs. {total.toLocaleString()}</Text>

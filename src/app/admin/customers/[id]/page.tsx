@@ -81,17 +81,23 @@ export default function CustomerDetailPage() {
             }
 
             if (ordersData && ordersData.length > 0) {
-                // Manually fetch items for these orders
                 const orderIds = ordersData.map(o => o.id);
+                // Fetch all products first for mapping in-memory to bypass relationship constraints
+                const { data: productsData } = await supabase
+                    .from('products')
+                    .select('id, name, slug, images');
+
+                const productMap = new Map();
+                if (productsData) {
+                    productsData.forEach(p => {
+                        productMap.set(p.id, p);
+                        productMap.set(p.slug, p);
+                    });
+                }
+
                 const { data: itemsData, error: itemsError } = await supabase
                     .from('order_items')
-                    .select(`
-                        *,
-                        product:products (
-                            name,
-                            images
-                        )
-                    `)
+                    .select('*')
                     .in('order_id', orderIds);
 
                 if (itemsError) {
@@ -99,10 +105,23 @@ export default function CustomerDetailPage() {
                     // Don't fail the whole page, just show orders without items
                     setOrders(ordersData);
                 } else {
-                    // Merge items into orders
+                    // Merge items into orders and map product info
+                    const mappedItems = (itemsData || []).map(item => {
+                        const dbProd = productMap.get(item.product_id);
+                        return {
+                            ...item,
+                            product: dbProd ? {
+                                name: dbProd.name,
+                                images: dbProd.images
+                            } : {
+                                name: item.product_id,
+                                images: []
+                            }
+                        };
+                    });
                     const ordersWithItems = ordersData.map(order => ({
                         ...order,
-                        order_items: itemsData?.filter(item => item.order_id === order.id) || []
+                        order_items: mappedItems.filter(item => item.order_id === order.id)
                     }));
                     setOrders(ordersWithItems);
                 }

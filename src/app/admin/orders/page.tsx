@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { CheckIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
@@ -118,12 +118,11 @@ export default function AdminOrdersPage() {
 
             if (error) throw error;
 
-            // Append product_name so InvoicePDF works
             const mappedOrders = (data || []).map(order => ({
                 ...order,
                 order_items: order.order_items?.map((item: any) => ({
                     ...item,
-                    product_name: productMap.get(item.product_id)?.name || 'Item'
+                    product_name: productMap.get(item.product_id)?.name || item.product_id
                 })) || []
             }));
 
@@ -308,8 +307,8 @@ export default function AdminOrdersPage() {
                                         <tr><td colSpan={6} className="text-center py-8 text-slate-500">No orders found.</td></tr>
                                     ) : (
                                         filteredOrders.map((order) => (
-                                            <>
-                                                <tr key={order.id} className={order.status === 'pending' ? 'bg-yellow-50' : ''}>
+                                            <React.Fragment key={order.id}>
+                                                <tr className={order.status === 'pending' ? 'bg-yellow-50' : ''}>
                                                     <td className="py-4 pl-4 pr-3 sm:pl-6">
                                                         <div className="flex items-center gap-2">
                                                             <button
@@ -391,7 +390,7 @@ export default function AdminOrdersPage() {
                                                                     const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id);
                                                                     return (
                                                                         <div key={idx} className="flex justify-between text-sm">
-                                                                            <span>{productDetails?.name || item.product_id || 'Unknown Product'} × {item.quantity}</span>
+                                                                            <span>{productDetails?.name || item.product_name || item.product_id || 'Unknown Product'} × {item.quantity}</span>
                                                                             <span className="font-medium">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>
                                                                         </div>
                                                                     );
@@ -405,7 +404,7 @@ export default function AdminOrdersPage() {
                                                         </td>
                                                     </tr>
                                                 )}
-                                            </>
+                                            </React.Fragment>
                                         ))
                                     )}
                                 </tbody>

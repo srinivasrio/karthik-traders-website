@@ -100,7 +100,7 @@ export default function DashboardPage() {
                     ...order,
                     order_items: order.order_items?.map((item: any) => ({
                         ...item,
-                        product_name: productMap.get(item.product_id)?.name || 'Item'
+                        product_name: productMap.get(item.product_id)?.name || item.product_id
                     })) || []
                 }));
                 // @ts-ignore
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                                                                 return (
                                                                     <div key={idx} className="flex justify-between items-center text-sm bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/50">
                                                                         <div className="flex flex-col">
-                                                                            <span className="font-semibold text-slate-800">{productDetails?.name || item.product_id || 'Unknown Product'}</span>
+                                                                            <span className="font-semibold text-slate-800">{productDetails?.name || item.product_name || item.product_id || 'Unknown Product'}</span>
                                                                             <span className="text-[11px] text-slate-500">Qty: {item.quantity}</span>
                                                                         </div>
                                                                         <span className="font-bold text-slate-700">₹{(item.price_at_purchase * item.quantity).toLocaleString()}</span>

@@ -68,7 +68,7 @@ export default function OrderDetailPage() {
                 if (data && data.order_items) {
                     data.order_items = data.order_items.map((item: any) => ({
                         ...item,
-                        product_name: productMap.get(item.product_id)?.name || 'Item'
+                        product_name: productMap.get(item.product_id)?.name || item.product_id
                     }));
                 }
                 setOrder(data);
@@ -295,7 +295,7 @@ export default function OrderDetailPage() {
                                                 {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
                                                     <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className="h-10 w-10 rounded mr-3 object-cover" />
                                                 )}
-                                                {productDetails?.name || item.product_id}
+                                                {productDetails?.name || item.product_name || item.product_id}
                                             </div>
                                         </td>
                                         <td className="py-4 px-4 text-sm text-slate-500 text-right">₹{item.price_at_purchase}</td>
