@@ -69,64 +69,189 @@ export default function DashboardPage() {
                 });
             }
 
-            // Fetch orders by user_id OR customer_mobile safely
             const userId = user?.id;
             const rawMobile = profile?.mobile || user?.phone || '';
             const normalizedMobile = rawMobile.replace(/\D/g, '');
             const last10Digits = normalizedMobile.slice(-10);
 
+            // Construct different queries to try in sequence as fallbacks
+            const FULL_SELECT = `
+                id, 
+                order_number, 
+                created_at, 
+                status, 
+                payment_status,
+                total_amount,
+                discount_amount,
+                coupon_code,
+                customer_name, 
+                customer_mobile,
+                shipping_address,
+                created_by_admin,
+                order_items(
+                    product_id,
+                    quantity,
+                    price_at_purchase,
+                    is_available,
+                    fulfilled_quantity,
+                    out_of_stock_reason
+                )
+            `;
+
+            const SIMPLE_SELECT = `
+                id, 
+                order_number, 
+                created_at, 
+                status, 
+                payment_status,
+                total_amount,
+                discount_amount,
+                coupon_code,
+                customer_name, 
+                customer_mobile,
+                shipping_address,
+                created_by_admin,
+                order_items(
+                    product_id,
+                    quantity,
+                    price_at_purchase
+                )
+            `;
+
+            const queryAttempts = [];
+
+            // Helper to build OR conditions list
             const orConditions: string[] = [];
             if (userId) {
                 orConditions.push(`user_id.eq.${userId}`);
             }
             if (last10Digits) {
-                // Using .like with wildcard to match any leading characters (like +91 or 91)
-                // without containing the dangerous '+' character inside the OR filter string.
                 orConditions.push(`customer_mobile.like.*${last10Digits}`);
             }
 
-            console.log('[Dashboard] Fetching orders with conditions:', orConditions.join(','));
-
-            let query = supabase
-                .from('orders')
-                .select(`
-                    id, 
-                    order_number, 
-                    created_at, 
-                    status, 
-                    payment_status,
-                    total_amount,
-                    discount_amount,
-                    coupon_code,
-                    customer_name, 
-                    customer_mobile,
-                    shipping_address,
-                    created_by_admin,
-                    order_items(
-                        product_id,
-                        quantity,
-                        price_at_purchase,
-                        is_available,
-                        fulfilled_quantity,
-                        out_of_stock_reason
-                    )
-                `);
-
+            // Attempt 1: Full fields + OR filter (if we have OR conditions)
             if (orConditions.length > 0) {
-                query = query.or(orConditions.join(','));
+                queryAttempts.push({
+                    name: 'Full Select with OR filter',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(FULL_SELECT)
+                        .or(orConditions.join(','))
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
+
+                // Attempt 2: Simple fields + OR filter
+                queryAttempts.push({
+                    name: 'Simple Select with OR filter',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(SIMPLE_SELECT)
+                        .or(orConditions.join(','))
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
             }
 
-            const { data, error } = await query
-                .order('created_at', { ascending: false })
-                .limit(10);
+            // Attempt 3: Full fields + user_id only (Fallback if OR fails and userId exists)
+            if (userId) {
+                queryAttempts.push({
+                    name: 'Full Select with user_id eq',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(FULL_SELECT)
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
 
-            if (error) {
-                console.error('[Dashboard] Supabase order query error:', error);
-                throw error;
+                // Attempt 4: Simple fields + user_id only
+                queryAttempts.push({
+                    name: 'Simple Select with user_id eq',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(SIMPLE_SELECT)
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
             }
 
-            if (!error && data) {
-                const mappedOrders = data.map(order => ({
+            // Attempt 5: Full fields + customer_mobile exact match only (using normalized mobile)
+            if (normalizedMobile) {
+                queryAttempts.push({
+                    name: 'Full Select with customer_mobile eq',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(FULL_SELECT)
+                        .eq('customer_mobile', normalizedMobile)
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
+
+                // Attempt 6: Simple fields + customer_mobile exact match only
+                queryAttempts.push({
+                    name: 'Simple Select with customer_mobile eq',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(SIMPLE_SELECT)
+                        .eq('customer_mobile', normalizedMobile)
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
+            }
+
+            // Attempt 7: Full fields + customer_mobile like search only
+            if (last10Digits) {
+                queryAttempts.push({
+                    name: 'Full Select with customer_mobile like last 10 digits',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(FULL_SELECT)
+                        .like('customer_mobile', `%${last10Digits}`)
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
+
+                // Attempt 8: Simple fields + customer_mobile like search only
+                queryAttempts.push({
+                    name: 'Simple Select with customer_mobile like last 10 digits',
+                    fn: () => supabase
+                        .from('orders')
+                        .select(SIMPLE_SELECT)
+                        .like('customer_mobile', `%${last10Digits}`)
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                });
+            }
+
+            let finalData: any = null;
+            let lastError: any = null;
+
+            for (const attempt of queryAttempts) {
+                console.log(`[Dashboard] Attempting query: ${attempt.name}`);
+                try {
+                    const { data, error } = await attempt.fn();
+                    if (error) {
+                        console.log(`[Dashboard] Query error for '${attempt.name}': ${JSON.stringify(error)}`);
+                        lastError = error;
+                    } else {
+                        finalData = data;
+                        console.log(`[Dashboard] Query success for '${attempt.name}' (fetched ${data?.length || 0} rows)`);
+                        break;
+                    }
+                } catch (e) {
+                    console.log(`[Dashboard] Exception during '${attempt.name}': ${JSON.stringify(e)}`);
+                    lastError = e;
+                }
+            }
+
+            if (!finalData && lastError) {
+                throw lastError;
+            }
+
+            if (finalData) {
+                const mappedOrders = finalData.map((order: any) => ({
                     ...order,
                     order_items: order.order_items?.map((item: any) => ({
                         ...item,
@@ -140,7 +265,8 @@ export default function DashboardPage() {
                 setOrders(mappedOrders);
             }
         } catch (err) {
-            console.error('Error fetching orders:', err);
+            console.error('Error fetching orders (all fallbacks failed):', err);
+            console.log(JSON.stringify(err));
         } finally {
             setLoadingOrders(false);
         }
