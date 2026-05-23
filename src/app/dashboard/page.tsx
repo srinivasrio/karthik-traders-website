@@ -69,8 +69,25 @@ export default function DashboardPage() {
                 });
             }
 
-            // Fetch orders by user_id OR customer_mobile
-            const { data, error } = await supabase
+            // Fetch orders by user_id OR customer_mobile safely
+            const userId = user?.id;
+            const rawMobile = profile?.mobile || user?.phone || '';
+            const normalizedMobile = rawMobile.replace(/\D/g, '');
+            const last10Digits = normalizedMobile.slice(-10);
+
+            const orConditions: string[] = [];
+            if (userId) {
+                orConditions.push(`user_id.eq.${userId}`);
+            }
+            if (last10Digits) {
+                // Using .like with wildcard to match any leading characters (like +91 or 91)
+                // without containing the dangerous '+' character inside the OR filter string.
+                orConditions.push(`customer_mobile.like.*${last10Digits}`);
+            }
+
+            console.log('[Dashboard] Fetching orders with conditions:', orConditions.join(','));
+
+            let query = supabase
                 .from('orders')
                 .select(`
                     id, 
@@ -93,10 +110,20 @@ export default function DashboardPage() {
                         fulfilled_quantity,
                         out_of_stock_reason
                     )
-                `)
-                .or(`user_id.eq.${user?.id},customer_mobile.eq.${profile?.mobile}`)
+                `);
+
+            if (orConditions.length > 0) {
+                query = query.or(orConditions.join(','));
+            }
+
+            const { data, error } = await query
                 .order('created_at', { ascending: false })
                 .limit(10);
+
+            if (error) {
+                console.error('[Dashboard] Supabase order query error:', error);
+                throw error;
+            }
 
             if (!error && data) {
                 const mappedOrders = data.map(order => ({

@@ -39,12 +39,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // Normalize customer mobile number (digits only, no + or spaces)
+        const normalizedMobile = customerMobile.replace(/\D/g, '');
+        const last10Digits = normalizedMobile.slice(-10);
+
         // Check if customer with this mobile exists
-        // Match either the pure 10 digits OR the +91 version
+        // Match digits only (avoiding dangerous '+' inside the or filter string)
         const { data: existingProfile } = await supabaseAdmin
             .from('profiles')
             .select('id, full_name')
-            .or(`mobile.eq.${customerMobile},mobile.eq.+91${customerMobile}`)
+            .or(`mobile.eq.${normalizedMobile},mobile.eq.91${last10Digits},mobile.eq.${last10Digits}`)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -54,7 +58,7 @@ export async function POST(request: Request) {
             .from('orders')
             .insert({
                 user_id: existingProfile?.id || null, // Link if user exists
-                customer_mobile: customerMobile,
+                customer_mobile: normalizedMobile,
                 customer_name: customerName || existingProfile?.full_name || 'Unknown',
                 total_amount: totalAmount,
                 status: 'pending',

@@ -66,12 +66,16 @@ export async function POST(request: Request) {
             price: item.salePrice || item.price || item.mrp
         }));
 
+        // Normalize customer mobile number (digits only, no + or spaces)
+        const rawMobile = profile?.mobile || shippingAddress.mobile || '';
+        const normalizedMobile = rawMobile.replace(/\D/g, '');
+
         // Create order directly (with customer_mobile for linking)
         const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
             .insert({
                 user_id: user.id,
-                customer_mobile: profile?.mobile || shippingAddress.mobile,
+                customer_mobile: normalizedMobile,
                 customer_name: profile?.full_name || shippingAddress.fullName,
                 total_amount: totalAmount,
                 discount_amount: discountAmount || 0,
