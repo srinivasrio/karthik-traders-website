@@ -321,22 +321,63 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
 
     // Load spec template
     const loadSpecTemplate = () => {
+        // Check if it's the PR20CMB model (so we don't modify its template)
+        const isPR20 = 
+            productId === 'aqualion-pr20cmb' || 
+            (name || '').toLowerCase().includes('pr 20 cmb') || 
+            (model || '').toLowerCase().includes('pr 20 cmb');
+
+        if (isPR20) {
+            alert("Aqualion PR20CMB has a locked specification template and cannot be modified.");
+            return;
+        }
+
         const template = SPEC_TEMPLATES[category];
         if (!template) return;
-        const existing = new Set(specs.map(s => s.key).filter(Boolean));
-        const newSpecs = template
-            .filter(k => !existing.has(k))
-            .map(k => ({
-                id: Math.random().toString(36).substring(2, 9),
-                key: k,
-                value: ''
-            }));
-        if (newSpecs.length > 0) {
-            setSpecs(prev => [
-                ...prev.filter(s => s.key || s.value),
-                ...newSpecs
-            ]);
-        }
+
+        // Map existing specs by lowercased key to keep their values, ids, etc.
+        const existingSpecsMap = new Map<string, typeof specs[number]>();
+        specs.forEach(s => {
+            const cleanKey = (s.key || '').trim().toLowerCase();
+            if (cleanKey && !existingSpecsMap.has(cleanKey)) {
+                existingSpecsMap.set(cleanKey, s);
+            }
+        });
+
+        const finalizedSpecs: typeof specs = [];
+        const templateKeysAdded = new Set<string>();
+
+        // 1. Add template keys in the exact template order
+        template.forEach(k => {
+            const cleanKey = k.trim().toLowerCase();
+            const existingSpec = existingSpecsMap.get(cleanKey);
+
+            if (existingSpec) {
+                // Keep existing spec's key (original casing), value, and id
+                finalizedSpecs.push(existingSpec);
+            } else {
+                // Generate a new blank spec row
+                finalizedSpecs.push({
+                    id: Math.random().toString(36).substring(2, 9),
+                    key: k,
+                    value: ''
+                });
+            }
+            templateKeysAdded.add(cleanKey);
+        });
+
+        // 2. Append any non-template custom specs that the user had manually added
+        specs.forEach(s => {
+            const cleanKey = (s.key || '').trim().toLowerCase();
+            if (cleanKey && !templateKeysAdded.has(cleanKey)) {
+                finalizedSpecs.push(s);
+            } else if (!cleanKey && s.value) {
+                // Keep empty keys that have values
+                finalizedSpecs.push(s);
+            }
+        });
+
+        setSpecs(finalizedSpecs);
     };
 
     // Spec handlers
