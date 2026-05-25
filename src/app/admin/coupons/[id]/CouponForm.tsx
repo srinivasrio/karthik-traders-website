@@ -242,7 +242,7 @@ export default function CouponForm({ initialCoupon, initialSelectedAerators, all
                             <div>
                                 <div className="flex items-center gap-2 mb-0.5">
                                     <h3 className="text-sm font-bold text-deep-blue-900 leading-tight">
-                                        {(product.brand === 'seaboss' ? 'SEA BOSS' : product.brand.toUpperCase())}
+                                        {(product.brand === 'seaboss' ? 'SEA BOSS' : product.brand ? product.brand.toUpperCase() : 'UNKNOWN BRAND')}
                                     </h3>
                                     {/* Brand Logo */}
                                     {product.brand === 'seaboss' && (

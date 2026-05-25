@@ -153,14 +153,18 @@ function CompareContent() {
                                             <div className="mb-2">
                                                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider ${product.brand === 'aqualion'
                                                     ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                                                    : 'bg-blue-100 text-blue-700 border border-blue-200'
+                                                    : product.brand === 'seaboss'
+                                                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                                    : 'bg-purple-100 text-purple-700 border border-purple-200'
                                                     }`}>
-                                                    <img
-                                                        src={product.brand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
-                                                        alt={product.brand}
-                                                        className="h-3 w-auto md:h-4"
-                                                    />
-                                                    {product.brand === 'aqualion' ? 'Aqualion' : 'Sea Boss'}
+                                                    {(product.brand === 'aqualion' || product.brand === 'seaboss') && (
+                                                        <img
+                                                            src={product.brand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
+                                                            alt={product.brand}
+                                                            className="h-3 w-auto md:h-4"
+                                                        />
+                                                    )}
+                                                    {product.brand === 'aqualion' ? 'Aqualion' : product.brand === 'seaboss' ? 'Sea Boss' : (product.brand || 'Unknown Brand')}
                                                 </span>
                                             </div>
                                             <h4 className="text-xs md:text-sm font-bold text-deep-blue-900 leading-tight mb-1 group-hover:text-aqua-700 transition-colors line-clamp-2">
@@ -201,14 +205,18 @@ function CompareContent() {
                                     <div className="flex items-start justify-between mb-3">
                                         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider ${product.brand === 'aqualion'
                                             ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                                            : 'bg-blue-100 text-blue-700 border border-blue-200'
+                                            : product.brand === 'seaboss'
+                                            ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                            : 'bg-purple-100 text-purple-700 border border-purple-200'
                                             }`}>
-                                            <img
-                                                src={product.brand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
-                                                alt={product.brand}
-                                                className="h-3 w-auto md:h-4"
-                                            />
-                                            {product.brand === 'aqualion' ? 'Aqualion' : 'Sea Boss'}
+                                            {(product.brand === 'aqualion' || product.brand === 'seaboss') && (
+                                                <img
+                                                    src={product.brand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
+                                                    alt={product.brand}
+                                                    className="h-3 w-auto md:h-4"
+                                                />
+                                            )}
+                                            {product.brand === 'aqualion' ? 'Aqualion' : product.brand === 'seaboss' ? 'Sea Boss' : (product.brand || 'Unknown Brand')}
                                         </span>
                                         <button
                                             onClick={() => handleRemoveProduct(product.id)}

@@ -244,11 +244,14 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                         <div className="px-4 py-6 md:px-0">
                             {/* Brand & Category */}
                             <div className="flex flex-wrap items-center gap-2 mb-2">
-                                {product.brand === 'aqualion' && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-amber-700 bg-amber-100 border border-amber-200">AQUALION</span>
-                                )}
-                                {product.brand === 'seaboss' && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-aqua-700 bg-aqua-100 border border-aqua-200">SEA BOSS</span>
+                                {product.brand === 'aqualion' ? (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-amber-700 bg-amber-100 border border-amber-200 uppercase">AQUALION</span>
+                                ) : product.brand === 'seaboss' ? (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-aqua-700 bg-aqua-100 border border-aqua-200 uppercase">SEA BOSS</span>
+                                ) : product.brand ? (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-purple-700 bg-purple-100 border border-purple-200 uppercase">{product.brand}</span>
+                                ) : (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-gray-700 bg-gray-100 border border-gray-200 uppercase">Unknown Brand</span>
                                 )}
                                 <span className="text-xs text-steel-500 font-medium uppercase tracking-wide">
                                     {categoryLabel}

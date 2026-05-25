@@ -184,11 +184,14 @@ export default function ProductCard({
                     >
                         {/* Brand Badges - Absolute (No Layout Shift) */}
                         <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-                            {product.brand === 'aqualion' && (
-                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full border border-amber-200">AQUALION</span>
-                            )}
-                            {product.brand === 'seaboss' && (
-                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-aqua-100 text-aqua-700 rounded-full border border-aqua-200">SEA BOSS</span>
+                            {product.brand === 'aqualion' ? (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full border border-amber-200 uppercase">AQUALION</span>
+                            ) : product.brand === 'seaboss' ? (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-aqua-100 text-aqua-700 rounded-full border border-aqua-200 uppercase">SEA BOSS</span>
+                            ) : product.brand ? (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-100 text-purple-700 rounded-full border border-purple-200 uppercase">{product.brand}</span>
+                            ) : (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gray-100 text-gray-700 rounded-full border border-gray-200 uppercase">Unknown Brand</span>
                             )}
                         </div>
 

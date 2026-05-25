@@ -224,9 +224,13 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
                                 {/* Brand Badge */}
                                 <div className="flex flex-wrap items-center gap-2 mb-3">
                                     {product.brand === 'aqualion' ? (
-                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-amber-700 bg-amber-100 border border-amber-200">AQUALION</span>
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-amber-700 bg-amber-100 border border-amber-200 uppercase">AQUALION</span>
+                                    ) : product.brand === 'seaboss' ? (
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-cyan-700 bg-cyan-100 border border-cyan-200 uppercase">SEA BOSS</span>
+                                    ) : product.brand ? (
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-purple-700 bg-purple-100 border border-purple-200 uppercase">{product.brand}</span>
                                     ) : (
-                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-cyan-700 bg-cyan-100 border border-cyan-200">SEA BOSS</span>
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-gray-700 bg-gray-100 border border-gray-200 uppercase">Unknown Brand</span>
                                     )}
                                     <span className="text-xs text-steel-500 font-medium uppercase tracking-wide">
                                         Aerator Set
