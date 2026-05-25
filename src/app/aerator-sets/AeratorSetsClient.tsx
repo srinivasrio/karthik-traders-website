@@ -28,6 +28,14 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
     // Initialize loading to false since we have server data
     const [isLoading, setIsLoading] = useState(false);
 
+    const handleBrandSelect = (brand: Brand | 'all') => {
+        if (brand === selectedBrand) return;
+        setIsLoading(true);
+        setSelectedBrand(brand);
+        // Shortened timeout for smoother transition with snappy spring
+        setTimeout(() => setIsLoading(false), 400);
+    };
+
     useEffect(() => {
         // Only trigger loading if the hook triggers it (e.g. background re-fetch)
         // But since we skip initial loading, this mostly stays false or true-then-false
@@ -40,15 +48,7 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
         if (brandParam) {
             handleBrandSelect(brandParam);
         }
-    }, [brandParam]);
-
-    const handleBrandSelect = (brand: Brand | 'all') => {
-        if (brand === selectedBrand) return;
-        setIsLoading(true);
-        setSelectedBrand(brand);
-        // Shortened timeout for smoother transition with snappy spring
-        setTimeout(() => setIsLoading(false), 400);
-    };
+    }, [brandParam, handleBrandSelect]);
 
     const handleSortChange = (newSort: SortOption) => {
         setIsLoading(true);
@@ -63,6 +63,9 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
         if (!isAerator) return false;
 
         if (selectedBrand === 'all') return true;
+        if (selectedBrand === 'custom') {
+            return product.brand !== 'aqualion' && product.brand !== 'seaboss';
+        }
         return product.brand === selectedBrand;
     });
 
@@ -112,9 +115,14 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
         setTimeout(() => setIsLoading(false), 1000);
     };
 
+    const hasCustomBrands = products.some(product => {
+        const isAerator = product.category === 'aerator-set' || product.category === 'aerators';
+        return isAerator && product.brand !== 'aqualion' && product.brand !== 'seaboss' && product.brand !== 'generic';
+    });
+
     return (
         <div className="min-h-screen bg-white pb-24">
-            <BrandFilter selectedBrand={selectedBrand as any} onSelectBrand={handleBrandSelect}>
+            <BrandFilter selectedBrand={selectedBrand as any} onSelectBrand={handleBrandSelect} showCustom={hasCustomBrands}>
                 <div className="flex items-center justify-between px-2">
                     <h1 className="text-2xl font-bold text-deep-blue-900">Aerator Sets</h1>
                     <FilterDropdown sortBy={sortBy} onSortChange={handleSortChange} />

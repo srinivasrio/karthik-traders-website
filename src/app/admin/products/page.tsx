@@ -231,6 +231,9 @@ function ProductsContent() {
         if (activeBrand !== 'all') {
             filtered = filtered.filter(p => {
                 const pBrand = p.brand || p.specifications?.brand || '';
+                if (activeBrand === 'custom') {
+                    return pBrand !== 'aqualion' && pBrand !== 'seaboss' && pBrand !== '';
+                }
                 return pBrand === activeBrand;
             });
         }
@@ -382,14 +385,18 @@ function ProductsContent() {
 
     const getBrandLabel = (product: Product) => {
         const b = product.brand || product.specifications?.brand || '';
+        if (!b) return '';
         const def = BRANDS.find(br => br.value === b);
-        return def ? def.label : '';
+        if (def) return def.label;
+        if (b === 'generic') return 'Generic';
+        return b.charAt(0).toUpperCase() + b.slice(1);
     };
 
     const getBrandColor = (product: Product) => {
         const b = product.brand || product.specifications?.brand || '';
+        if (b === 'generic') return 'bg-slate-100 text-slate-600';
         const def = BRANDS.find(br => br.value === b);
-        return def?.bgClass || 'bg-slate-100 text-slate-600';
+        return def?.bgClass || 'bg-purple-100 text-purple-800';
     };
 
     // Pagination
@@ -674,8 +681,10 @@ function ProductsContent() {
                     {paginatedProducts.map(product => {
                         const img = product.images && product.images.length > 0 ? product.images[0] : null;
                         const brandLabel = getBrandLabel(product);
-                        const brandDef = BRANDS.find(br => br.value === (product.brand || product.specifications?.brand));
-
+                        const bVal = product.brand || product.specifications?.brand || '';
+                        const brandDef = BRANDS.find(br => br.value === bVal);
+                        const brandColorHex = brandDef ? brandDef.color : (bVal && bVal !== 'generic' ? '#A855F7' : '');
+ 
                         return (
                             <div key={product.id} className={`bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${!product.is_active ? 'opacity-60' : ''}`}>
                                 {/* Image */}
@@ -690,8 +699,8 @@ function ProductsContent() {
                                             </svg>
                                         </div>
                                     )}
-                                    {brandDef && brandDef.value !== 'generic' && (
-                                        <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: brandDef.color }}>
+                                    {brandLabel && bVal !== 'generic' && (
+                                        <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: brandColorHex || '#A855F7' }}>
                                             {brandLabel}
                                         </span>
                                     )}

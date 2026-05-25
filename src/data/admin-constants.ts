@@ -29,7 +29,7 @@ export const CATEGORY_GROUPS: { group: string; categories: string[] }[] = [
 export const BRANDS = [
   { value: 'aqualion', label: 'Aqua Lion', color: '#FFCE47', bgClass: 'bg-amber-100 text-amber-800' },
   { value: 'seaboss', label: 'Sea Boss', color: '#4ED7F1', bgClass: 'bg-sky-100 text-sky-800' },
-  { value: 'generic', label: 'Generic / Other', color: '#94A3B8', bgClass: 'bg-slate-100 text-slate-600' },
+  { value: 'custom', label: 'Custom', color: '#A855F7', bgClass: 'bg-purple-100 text-purple-800' },
 ] as const;
 
 export const STOCK_STATUSES = [

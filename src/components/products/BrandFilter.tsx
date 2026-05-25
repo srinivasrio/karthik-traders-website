@@ -3,15 +3,16 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
-type Brand = 'all' | 'aqualion' | 'seaboss';
+type Brand = 'all' | 'aqualion' | 'seaboss' | 'custom';
 
 interface BrandFilterProps {
     selectedBrand: Brand;
     onSelectBrand: (brand: Brand) => void;
     children?: ReactNode;
+    showCustom?: boolean;
 }
 
-export default function BrandFilter({ selectedBrand, onSelectBrand, children }: BrandFilterProps) {
+export default function BrandFilter({ selectedBrand, onSelectBrand, children, showCustom = false }: BrandFilterProps) {
     return (
         <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-aqua-100/50 pb-2 pt-16 md:pt-20 transition-all duration-300">
             <div className="container-custom py-2">
@@ -78,6 +79,28 @@ export default function BrandFilter({ selectedBrand, onSelectBrand, children }: 
                                 Sea Boss
                             </span>
                         </button>
+
+                        {showCustom && (
+                            <button
+                                onClick={() => onSelectBrand('custom')}
+                                className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 ${selectedBrand === 'custom'
+                                    ? 'text-white'
+                                    : 'text-black bg-steel-200 hover:bg-steel-300'
+                                    }`}
+                            >
+                                {selectedBrand === 'custom' && (
+                                    <motion.div
+                                        layoutId="activeBrand"
+                                        className="absolute inset-0 bg-gradient-to-r from-purple-400 to-purple-500 rounded-full shadow-lg shadow-purple-500/30"
+                                        initial={false}
+                                        transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
+                                    />
+                                )}
+                                <span className="relative z-10 flex items-center gap-2">
+                                    Custom
+                                </span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

@@ -198,7 +198,8 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
     const [name, setName] = useState('');
     const [slug, setSlug] = useState('');
     const [model, setModel] = useState('');
-    const [brand, setBrand] = useState('generic');
+    const [brand, setBrand] = useState('custom');
+    const [customBrand, setCustomBrand] = useState('');
     const [category, setCategory] = useState('aerator-set');
     const [mrp, setMrp] = useState('');
     const [sellingPrice, setSellingPrice] = useState('');
@@ -266,7 +267,13 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
 
                 // Extract brand
                 const b = data.brand || specsData.brand || 'generic';
-                setBrand(b);
+                if (b !== 'aqualion' && b !== 'seaboss') {
+                    setBrand('custom');
+                    setCustomBrand(b);
+                } else {
+                    setBrand(b);
+                    setCustomBrand('');
+                }
 
                 // Extract model
                 const m = specsData.model ||
@@ -411,7 +418,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
     };
 
     // Build specifications JSONB
-    const buildSpecifications = () => {
+    const buildSpecifications = (brandValue: string) => {
         const result: Record<string, any> = {};
 
         // Add spec rows
@@ -422,7 +429,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
         });
 
         // Add brand & model for backwards compatibility
-        result.brand = brand;
+        result.brand = brandValue;
         if (model) result.model = model;
 
         // Add existing features array for backward compatibility
@@ -453,6 +460,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
         if (!name.trim()) return 'Product name is required';
         if (!slug.trim()) return 'Slug is required';
         if (!sellingPrice || parseFloat(sellingPrice) <= 0) return 'Selling price must be greater than 0';
+        if (brand === 'custom' && !customBrand.trim()) return 'Custom brand name is required';
         return null;
     };
 
@@ -468,6 +476,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
         setSaving(true);
 
         try {
+            const brandValue = brand === 'custom' ? customBrand.trim() : brand;
             const productData = {
                 name: name.trim(),
                 slug: slug.trim(),
@@ -477,9 +486,10 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                 stock: parseInt(stock) || 0,
                 description: description.trim() || null,
                 images,
-                specifications: buildSpecifications(),
+                specifications: buildSpecifications(brandValue),
                 is_active: isActive,
                 is_best_selling: isBestSelling,
+                brand: brandValue,
             };
 
             if (mode === 'create') {
@@ -608,6 +618,21 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                                                 </button>
                                             ))}
                                         </div>
+                                        {brand === 'custom' && (
+                                            <div className="mt-3 transition-all duration-300">
+                                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                                    Enter Custom Brand Name <span className="text-red-400">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={customBrand}
+                                                    onChange={e => setCustomBrand(e.target.value)}
+                                                    placeholder="e.g., CRI, Standard, Kirloskar"
+                                                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500"
+                                                    required
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -917,7 +942,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                                 <ProductPreviewCard
                                     name={name}
                                     model={model}
-                                    brand={brand}
+                                    brand={brand === 'custom' ? customBrand : brand}
                                     category={category}
                                     mrp={mrp}
                                     sellingPrice={sellingPrice}

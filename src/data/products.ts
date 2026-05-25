@@ -1,7 +1,7 @@
 // Complete Product Catalog for Karthik Traders
 // Brands: Aqualion (Premium) & Sea Boss (Budget + Performance)
 
-export type Brand = 'aqualion' | 'seaboss' | 'generic';
+export type Brand = 'aqualion' | 'seaboss' | 'generic' | 'custom' | string;
 
 export type ProductCategory =
   | 'aerator-set'

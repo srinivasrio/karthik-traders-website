@@ -30,6 +30,8 @@ export default function ProductPreviewCard({
     isBestSelling = false,
 }: ProductPreviewCardProps) {
     const brandDef = BRANDS.find(b => b.value === brand);
+    const brandLabel = brandDef ? brandDef.label : (brand && brand !== 'generic' ? brand : '');
+    const brandColor = brandDef ? brandDef.color : '#A855F7';
     const mrpNum = parseFloat(mrp) || 0;
     const priceNum = parseFloat(sellingPrice) || 0;
     const discount = mrpNum > 0 && priceNum > 0 && mrpNum > priceNum
@@ -75,12 +77,12 @@ export default function ProductPreviewCard({
                 )}
 
                 {/* Brand badge */}
-                {brandDef && brand !== 'generic' && (
+                {brandLabel && brand !== 'generic' && (
                     <span
                         className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-sm"
-                        style={{ backgroundColor: brandDef.color }}
+                        style={{ backgroundColor: brandColor }}
                     >
-                        {brandDef.label.toUpperCase()}
+                        {brandLabel.toUpperCase()}
                     </span>
                 )}
 
