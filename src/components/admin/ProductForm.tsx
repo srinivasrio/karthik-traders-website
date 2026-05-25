@@ -249,7 +249,10 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                     .eq('id', productId)
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.log(error);
+                    throw error;
+                }
                 if (!data) throw new Error('Product not found');
 
                 setName(data.name || '');
@@ -494,13 +497,19 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
 
             if (mode === 'create') {
                 const { error } = await supabase.from('products').insert([productData]);
-                if (error) throw error;
+                if (error) {
+                    console.log(error);
+                    throw error;
+                }
             } else {
                 const { error } = await supabase
                     .from('products')
                     .update(productData)
                     .eq('id', productId);
-                if (error) throw error;
+                if (error) {
+                    console.log(error);
+                    throw error;
+                }
             }
 
             router.push(returnUrl);
