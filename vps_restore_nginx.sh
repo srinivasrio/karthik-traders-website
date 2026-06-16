@@ -23,6 +23,11 @@ server {
         set $maintenance off;
     }
 
+    # Bypass maintenance check for Supabase API routes (database, auth, storage)
+    if ($request_uri ~* ^/(rest|auth|storage)/) {
+        set $maintenance off;
+    }
+
     # If maintenance mode is active, trigger a 503 error
     if ($maintenance = on) {
         return 503;
