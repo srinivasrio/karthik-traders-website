@@ -30,6 +30,8 @@ export default function ProductCard({
     const cartQuantity = cartItem ? cartItem.quantity : 0;
     const savings = calculateSavings(product.mrp, product.salePrice);
     const isInCart = cartQuantity > 0;
+    const isOutOfStock = (product.stock !== undefined && product.stock <= 0) || product.inStock === false;
+    const hasBadge = product.is_best_selling || (product.badge && !(product.badge === 'Limited Stock' && isOutOfStock));
 
     // Auto Slideshow State
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -330,7 +332,7 @@ export default function ProductCard({
                                 </span>
                             )}
                             {/* Product Badge (Moved to bottom) */}
-                            {(product.is_best_selling || product.badge) && (
+                            {hasBadge && (
                                 <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wide shadow-sm ${(product.is_best_selling || product.badge === 'Best Selling')
                                     ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-none shadow-indigo-500/20'
                                     : product.badge === 'Limited Stock'
