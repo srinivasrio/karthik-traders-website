@@ -18,6 +18,16 @@ server {
         set $maintenance on;
     }
 
+    # Bypass maintenance check for the administrator's IP
+    if ($remote_addr = "106.215.171.125") {
+        set $maintenance off;
+    }
+
+    # Bypass maintenance check if URL contains query parameter ?preview=1
+    if ($arg_preview = "1") {
+        set $maintenance off;
+    }
+
     # Bypass maintenance check for static files (so images, logos, CSS render correctly)
     if ($request_uri ~* \.(gif|jpg|jpeg|png|css|js|ico|svg|woff|woff2)$) {
         set $maintenance off;
