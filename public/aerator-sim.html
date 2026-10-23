@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aerator Pond Simulation</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #c4dbe6; font: 14px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #ui { position: fixed; left: 16px; bottom: 16px; padding: 12px 14px; border-radius: 10px;
+        background: rgba(10, 30, 40, .72); color: #fff; display: grid; gap: 6px; max-width: calc(100vw - 60px); }
+  #ui label { display: flex; align-items: center; gap: 8px; }
+  #ui input { width: 160px; accent-color: #f6c400; }
+  #ui small { opacity: .7; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="ui">
+  <b>Paddle-wheel aerator · live</b>
+  <label for="rpm">Speed <input id="rpm" type="range" min="0" max="120" value="60"> <span id="rv">60</span> rpm</label>
+  <small>Drag to orbit · scroll to zoom</small>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const PI = Math.PI;
+const WHEELS = [-2.25, -0.75, 0.75, 2.25]; // wheel x positions on the shaft
+const SRC_Z = 0.3;                         // where blades meet the water
+
+// ---------- renderer / scene ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const SKY = new THREE.Color(0xc4dbe6);
+scene.background = SKY;
+scene.fog = new THREE.FogExp2(SKY, 0.03);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(6.5, 3.6, 8);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.4, 0);
+controls.enableDamping = true;
+controls.maxPolarAngle = 1.45; // stay above water
+controls.minDistance = 3;
+controls.maxDistance = 30;
+
+const SUN = new THREE.Vector3(0.65, 0.6, -0.45).normalize();
+scene.add(new THREE.HemisphereLight(0xdfefff, 0x3a4a2a, 1.3));
+const sun = new THREE.DirectionalLight(0xfff4e0, 2.4);
+sun.position.copy(SUN).multiplyScalar(20);
+scene.add(sun);
+
+// ---------- water height (shared by GLSL and JS so things float on the same surface) ----------
+const HEIGHT_GLSL = /* glsl */`
+uniform float uTime, uSpin;
+uniform vec2 uSrc[4];
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + 1.), f.x), f.y);
+}
+float height(vec2 p) {
+  float h = .035 * sin(p.x * .35 + uTime * .9) + .025 * sin(p.y * .5 - uTime * 1.1) + .015 * sin((p.x + p.y) * .8 + uTime * 1.7);
+  for (int i = 0; i < 4; i++) {
+    float d = length(p - uSrc[i]);
+    h += .04 * uSpin * sin(d * 5. - uTime * 6. + float(i) * 1.7) * exp(-.22 * d);   // circular ripples
+    h += .05 * uSpin * exp(-d * d * 3.) * (noise(p * 4. + uTime * 3.) - .5);          // churn at the blades
+  }
+  return h;
+}`;
+function waterHeight(x, z, t, s) { // JS mirror of height() minus the churn noise
+  let h = .035 * Math.sin(x * .35 + t * .9) + .025 * Math.sin(z * .5 - t * 1.1) + .015 * Math.sin((x + z) * .8 + t * 1.7);
+  for (let i = 0; i < 4; i++) {
+    const d = Math.hypot(x - WHEELS[i], z - SRC_Z);
+    h += .04 * s * Math.sin(d * 5 - t * 6 + i * 1.7) * Math.exp(-.22 * d);
+  }
+  return h;
+}
+
+// ---------- water ----------
+const POND = 18; // half-size of the pond
+const water = new THREE.Mesh(
+  new THREE.PlaneGeometry(POND * 2 + 4, POND * 2 + 4, 200, 200).rotateX(-PI / 2),
+  new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 }, uSpin: { value: 1 },
+      uSrc: { value: WHEELS.map(x => new THREE.Vector2(x, SRC_Z)) },
+      uSun: { value: SUN }, uFog: { value: SKY }, uFogD: { value: scene.fog.density },
+    },
+    vertexShader: HEIGHT_GLSL + /* glsl */`
+      varying vec3 vW;
+      void main() {
+        vec3 p = position; p.y += height(p.xz);
+        vW = (modelMatrix * vec4(p, 1.)).xyz;
+        gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.);
+      }`,
+    fragmentShader: HEIGHT_GLSL + /* glsl */`
+      uniform vec3 uSun, uFog; uniform float uFogD;
+      varying vec3 vW;
+      void main() {
+        vec2 p = vW.xz; float e = .04;
+        vec3 n = normalize(vec3(height(p - vec2(e, 0.)) - height(p + vec2(e, 0.)), 2. * e,
+                                height(p - vec2(0., e)) - height(p + vec2(0., e))));
+        n = normalize(n + vec3(noise(p * 6. + uTime * .6) - .5, 0., noise(p * 6. - uTime * .5 + 17.) - .5) * .12);
+        vec3 v = normalize(cameraPosition - vW);
+        vec3 r = reflect(-v, n);
+        float fr = .03 + .97 * pow(1. - max(dot(n, v), 0.), 5.);
+        vec3 sky = mix(vec3(.55, .68, .75), vec3(.18, .34, .6), clamp(r.y, 0., 1.));
+        vec3 col = mix(vec3(.015, .07, .05), vec3(.05, .17, .1), smoothstep(-.05, .1, vW.y)); // greenish pond
+        col = mix(col, sky, fr);
+        col += pow(max(dot(r, uSun), 0.), 300.) * 1.5 * vec3(1., .95, .85);
+
+        // foam: churn at each wheel + oxygenation trail pushed downstream (+z)
+        float f = 0.;
+        for (int i = 0; i < 4; i++) {
+          vec2 q = p - uSrc[i];
+          float spread = .25 + max(q.y, 0.) * .18;
+          float trail = smoothstep(-.3, .4, q.y) * exp(-max(q.y, 0.) * .45) * exp(-q.x * q.x / (spread * spread));
+          f = max(f, max(exp(-dot(q, q) * 2.5), trail * .85));
+        }
+        f = clamp(f * uSpin, 0., 1.);
+        vec2 fp = p - vec2(0., uTime * 1.2);
+        float nz = noise(fp * 2.5) * .55 + noise(fp * 7. - vec2(0., uTime * 1.5)) * .45;
+        col = mix(col, vec3(.85, .92, .9), smoothstep(1. - f, 1.2 - f, nz) * .9);
+
+        float d = length(cameraPosition - vW);
+        col = mix(col, uFog, 1. - exp(-uFogD * uFogD * d * d));
+        gl_FragColor = vec4(col, 1.);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+  })
+);
+scene.add(water);
+
+// earthen pond banks
+const bank = new THREE.MeshStandardMaterial({ color: 0x6b7a3a, roughness: 1 });
+const W = 8;
+for (const s of [-1, 1]) {
+  const a = new THREE.Mesh(new THREE.BoxGeometry(POND * 2 + W * 2, .8, W), bank); a.position.set(0, -.05, s * (POND + W / 2)); scene.add(a);
+  const b = new THREE.Mesh(new THREE.BoxGeometry(W, .8, POND * 2), bank); b.position.set(s * (POND + W / 2), -.05, 0); scene.add(b);
+}
+
+// ---------- aerator ----------
+const blue = new THREE.MeshStandardMaterial({ color: 0x1f2f8a, roughness: .35 });
+const yellow = new THREE.MeshStandardMaterial({ color: 0xf6c400, roughness: .5, side: THREE.DoubleSide });
+const steel = new THREE.MeshStandardMaterial({ color: 0xc0c4c8, metalness: .85, roughness: .3 });
+const aerator = new THREE.Group();
+scene.add(aerator);
+const add = (geo, mat, x = 0, y = 0, z = 0, parent = aerator) => {
+  const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m;
+};
+
+// 3 HDPE pontoon floats, half submerged
+const floatGeo = new THREE.CapsuleGeometry(.3, 1.9, 8, 20).rotateX(PI / 2).scale(1.4, 1, 1);
+for (const x of [-1.5, 0, 1.5]) add(floatGeo, blue, x, 0, .1);
+
+// stainless frame
+const tube = (lx, ly, lz, x, y, z) => add(new THREE.BoxGeometry(lx, ly, lz), steel, x, y, z);
+tube(4, .06, .06, 0, .33, -.85);
+tube(4, .06, .06, 0, .33, 1.0);
+for (const x of [-1.97, 1.97]) tube(.06, .06, 1.91, x, .33, .075);
+
+// gearbox / motor housing + bearing blocks
+add(new THREE.BoxGeometry(.55, .9, .45), blue, 0, .7, -.05);
+add(new THREE.CylinderGeometry(.275, .275, .45, 24).rotateX(PI / 2), blue, 0, 1.15, -.05);
+for (const x of [-1.5, 1.5]) add(new THREE.BoxGeometry(.14, .22, .2), blue, x, .39, 0);
+
+// rotating shaft with four 8-blade paddle wheels
+const shaft = new THREE.Group();
+shaft.position.y = .5;
+aerator.add(shaft);
+add(new THREE.CylinderGeometry(.035, .035, 5, 12).rotateZ(PI / 2), steel, 0, 0, 0, shaft);
+
+const holes = (() => { // perforated paddle plates via alpha map
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#000';
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { g.beginPath(); g.arc(14 + i * 18, 14 + j * 18, 5, 0, 7); g.fill(); }
+  return new THREE.CanvasTexture(c);
+})();
+const bladeMat = yellow.clone();
+bladeMat.alphaMap = holes;
+bladeMat.alphaTest = .5;
+const bladeGeo = new THREE.PlaneGeometry(.34, .3);
+const spokeGeo = new THREE.BoxGeometry(.035, .5, .035);
+const hubGeo = new THREE.CylinderGeometry(.11, .11, .2, 20).rotateZ(PI / 2);
+const rimGeo = new THREE.TorusGeometry(.42, .022, 8, 40).rotateY(PI / 2);
+for (const wx of WHEELS) {
+  const w = new THREE.Group(); w.position.x = wx; shaft.add(w);
+  add(hubGeo, yellow, 0, 0, 0, w);
+  add(rimGeo, yellow, 0, 0, 0, w);
+  for (let i = 0; i < 8; i++) {
+    const arm = new THREE.Group(); arm.rotation.x = i * PI / 4; w.add(arm);
+    add(spokeGeo, yellow, 0, .3, 0, arm);
+    add(bladeGeo, bladeMat, 0, .57, 0, arm).rotation.x = .25; // slight scoop
+  }
+}
+
+// ---------- spray / mist / surface-foam particles ----------
+// kind 0 = spray droplets (ballistic), 1 = mist (drifts, fades), 2 = surface foam (rides the current)
+const N = 5000;
+const pos = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+const life = new Float32Array(N).fill(1), maxLife = new Float32Array(N).fill(1);
+const kind = new Uint8Array(N), size = new Float32Array(N), alpha = new Float32Array(N);
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+pGeo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+pGeo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+const pMat = new THREE.ShaderMaterial({
+  uniforms: { uScale: { value: 1 } },
+  transparent: true, depthWrite: false,
+  vertexShader: /* glsl */`
+    attribute float aSize; attribute float aAlpha; uniform float uScale; varying float vA;
+    void main() {
+      vec4 mv = modelViewMatrix * vec4(position, 1.);
+      gl_PointSize = aSize * uScale / -mv.z;
+      gl_Position = projectionMatrix * mv; vA = aAlpha;
+    }`,
+  fragmentShader: /* glsl */`
+    varying float vA;
+    void main() {
+      float a = smoothstep(.5, .1, length(gl_PointCoord - .5)) * vA;
+      if (a < .004) discard;
+      gl_FragColor = vec4(.95, .98, 1., a);
+      #include <colorspace_fragment>
+    }`,
+});
+const points = new THREE.Points(pGeo, pMat);
+points.frustumCulled = false;
+scene.add(points);
+
+// ponytail: ring buffer overwrites oldest particle; at max rpm ~3k alive of 5k, raise N if spray looks cut off
+let head = 0;
+const RATE = [700, 220, 90], acc = [0, 0, 0], rnd = Math.random;
+function spawn(k, s) {
+  const i = head, j = i * 3; head = (head + 1) % N;
+  pos[j] = WHEELS[rnd() * 4 | 0] + (rnd() - .5) * .34;
+  pos[j + 1] = aerator.position.y + .02 + rnd() * .15;
+  pos[j + 2] = .5 + rnd() * .25; // blades exit the water on the +z side
+  let vx = (rnd() - .5) * .8, vy, vz;
+  if (k === 0) { vy = (1.2 + rnd() * 2.2) * s; vz = (1.2 + rnd() * 2.6) * s; maxLife[i] = 2; }
+  else if (k === 1) { vx *= 1.5; vy = (.4 + rnd() * .9) * s; vz = (.6 + rnd() * 1.4) * s; maxLife[i] = 2 + rnd() * 1.5; }
+  else { pos[j + 2] += .2; vy = 0; vz = (.8 + rnd() * 1.2) * s; maxLife[i] = 3 + rnd() * 2; }
+  vel[j] = vx; vel[j + 1] = vy; vel[j + 2] = vz;
+  kind[i] = k; life[i] = 0;
+}
+function updateParticles(dt, s, t) {
+  for (let k = 0; k < 3; k++) { acc[k] += RATE[k] * s * dt; while (acc[k] >= 1) { acc[k]--; spawn(k, s); } }
+  for (let i = 0; i < N; i++) {
+    if (life[i] >= maxLife[i]) { alpha[i] = 0; continue; }
+    const j = i * 3;
+    life[i] += dt;
+    const u = life[i] / maxLife[i];
+    if (kind[i] === 0) {
+      vel[j + 1] -= 9.8 * dt;
+      if (pos[j + 1] < waterHeight(pos[j], pos[j + 2], t, s)) { // splashdown -> becomes surface foam
+        kind[i] = 2; vel[j] *= .3; vel[j + 1] = 0; vel[j + 2] *= .4; life[i] = 0; maxLife[i] = 1 + rnd() * 1.5;
+      }
+      size[i] = .07; alpha[i] = .9;
+    } else if (kind[i] === 1) {
+      const drag = Math.exp(-1.5 * dt);
+      vel[j] *= drag; vel[j + 1] = vel[j + 1] * drag + .15 * dt; vel[j + 2] = vel[j + 2] * drag + .3 * dt;
+      size[i] = .2 + u * .5; alpha[i] = .22 * Math.sin(PI * u);
+    } else {
+      vel[j] *= Math.exp(-.4 * dt);
+      vel[j + 2] = Math.max(vel[j + 2] * Math.exp(-.3 * dt), .35 * s); // oxygenated current keeps flowing
+      size[i] = .14 + u * .12; alpha[i] = .75 * (1 - u);
+    }
+    pos[j] += vel[j] * dt; pos[j + 1] += vel[j + 1] * dt; pos[j + 2] += vel[j + 2] * dt;
+    if (kind[i] === 2) pos[j + 1] = waterHeight(pos[j], pos[j + 2], t, s) + .03;
+  }
+  pGeo.attributes.position.needsUpdate = pGeo.attributes.aSize.needsUpdate = pGeo.attributes.aAlpha.needsUpdate = true;
+}
+
+// ---------- UI / resize / loop ----------
+let rpm = 60;
+const rpmInput = document.getElementById('rpm'), rv = document.getElementById('rv');
+rpmInput.oninput = () => { rpm = +rpmInput.value; rv.textContent = rpm; };
+
+function resize() {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  pMat.uniforms.uScale.value = renderer.domElement.height / (2 * Math.tan(camera.fov * PI / 360));
+}
+addEventListener('resize', resize);
+resize();
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime, s = rpm / 60;
+  water.material.uniforms.uTime.value = t;
+  water.material.uniforms.uSpin.value = s;
+  // float on the surface: heave from centre, roll/pitch from height differences
+  aerator.position.y = waterHeight(0, .1, t, s) * .6 + .004 * Math.sin(t * 40) * s;
+  aerator.rotation.z = (waterHeight(1.5, .1, t, s) - waterHeight(-1.5, .1, t, s)) / 3 * .6;
+  aerator.rotation.x = (waterHeight(0, -1, t, s) - waterHeight(0, 1.2, t, s)) / 2.2 * .6;
+  shaft.rotation.x -= s * 2 * PI * dt; // bottom of wheel moves +z, pushing water downstream
+  updateParticles(dt, s, t);
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
