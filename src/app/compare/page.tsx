@@ -178,7 +178,7 @@ function formatSpecValue(raw: string | null | undefined): FormattedSpec {
   return { primary: str, secondary: null };
 }
 
-/** Formatted Spec Value View with bold primary text & structured subtext */
+/** Formatted Spec Value View with regular normal weight values & structured subtext */
 function FormattedValueView({ raw }: { raw: string }) {
   const { primary, secondary } = formatSpecValue(raw);
 
@@ -188,11 +188,11 @@ function FormattedValueView({ raw }: { raw: string }) {
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <span className="font-semibold text-[#1E293B] text-[11.5px] sm:text-[13px] md:text-sm tracking-tight leading-snug">
+      <span className="font-normal text-[#1E293B] text-[11.5px] sm:text-[13px] md:text-sm tracking-tight leading-snug">
         {primary}
       </span>
       {secondary && (
-        <span className="text-[9.5px] sm:text-[10.5px] md:text-[11.5px] text-[#64748B] font-medium leading-tight mt-0.5">
+        <span className="text-[9.5px] sm:text-[10.5px] md:text-[11.5px] text-[#64748B] font-normal leading-tight mt-0.5">
           {secondary}
         </span>
       )}
