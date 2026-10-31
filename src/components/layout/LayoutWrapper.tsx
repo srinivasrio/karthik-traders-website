@@ -11,6 +11,7 @@ import SimpleLoadingScreen from "@/components/ui/SimpleLoadingScreen";
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isAdminRoute = pathname?.startsWith('/admin');
+    const isCompareRoute = pathname === '/compare';
     const { loading } = useAuth();
 
     // Show loading screen while auth is initializing
@@ -23,16 +24,16 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
         return <>{children}</>;
     }
 
-    // Regular pages get the full site layout
+    // Regular pages get the full site layout; compare page has standalone bottom actions and clean layout
     return (
         <>
             <Header />
-            <main className="min-h-screen pb-16 md:pb-0">
+            <main className={`min-h-screen ${isCompareRoute ? 'pb-0' : 'pb-16 md:pb-0'}`}>
                 {children}
             </main>
-            <Footer />
-            <MobileBottomNav />
-            <FloatingCart />
+            {!isCompareRoute && <Footer />}
+            {!isCompareRoute && <MobileBottomNav />}
+            {!isCompareRoute && <FloatingCart />}
         </>
     );
 }

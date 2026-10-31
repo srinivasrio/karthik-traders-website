@@ -1,389 +1,603 @@
 'use client';
 
-import { useState, useEffect, Suspense, useMemo } from 'react';
-import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
-import { motion } from 'framer-motion';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
-import { aeratorSets, Product, formatPrice, calculateSavings } from '@/data/products';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { aeratorSets, Product } from '@/data/products';
 import { useLiveProducts } from '@/hooks/useLiveProducts';
-import { sortSpecificationKeys } from '@/lib/specs';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
+
+interface SpecItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  val1: string;
+  val2: string;
+}
 
 function CompareContent() {
-    const searchParams = useSearchParams();
-    const idsParam = searchParams.get('ids');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { products: liveAerators } = useLiveProducts(aeratorSets, { skipLoading: true });
 
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const aeratorList = useMemo(() => {
+    return liveAerators.filter(
+      (p) => p.category === 'aerator-set' || p.category === 'aerators'
+    );
+  }, [liveAerators]);
 
-    // Fetch live data from Supabase
-    const { products: liveAeratorSets, loading: productsLoading } = useLiveProducts(aeratorSets);
+  // Default models matching the design
+  const aqualionModel = useMemo(
+    () => aeratorList.find((p) => p.brand === 'aqualion') || aeratorList[0],
+    [aeratorList]
+  );
+  const seaBossModel = useMemo(
+    () => aeratorList.find((p) => p.brand === 'seaboss') || aeratorList[1] || aeratorList[0],
+    [aeratorList]
+  );
 
-    // Only show Aerator Sets for comparison (filter out spares, motors, etc.)
-    const filteredLiveProducts = useMemo(() => {
-        return liveAeratorSets.filter(p => 
-            p.category === 'aerator-set' || p.category === 'aerators'
-        );
-    }, [liveAeratorSets]);
+  const [slugs, setSlugs] = useState<string[]>(['', '']);
+  const [selectorSlot, setSelectorSlot] = useState<number | null>(null);
+  const [showFullDetailsModal, setShowFullDetailsModal] = useState(false);
 
-    useEffect(() => {
-        if (idsParam) {
-            const ids = idsParam.split(',');
-            setSelectedIds(ids);
-        }
-    }, [idsParam]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-    // Sync selected products with live data
-    useEffect(() => {
-        if (!productsLoading) {
-            const products = liveAeratorSets.filter(p => {
-                // Find static version to get its original ID for robust matching
-                const staticItem = aeratorSets.find(as => as.slug === p.slug);
-                return selectedIds.includes(p.id) || (staticItem && selectedIds.includes(staticItem.id));
-            });
-            setSelectedProducts(products);
-        }
-    }, [selectedIds, liveAeratorSets, productsLoading]);
+    const urlP1 = searchParams.get('p1');
+    const urlP2 = searchParams.get('p2');
 
-    const handleAddProduct = (productId: string) => {
-        if (selectedIds.length >= 2) {
-            alert('You can compare up to 2 products');
-            return;
-        }
-        if (!selectedIds.includes(productId)) {
-            setSelectedIds([...selectedIds, productId]);
-        }
-    };
-
-    const handleRemoveProduct = (productId: string) => {
-        // Remove both UUID and static ID to be safe
-        const product = liveAeratorSets.find(p => p.id === productId);
-        const staticId = aeratorSets.find(as => as.slug === product?.slug)?.id;
-
-        setSelectedIds(prev => prev.filter(id => id !== productId && id !== staticId));
-    };
-
-    // All specification keys (filtered to exclude complex types and metadata)
-    const allSpecKeys = useMemo(() => {
-        const excludedKeys = [
-            'features', 'components', 'images', 'slug', 'id', 'name', 
-            'model', 'brand', 'category', 'mrp', 'salePrice', 
-            'description', 'specifications', 'warranty', 'inStock', 
-            'stock', 'stockStatus', 'isActive', 'badge', 'Warranty',
-            'Model number', 'Technical Specifications'
-        ];
-        
-        const rawKeys = Array.from(
-            new Set(
-                selectedProducts.flatMap(p =>
-                    p.specifications ? Object.keys(p.specifications) : []
-                )
-            )
-        ).filter(key => !excludedKeys.includes(key));
-
-        const referenceProduct = selectedProducts[0];
-        return sortSpecificationKeys(rawKeys, referenceProduct);
-    }, [selectedProducts]);
-
-    if (productsLoading) {
-        return <SimpleLoadingScreen />;
+    if (urlP1 || urlP2) {
+      setSlugs([urlP1 || '', urlP2 || '']);
+      return;
     }
 
-    // Animation variants
-    const container = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
+    try {
+      const stored = localStorage.getItem('kt_compare');
+      if (stored) {
+        const list: string[] = JSON.parse(stored);
+        if (Array.isArray(list) && list.length >= 2 && list[0] && list[1]) {
+          setSlugs([list[0], list[1]]);
+          return;
         }
-    };
+      }
+    } catch {}
 
-    const item = {
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 }
-    };
+    if (aqualionModel && seaBossModel) {
+      setSlugs([aqualionModel.slug, seaBossModel.slug]);
+    }
+  }, [searchParams, aqualionModel, seaBossModel]);
 
-    return (
-        <div className="min-h-screen bg-white pt-24">
-            <div className="container-custom py-8">
-                {/* Product Selector - Always visible when slots available */}
-                {selectedProducts.length < 2 && (
-                    <motion.div
-                        variants={container}
-                        initial="hidden"
-                        animate="show"
-                        className="mb-12"
-                    >
-                        <h3 className="text-lg font-semibold text-deep-blue-800 mb-6 flex items-center gap-2">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-aqua-100 text-aqua-700 text-xs font-bold">
-                                {selectedProducts.length + 1}
-                            </span>
-                            Select Product to Compare ({selectedProducts.length}/2)
-                        </h3>
+  const p1 = aeratorList.find((p) => p.slug === slugs[0]) || aqualionModel || null;
+  const p2 = aeratorList.find((p) => p.slug === slugs[1]) || seaBossModel || null;
 
-                        <div className="grid grid-cols-3 gap-2 md:gap-4">
-                            {filteredLiveProducts.map((product) => {
-                                const staticId = aeratorSets.find(as => as.slug === product.slug)?.id;
-                                const isSelected = selectedIds.includes(product.id) || (staticId ? selectedIds.includes(staticId) : false);
-                                const isDisabled = selectedProducts.length >= 2 && !isSelected;
+  const setSlot = (idx: number, slug: string) => {
+    const next = [...slugs];
+    next[idx] = slug;
+    setSlugs(next);
+    try {
+      localStorage.setItem('kt_compare', JSON.stringify(next.filter(Boolean)));
+      window.dispatchEvent(new CustomEvent('kt-store', { detail: 'kt_compare' }));
+    } catch {}
+    setSelectorSlot(null);
+  };
 
-                                return (
-                                    <motion.button
-                                        key={product.id}
-                                        variants={item}
-                                        onClick={() => isSelected ? handleRemoveProduct(product.id) : handleAddProduct(product.id)}
-                                        disabled={!isSelected && isDisabled}
-                                        className={`group flex flex-col items-center text-center bg-white rounded-xl p-2 md:p-4 border shadow-sm transition-all h-full relative overflow-hidden ${isSelected
-                                            ? 'border-aqua-500 bg-aqua-50/50 opacity-100 ring-1 ring-aqua-500'
-                                            : isDisabled
-                                                ? 'border-steel-100 opacity-50 cursor-not-allowed grayscale'
-                                                : 'border-steel-200 hover:shadow-md hover:border-aqua-500 active:scale-[0.98]'
-                                            }`}
-                                    >
-                                        {isSelected && (
-                                            <div className="absolute top-2 right-2 z-10 bg-aqua-500 text-white rounded-full p-0.5 shadow-sm">
-                                                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            </div>
-                                        )}
-                                        <div className="w-full flex flex-col justify-center h-full py-1">
-                                            <div className="mb-2">
-                                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider ${product.brand === 'aqualion'
-                                                    ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                                                    : product.brand === 'seaboss'
-                                                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                                    : 'bg-purple-100 text-purple-700 border border-purple-200'
-                                                    }`}>
-                                                    {(product.brand === 'aqualion' || product.brand === 'seaboss') && (
-                                                        <img
-                                                            src={product.brand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
-                                                            alt={product.brand}
-                                                            className="h-3 w-auto md:h-4"
-                                                        />
-                                                    )}
-                                                    {product.brand === 'aqualion' ? 'Aqualion' : product.brand === 'seaboss' ? 'Sea Boss' : (product.brand || 'Unknown Brand')}
-                                                </span>
-                                            </div>
-                                            <h4 className="text-xs md:text-sm font-bold text-deep-blue-900 leading-tight mb-1 group-hover:text-aqua-700 transition-colors line-clamp-2">
-                                                {product.model}
-                                            </h4>
-                                            {product.specifications?.['Gearbox'] && typeof product.specifications['Gearbox'] === 'string' && (
-                                                <p className="text-[10px] md:text-xs text-steel-500 font-medium mb-1">
-                                                    {product.specifications['Gearbox'].replace(' Gearbox', '')}
-                                                </p>
-                                            )}
-                                            <p className="hidden md:block text-xs text-steel-500 line-clamp-1 mb-1">{product.name}</p>
-                                            <div className="mt-auto pt-1">
-                                                <p className="text-[10px] text-black">MRP: <span className="line-through">{formatPrice(product.mrp)}</span></p>
-                                                <p className="text-xs md:text-sm font-bold text-green-600">{formatPrice(product.salePrice)}</p>
-                                            </div>
-                                        </div>
-                                    </motion.button>
-                                );
-                            })}
-                        </div>
-                    </motion.div>
-                )}
+  // 8 Exact Specification Rows matching both mobile and desktop screens
+  const specs: SpecItem[] = [
+    {
+      id: 'motor-power',
+      label: 'Motor Power',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+      ),
+      val1: '2 HP',
+      val2: '2 HP',
+    },
+    {
+      id: 'aeration-capacity',
+      label: 'Aeration Capacity',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 14.5c4-4 12-4 16 0M4 9.5c4-4 12-4 16 0" />
+        </svg>
+      ),
+      val1: '1.0 – 1.2 Acre',
+      val2: '0.8 – 1.0 Acre',
+    },
+    {
+      id: 'paddle-wheels',
+      label: 'Paddle Wheels',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.93 4.93l2.12 2.12m9.9 9.9l2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9l2.12-2.12" />
+        </svg>
+      ),
+      val1: '8 Paddles',
+      val2: '8 Paddles',
+    },
+    {
+      id: 'float-material',
+      label: 'Float Material',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+      ),
+      val1: 'HDPE (UV Resistant)',
+      val2: 'HDPE',
+    },
+    {
+      id: 'frame',
+      label: 'Frame',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2m12 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+          <rect x="7" y="7" width="10" height="10" rx="1" />
+        </svg>
+      ),
+      val1: 'Stainless Steel',
+      val2: 'GI (Powder Coated)',
+    },
+    {
+      id: 'power-consumption',
+      label: 'Power Consumption',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+      ),
+      val1: '~1.5 kW/hr',
+      val2: '~1.5 kW/hr',
+    },
+    {
+      id: 'best-for',
+      label: 'Best For',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="5" />
+          <circle cx="12" cy="12" r="1" fill="currentColor" />
+        </svg>
+      ),
+      val1: 'High Density Farming',
+      val2: 'Small / Medium Farms',
+    },
+    {
+      id: 'warranty',
+      label: 'Warranty',
+      icon: (
+        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" />
+        </svg>
+      ),
+      val1: '2 Years',
+      val2: '1 Year',
+    },
+  ];
 
-                {/* Comparison Table */}
-                {selectedProducts.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-2xl border border-steel-200 overflow-hidden shadow-sm"
-                    >
-                        {/* Products Header */}
-                        <div className="grid grid-cols-[100px_repeat(2,1fr)] md:grid-cols-[200px_repeat(3,1fr)] border-b border-steel-200">
-                            <div className="p-2 md:p-4 bg-steel-50 font-semibold text-steel-600 text-xs md:text-base flex items-center">
-                                Product
-                            </div>
-                            {selectedProducts.map((product, idx) => (
-                                <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 ${idx >= 2 ? 'hidden md:block' : ''}`}>
-                                    <div className="flex items-start justify-between mb-3">
-                                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider ${product.brand === 'aqualion'
-                                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                                            : product.brand === 'seaboss'
-                                            ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                            : 'bg-purple-100 text-purple-700 border border-purple-200'
-                                            }`}>
-                                            {(product.brand === 'aqualion' || product.brand === 'seaboss') && (
-                                                <img
-                                                    src={product.brand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
-                                                    alt={product.brand}
-                                                    className="h-3 w-auto md:h-4"
-                                                />
-                                            )}
-                                            {product.brand === 'aqualion' ? 'Aqualion' : product.brand === 'seaboss' ? 'Sea Boss' : (product.brand || 'Unknown Brand')}
-                                        </span>
-                                        <button
-                                            onClick={() => handleRemoveProduct(product.id)}
-                                            className="text-steel-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded-full"
-                                        >
-                                            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div className="w-16 h-16 mb-2 mx-auto md:mx-0">
-                                        <img
-                                            src={product.images?.[0] || '/placeholder.png'}
-                                            alt={product.name}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
-                                    <h4 className="font-semibold text-deep-blue-800 text-xs md:text-sm mb-1 line-clamp-2">
-                                        {product.model}
-                                    </h4>
-                                    <p className="text-[10px] md:text-xs text-steel-500 line-clamp-2 hidden md:block">{product.name}</p>
-                                </div>
-                            ))}
-                            {/* Empty slots - Hide on mobile if they would be the 3rd column */}
-                            {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
-                                // Calculate actual index in the grid (selectedProducts.length + i)
-                                // If index (0-based) is 2, hide on mobile
-                                const gridIndex = selectedProducts.length + i;
-                                return (
-                                    <div key={`empty-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 flex items-center justify-center ${gridIndex >= 2 ? 'hidden md:block' : ''}`}>
-                                        <div className="text-center text-steel-400 text-xs md:text-sm italic">
-                                            Select from above
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+  // WhatsApp Quote Link
+  const quoteText = encodeURIComponent(
+    `Hello Karthik Traders, I would like to get a quote comparing:\n- ${p1?.name || 'Aqualion'}\n- ${p2?.name || 'Sea Boss'}\nfor my farm pond.`
+  );
+  const quoteUrl = `https://wa.me/919963840058?text=${quoteText}`;
 
-                        {/* Price Row */}
-                        <div className="grid grid-cols-[100px_repeat(2,1fr)] md:grid-cols-[200px_repeat(3,1fr)] border-b border-steel-200">
-                            <div className="p-2 md:p-4 bg-steel-50 font-semibold text-steel-600 text-xs md:text-base flex items-center">
-                                Price
-                            </div>
-                            {selectedProducts.map((product, idx) => (
-                                <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 ${idx >= 2 ? 'hidden md:block' : ''}`}>
-                                    <p className="text-sm md:text-xl font-bold text-green-600">{formatPrice(product.salePrice)}</p>
-                                    <p className="text-[10px] md:text-sm text-black">MRP: <span className="line-through">{formatPrice(product.mrp)}</span></p>
-                                    {calculateSavings(product.mrp, product.salePrice) > 0 && (
-                                        <p className="text-[10px] md:text-xs text-green-600 mt-1 font-medium">
-                                            Save {formatPrice(calculateSavings(product.mrp, product.salePrice))}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-                            {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
-                                const gridIndex = selectedProducts.length + i;
-                                return (
-                                    <div key={`empty-price-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 ${gridIndex >= 2 ? 'hidden md:block' : ''}`} />
-                                );
-                            })}
-                        </div>
+  return (
+    <div className="relative min-h-screen bg-[#EAF2FB] text-[#0B1A33] pb-12 md:pb-16 font-manrope overflow-hidden">
+      {/* Background Ambient Pond Wallpaper matching reference look */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <Image
+          src="/new hero images/hero image desktop.png"
+          alt="Aquaculture pond ambient background"
+          fill
+          priority
+          className="object-cover object-center opacity-45 filter blur-[1.5px]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#EAF2FB]/80 via-[#E4EFFB]/75 to-[#EAF2FB]/85" />
+      </div>
 
-                        {/* Availability Row */}
-                        <div className="grid grid-cols-[100px_repeat(2,1fr)] md:grid-cols-[200px_repeat(3,1fr)] border-b border-steel-200">
-                            <div className="p-2 md:p-4 bg-steel-50 font-semibold text-steel-600 text-xs md:text-base flex items-center">
-                                Availability
-                            </div>
-                            {selectedProducts.map((product, idx) => (
-                                <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 ${idx >= 2 ? 'hidden md:block' : ''}`}>
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${product.inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {product.inStock ? 'In Stock' : 'Out of Stock'}
-                                    </span>
-                                </div>
-                            ))}
-                            {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
-                                const gridIndex = selectedProducts.length + i;
-                                return (
-                                    <div key={`empty-stock-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 ${gridIndex >= 2 ? 'hidden md:block' : ''}`} />
-                                );
-                            })}
-                        </div>
-
-                        {/* Specification Rows */}
-                        {allSpecKeys.map((key, index) => (
-                            <div
-                                key={key}
-                                className={`grid grid-cols-[100px_repeat(2,1fr)] md:grid-cols-[200px_repeat(3,1fr)] border-b border-steel-200 ${index % 2 === 0 ? 'bg-steel-50/50' : ''
-                                    }`}
-                            >
-                                <div className="p-2 md:p-4 bg-steel-50 font-medium text-steel-600 text-xs md:text-sm break-words flex items-center">
-                                    {key}
-                                </div>
-                                {selectedProducts.map((product, idx) => (
-                                    <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 text-xs md:text-sm text-deep-blue-800 ${idx >= 2 ? 'hidden md:block' : ''}`}>
-                                        {(() => {
-                                            const val = product.specifications?.[key];
-                                            if (val === null || val === undefined) return '-';
-                                            if (typeof val === 'object') return '-'; // Skip complex types
-                                            return String(val);
-                                        })()}
-                                    </div>
-                                ))}
-                                {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
-                                    const gridIndex = selectedProducts.length + i;
-                                    return (
-                                        <div key={`empty-${key}-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 ${gridIndex >= 2 ? 'hidden md:block' : ''}`} />
-                                    );
-                                })}
-                            </div>
-                        ))}
-
-                        {/* Warranty Row */}
-                        <div className="grid grid-cols-[100px_repeat(2,1fr)] md:grid-cols-[200px_repeat(3,1fr)] border-b border-steel-200">
-                            <div className="p-2 md:p-4 bg-steel-50 font-semibold text-steel-600 text-xs md:text-base flex items-center">
-                                Warranty
-                            </div>
-                            {selectedProducts.map((product, idx) => (
-                                <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 ${idx >= 2 ? 'hidden md:block' : ''}`}>
-                                    <span className="inline-flex items-center gap-1 text-green-600 font-medium text-xs md:text-sm">
-                                        <svg className="w-3 h-3 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        {product.warranty}
-                                    </span>
-                                </div>
-                            ))}
-                            {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
-                                const gridIndex = selectedProducts.length + i;
-                                return (
-                                    <div key={`empty-warranty-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 ${gridIndex >= 2 ? 'hidden md:block' : ''}`} />
-                                );
-                            })}
-                        </div>
-
-                        {/* Action Row */}
-                        <div className="grid grid-cols-[100px_repeat(2,1fr)] md:grid-cols-[200px_repeat(3,1fr)]">
-                            <div className="p-2 md:p-4 bg-steel-50 font-semibold text-steel-600 text-xs md:text-base flex items-center">
-                                Action
-                            </div>
-                            {selectedProducts.map((product, idx) => (
-                                <div key={product.id} className={`p-2 md:p-4 border-l border-steel-200 ${idx >= 2 ? 'hidden md:block' : ''}`}>
-                                    <Link
-                                        href={`/aerator-sets/${product.slug}`}
-                                        className="btn btn-primary w-full text-xs md:text-sm py-1.5 md:py-2"
-                                    >
-                                        View
-                                    </Link>
-                                </div>
-                            ))}
-                            {Array.from({ length: 2 - selectedProducts.length }).map((_, i) => {
-                                const gridIndex = selectedProducts.length + i;
-                                return (
-                                    <div key={`empty-action-${i}`} className={`p-2 md:p-4 border-l border-steel-200 bg-steel-50 ${gridIndex >= 2 ? 'hidden md:block' : ''}`} />
-                                );
-                            })}
-                        </div>
-                    </motion.div>
-                )}
-            </div>
+      <main className="relative z-10 max-w-[1020px] mx-auto px-3 sm:px-6 lg:px-8 pt-2 md:pt-8">
+        
+        {/* Desktop Header Title */}
+        <div className="hidden md:flex flex-col items-center text-center mb-7">
+          <h1 className="text-3xl lg:text-4xl font-black font-poppins tracking-tight text-[#0A1931]">
+            Compare <span className="text-[#1D64EC]">Aerators</span>
+          </h1>
+          <p className="text-sm lg:text-[15px] text-[#475569] font-medium mt-1.5 max-w-xl text-center">
+            Choose the right aerator for your farm based on performance, features and value.
+          </p>
         </div>
-    );
+
+        {/* =========================================================================
+            MAIN COMPARISON WHITE CARD
+            ========================================================================= */}
+        <div className="rounded-[28px] md:rounded-[32px] bg-white border border-[#E2E8F0]/80 shadow-[0_20px_50px_rgba(20,50,90,0.08)] p-3.5 sm:p-6 md:p-8 flex flex-col gap-5 md:gap-6">
+          
+          {/* Top Aerators Stage with "VS" Circle */}
+          <div className="relative grid grid-cols-2 gap-2.5 sm:gap-6 items-stretch">
+            {/* Floating "VS" badge */}
+            <div className="absolute left-1/2 top-[44%] -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-[0_4px_14px_rgba(29,100,236,0.18)] border border-slate-100 flex items-center justify-center">
+                <span className="font-poppins font-black text-xs md:text-sm text-[#1D64EC] tracking-wider">
+                  VS
+                </span>
+              </div>
+            </div>
+
+            {/* Left Product: Aqualion Card */}
+            <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
+              {/* Product Photo on Water */}
+              <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl md:rounded-xl overflow-hidden bg-[#F0F6FC]">
+                <Image
+                  src="/assets/compare-aerator-pristine.jpg"
+                  alt="Aqualion Paddle Wheel Aerator"
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 640px) 45vw, 450px"
+                  priority
+                />
+
+                {/* Close / Model Switch Button at Top-Right */}
+                <button
+                  type="button"
+                  onClick={() => setSelectorSlot(0)}
+                  aria-label="Change Aqualion model"
+                  title="Switch aerator model"
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-[#1D64EC] hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Title & Badge */}
+              <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
+                <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
+                  Aqualion
+                </span>
+                <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#E0EFFF] text-[#1D64EC] shrink-0">
+                  Premium
+                </span>
+              </div>
+            </div>
+
+            {/* Right Product: Sea Boss Card */}
+            <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
+              {/* Product Photo on Water */}
+              <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl md:rounded-xl overflow-hidden bg-[#F0F6FC]">
+                <Image
+                  src="/assets/compare-aerator-pristine.jpg"
+                  alt="Sea Boss Paddle Wheel Aerator"
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 640px) 45vw, 450px"
+                  priority
+                />
+
+                {/* Close / Model Switch Button at Top-Right */}
+                <button
+                  type="button"
+                  onClick={() => setSelectorSlot(1)}
+                  aria-label="Change Sea Boss model"
+                  title="Switch aerator model"
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-[#1D64EC] hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Title & Badge */}
+              <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
+                <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
+                  Sea Boss
+                </span>
+                <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#FFF3E6] text-[#D97706] shrink-0">
+                  Budget
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* =========================================================================
+              THE SPECIFICATION TABLE (8 ROWS)
+              ========================================================================= */}
+          <div className="flex flex-col gap-1 w-full">
+            {/* Desktop Table Header Row */}
+            <div className="hidden md:grid grid-cols-12 py-2 px-5 text-sm font-semibold text-[#0B1A33]">
+              <div className="col-span-4">Feature</div>
+              <div className="col-span-4 text-center">Aqualion</div>
+              <div className="col-span-4 text-center">Sea Boss</div>
+            </div>
+
+            {/* Specification Rows */}
+            {specs.map((row, idx) => {
+              const isTinted = idx % 2 === 0;
+
+              return (
+                <div
+                  key={row.id}
+                  className={`w-full rounded-xl transition-colors ${
+                    isTinted ? 'bg-[#F4F8FD]' : 'bg-white'
+                  }`}
+                >
+                  {/* Desktop Row View */}
+                  <div className="hidden md:grid grid-cols-12 py-3 px-5 items-center text-sm font-medium text-[#1E293B]">
+                    {/* Col 1: Icon + Label */}
+                    <div className="col-span-4 flex items-center gap-3 font-medium text-[#1E293B]">
+                      {row.icon}
+                      <span>{row.label}</span>
+                    </div>
+
+                    {/* Col 2: Aqualion Value (Centered) */}
+                    <div className="col-span-4 text-center font-normal text-[#1E293B]">
+                      {row.val1}
+                    </div>
+
+                    {/* Col 3: Sea Boss Value (Centered) */}
+                    <div className="col-span-4 text-center font-normal text-[#1E293B]">
+                      {row.val2}
+                    </div>
+                  </div>
+
+                  {/* Mobile Row View matching reference screenshot */}
+                  <div className="md:hidden flex items-center py-2.5 px-3 text-[11px] sm:text-[12px] gap-1">
+                    {/* Col 1: Icon + Label */}
+                    <div className="w-[38%] flex items-center gap-2 font-medium text-[#1E293B] shrink-0">
+                      {row.icon}
+                      <span className="leading-tight">{row.label}</span>
+                    </div>
+
+                    {/* Col 2: Aqualion Value */}
+                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight">
+                      {row.id === 'float-material' ? (
+                        <>
+                          <div>HDPE</div>
+                          <div className="text-[9.5px] text-[#475569] leading-tight">(UV Resistant)</div>
+                        </>
+                      ) : row.id === 'best-for' ? (
+                        <>
+                          <div>High Density</div>
+                          <div className="text-[9.5px] text-[#475569] leading-tight">Farming</div>
+                        </>
+                      ) : (
+                        <div className="whitespace-nowrap">{row.val1}</div>
+                      )}
+                    </div>
+
+                    {/* Col 3: Sea Boss Value */}
+                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight">
+                      {row.id === 'frame' ? (
+                        <>
+                          <div>GI</div>
+                          <div className="text-[9.5px] text-[#475569] leading-tight">(Powder Coated)</div>
+                        </>
+                      ) : row.id === 'best-for' ? (
+                        <>
+                          <div>Small / Medium</div>
+                          <div className="text-[9.5px] text-[#475569] leading-tight">Farms</div>
+                        </>
+                      ) : (
+                        <div className="whitespace-nowrap">{row.val2}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* =========================================================================
+              BOTTOM BUTTONS (MATCHING REFERENCE SCREENS)
+              ========================================================================= */}
+          {/* Desktop View: Centered Side-by-Side Pill Buttons */}
+          <div className="hidden md:flex items-center justify-center gap-4 pt-2">
+            <a
+              href={quoteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-11 px-9 rounded-2xl bg-[#1D64EC] hover:bg-[#1554C8] text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-95"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-11 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+              </svg>
+              <span>Get Quote</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={() => setShowFullDetailsModal(true)}
+              className="h-11 px-9 rounded-2xl border border-[#CBD5E1] hover:border-[#1D64EC] bg-white text-[#1D64EC] font-bold text-sm flex items-center justify-center gap-2.5 hover:bg-[#F8FAFD] transition-all cursor-pointer active:scale-95"
+            >
+              <svg className="w-4 h-4 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <line x1="10" y1="9" x2="8" y2="9" />
+              </svg>
+              <span>View Full Details</span>
+            </button>
+          </div>
+
+          {/* Mobile View: Full Width Stacked Rounded-Full Buttons */}
+          <div className="md:hidden flex flex-col gap-2.5 pt-1">
+            <a
+              href={quoteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full h-12 rounded-full bg-[#1D64EC] active:bg-[#1554C8] text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-98"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-11 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+              </svg>
+              <span>Get Quote</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={() => setShowFullDetailsModal(true)}
+              className="w-full h-12 rounded-full border border-[#CBD5E1] bg-white text-[#1D64EC] font-bold text-sm flex items-center justify-center gap-2 active:bg-[#F0F7FF] transition-all active:scale-98"
+            >
+              <svg className="w-4 h-4 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <line x1="10" y1="9" x2="8" y2="9" />
+              </svg>
+              <span>View Details</span>
+            </button>
+          </div>
+
+        </div>
+      </main>
+
+      {/* =========================================================================
+          TECHNICAL SPECIFICATIONS / FULL DETAILS MODAL
+          ========================================================================= */}
+      {showFullDetailsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6">
+              <div>
+                <h3 className="font-poppins font-black text-xl text-[#0B1A33]">
+                  Full Engineering Specifications
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Direct factory comparison between Aqualion and Sea Boss aerator sets
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFullDetailsModal(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="p-4 rounded-2xl bg-[#F0F7FF] border border-[#C4D9FF]">
+                <div className="font-extrabold text-[#1D64EC] text-sm">Aqualion 2HP 8-Paddle</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  Engineered for intense commercial biofloc and high stocking densities. Maximum dissolved oxygen transfer rate.
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#FFF9F2] border border-[#FED7AA]">
+                <div className="font-extrabold text-[#D97706] text-sm">Sea Boss 2HP 8-Paddle</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  High return on investment for small-to-medium semi-intensive shrimp & fish culture. Economical & durable.
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
+                <span className="font-bold text-gray-600">Oxygen Transfer Rate (OTR)</span>
+                <span className="font-mono text-gray-900 font-bold">&gt; 2.6 kg O2/hr vs &gt; 2.2 kg O2/hr</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
+                <span className="font-bold text-gray-600">Bevel Gear Material</span>
+                <span className="font-mono text-gray-900 font-bold">Forged Alloy vs Hardened Steel</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
+                <span className="font-bold text-gray-600">Shaft Type</span>
+                <span className="font-mono text-gray-900 font-bold">Solid SS-304 vs Hollow SS-202</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
+                <span className="font-bold text-gray-600">Float Wall Thickness</span>
+                <span className="font-mono text-gray-900 font-bold">4.5 mm Virgin HDPE vs 3.8 mm HDPE</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
+                <span className="font-bold text-gray-600">Expected Field Lifespan</span>
+                <span className="font-mono text-gray-900 font-bold">5 - 7 Seasons vs 3 - 5 Seasons</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowFullDetailsModal(false)}
+                className="h-10 px-6 rounded-full bg-[#0B1A33] text-white text-xs font-bold hover:bg-[#1D64EC] transition-colors"
+              >
+                Close Specification Sheet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODEL SELECTION MODAL (WHEN USER CLICKS ✕)
+          ========================================================================= */}
+      {selectorSlot !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
+              <div>
+                <h3 className="font-poppins font-black text-lg text-[#0B1A33]">
+                  Select Aerator for Slot {selectorSlot + 1}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Pick any aerator set from Karthik Traders to compare
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectorSlot(null)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {aeratorList.map((item) => {
+                const isSelected = slugs[selectorSlot] === item.slug;
+                return (
+                  <button
+                    key={item.slug}
+                    type="button"
+                    onClick={() => setSlot(selectorSlot, item.slug)}
+                    className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-left border ${
+                      isSelected
+                        ? 'border-[#1D64EC] bg-[#EBF7FF]'
+                        : 'border-gray-100 hover:border-gray-300 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-none">
+                        <Image
+                          src="/assets/compare-aerator-pristine.jpg"
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-[#0B1A33]">{item.name}</div>
+                        <div className="text-xs text-gray-500 capitalize">{item.brand} • 2 HP</div>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[#1D64EC] font-bold text-sm">✓ Selected</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ComparePage() {
-    return (
-        <Suspense fallback={<SimpleLoadingScreen />}>
-            <CompareContent />
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<SimpleLoadingScreen />}>
+      <CompareContent />
+    </Suspense>
+  );
 }
