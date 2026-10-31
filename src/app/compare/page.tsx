@@ -8,7 +8,7 @@ import { aeratorSets, Product } from '@/data/products';
 import { useLiveProducts } from '@/hooks/useLiveProducts';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
-// ─── Helpers ──────────────────────────────────────────────────────────
+// ─── Spec Lookup Helper ────────────────────────────────────────────────
 /** Case-insensitive spec lookup; tries each key in order, returns first non-empty value. */
 function getSpec(product: Product | null | undefined, ...keys: string[]): string {
   if (!product?.specifications) return '—';
@@ -25,16 +25,189 @@ function getSpec(product: Product | null | undefined, ...keys: string[]): string
   return '—';
 }
 
+// ─── Value Formatter & Structuring ─────────────────────────────────────
+interface FormattedSpec {
+  primary: string;
+  secondary: string | null;
+}
+
+function formatSpecValue(raw: string | null | undefined): FormattedSpec {
+  if (!raw || raw === '—' || raw.trim() === '') {
+    return { primary: '—', secondary: null };
+  }
+  const str = raw.trim();
+
+  // Direct normalizations
+  if (/^made in india$/i.test(str)) return { primary: 'Made in India', secondary: null };
+  if (/^(no|not included)$/i.test(str)) return { primary: 'Not Included', secondary: null };
+  if (/^(yes|included)$/i.test(str)) return { primary: 'Included', secondary: null };
+  if (/^low cost$/i.test(str) || /^low coast$/i.test(str)) return { primary: 'Low Maintenance', secondary: 'Economical Spares' };
+  if (/^high cost$/i.test(str)) return { primary: 'Standard', secondary: 'Low Downtime' };
+  if (/^automatic$/i.test(str)) return { primary: 'Automatic', secondary: null };
+  if (/^electric$/i.test(str)) return { primary: 'Electric', secondary: null };
+  if (/^(three phase|3 phase)$/i.test(str)) return { primary: '3 Phase', secondary: null };
+  if (/^415\s*v$/i.test(str)) return { primary: '415 V', secondary: null };
+  if (/^2\s*hp$/i.test(str)) return { primary: '2 HP', secondary: null };
+  if (/^50\s*hz$/i.test(str)) return { primary: '50 Hz', secondary: null };
+  if (/^50\s*[-–]\s*60\s*hz$/i.test(str)) return { primary: '50 – 60 Hz', secondary: null };
+
+  // Gear Box & Motor Material
+  if (/cast iron/i.test(str)) {
+    if (/e\s*[-–]?\s*coating/i.test(str)) {
+      return { primary: 'Cast Iron Body', secondary: 'Powder & E-Coating' };
+    }
+    if (/powder/i.test(str)) {
+      return { primary: 'Cast Iron Body', secondary: 'Powder Coated' };
+    }
+    return { primary: 'Cast Iron Body', secondary: null };
+  }
+  if (/nylon/i.test(str)) {
+    return { primary: 'Nylon / Cast Iron', secondary: 'Powder Coated' };
+  }
+
+  // Motor Type
+  if (/heavy duty/i.test(str)) {
+    if (/iso/i.test(str)) return { primary: 'Heavy Duty Motor', secondary: 'ISO Certified' };
+    if (/jinhulong/i.test(str)) return { primary: 'Heavy Duty Motor', secondary: 'Jinhulong Type' };
+    return { primary: 'Heavy Duty Motor', secondary: null };
+  }
+
+  // Fan & Float Material
+  if (/virgin/i.test(str) && /float/i.test(str)) {
+    return { primary: 'Virgin PP & HDPE', secondary: 'UV Stabilized' };
+  }
+
+  // Warranty
+  if (/service warranty/i.test(str)) {
+    return { primary: '1 Year Warranty', secondary: '+ 1 Year Service' };
+  }
+  if (/^1\s*year/i.test(str)) {
+    return { primary: '1 Year', secondary: 'Standard Warranty' };
+  }
+  if (/^2\s*year/i.test(str)) {
+    return { primary: '2 Years', secondary: 'Comprehensive' };
+  }
+
+  // Gear Oil
+  if (/ep\s*140/i.test(str)) {
+    return { primary: 'EP 140 Synthetic', secondary: '2 Liters' };
+  }
+
+  // Wire
+  if (/heavy cable wire/i.test(str) || (/1\.5/i.test(str) && /wire/i.test(str))) {
+    return { primary: '1.5 mm Heavy Duty', secondary: 'Copper Cable Wire' };
+  }
+
+  // Starter
+  if (/starter/i.test(str)) {
+    return { primary: 'L&T Type Starter', secondary: 'Heavy Duty OEM' };
+  }
+
+  // Dom Type
+  if (/hdpe handle dom/i.test(str)) {
+    return { primary: 'HDPE Dom', secondary: 'Handle Grip Type' };
+  }
+  if (/hdpe side grip dom/i.test(str)) {
+    return { primary: 'HDPE Dom', secondary: 'Side Grip Type' };
+  }
+
+  // Type of Aerator
+  if (/surface floating/i.test(str)) {
+    return { primary: 'Surface Floating', secondary: 'Paddle Wheel Aerator' };
+  }
+
+  // Application
+  if (/farming/i.test(str)) {
+    return { primary: 'Shrimp & Fish Farming', secondary: 'Pond Aeration' };
+  }
+
+  // Gear Box RPM
+  if (/^105/i.test(str)) {
+    if (/a3/i.test(str)) return { primary: '105 RPM', secondary: '(A3 Ultra)' };
+    return { primary: '105 RPM', secondary: null };
+  }
+
+  // Frame Material
+  if (/ss\s*304/i.test(str)) return { primary: 'SS 304', secondary: 'CR Finishing' };
+  if (/ss\s*202/i.test(str)) return { primary: 'SS 202', secondary: 'CR Finishing' };
+
+  // Parentheses split: "HDPE (UV Resistant)" -> "HDPE", "(UV Resistant)"
+  const parenMatch = str.match(/^([^(]+)\s*\(([^)]+)\)$/);
+  if (parenMatch) {
+    const p = parenMatch[1].trim();
+    let s = parenMatch[2].trim();
+    if (/^apx|approx$/i.test(s)) s = 'Approx';
+    if (/^a3 ultra$/i.test(s)) s = 'A3 Ultra';
+    if (/^iso certified$/i.test(s)) s = 'ISO Certified';
+    if (/^uv resistant$/i.test(s)) s = 'UV Resistant';
+    if (/^powder coated$/i.test(s)) s = 'Powder Coated';
+    return { primary: p, secondary: `(${s})` };
+  }
+
+  // Thickness: 2 MM -> 2 mm
+  const mmMatch = str.match(/^(\d+(\.\d+)?)\s*mm$/i);
+  if (mmMatch) {
+    return { primary: `${mmMatch[1]} mm`, secondary: null };
+  }
+
+  // Weight: 7 KG -> 7 kg, 7.3 Kg ( Apx ) -> 7.3 kg, (Approx)
+  const kgMatch = str.match(/^(\d+(\.\d+)?)\s*kg/i);
+  if (kgMatch) {
+    const hasApx = /apx|approx/i.test(str);
+    return { primary: `${kgMatch[1]} kg`, secondary: hasApx ? '(Approx)' : null };
+  }
+
+  // Power Consumption: 1.5 - 2 Units / Hour
+  if (/units\s*[\/|per]\s*hour/i.test(str)) {
+    const m = str.replace(/units\s*[\/|per]\s*hour/i, '').trim();
+    return { primary: `${m} Units/hr`, secondary: null };
+  }
+
+  // Oxygen Generation: 3.0 - 3.2 Kg O2 / Hour
+  if (/kg\s*o[2₂]\s*[\/|per]\s*hour/i.test(str)) {
+    const m = str.replace(/kg\s*o[2₂]\s*[\/|per]\s*hour/i, '').trim();
+    return { primary: `${m} kg O₂/hr`, secondary: 'Transfer Rate' };
+  }
+
+  // Aeration capacity / Pond coverage: 0.75 – 1 acre
+  if (/acre/i.test(str)) {
+    const m = str.replace(/acre[s]?/i, '').trim();
+    return { primary: `${m} Acre`, secondary: null };
+  }
+
+  return { primary: str, secondary: null };
+}
+
+/** Formatted Spec Value View with bold primary text & structured subtext */
+function FormattedValueView({ raw }: { raw: string }) {
+  const { primary, secondary } = formatSpecValue(raw);
+
+  if (primary === '—') {
+    return <span className="text-slate-300 font-normal">—</span>;
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center text-center">
+      <span className="font-semibold text-[#1E293B] text-[11.5px] sm:text-[13px] md:text-sm tracking-tight leading-snug">
+        {primary}
+      </span>
+      {secondary && (
+        <span className="text-[9.5px] sm:text-[10.5px] md:text-[11.5px] text-[#64748B] font-medium leading-tight mt-0.5">
+          {secondary}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ─── Comparison field definitions with display order ──────────────────
-// Each field maps a user-friendly label to one or more DB key variants.
-// Icons are assigned by category group.
 type IconType = 'bolt' | 'wave' | 'gear' | 'layers' | 'frame' | 'target' | 'shield' | 'droplet' | 'weight';
 
 interface CompareField {
   label: string;
   keys: string[];
   icon: IconType;
-  group: string; // For grouping in the "View Full Details" modal
+  group: string;
 }
 
 const COMPARE_FIELDS: CompareField[] = [
@@ -86,13 +259,13 @@ const COMPARE_FIELDS: CompareField[] = [
   { label: 'Country of Origin', keys: ['Country of Origin'], icon: 'shield', group: 'General' },
 ];
 
-// Metadata keys to skip when scanning for "extra" specs not in COMPARE_FIELDS
+// Metadata keys to skip when scanning for extra specs
 const SKIP_KEYS = new Set([
   'brand', 'category', 'components', 'features', 'model', 'warranty',
   'Product Name', 'Model number',
 ]);
 
-// ─── SVG Icon Components (Compact) ───────────────────────────────────
+// ─── SVG Icons ────────────────────────────────────────────────────────
 function SpecIcon({ type }: { type: IconType }) {
   const cls = 'w-4 h-4 text-[#1D64EC] shrink-0';
   switch (type) {
@@ -101,7 +274,7 @@ function SpecIcon({ type }: { type: IconType }) {
     case 'wave':
       return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.5c4-4 12-4 16 0M4 9.5c4-4 12-4 16 0" /></svg>;
     case 'gear':
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
+      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83-2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
     case 'layers':
       return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>;
     case 'frame':
@@ -209,19 +382,18 @@ function CompareContent() {
   const specRows = useMemo(() => {
     const rows: { label: string; val1: string; val2: string; icon: IconType; group: string }[] = [];
 
-    // 1. Add rows from our ordered field definitions
+    // 1. Add rows from ordered field definitions
     for (const field of COMPARE_FIELDS) {
       const v1 = getSpec(p1, ...field.keys);
       const v2 = getSpec(p2, ...field.keys);
-      // Only include row if at least one product has a value
       if (v1 !== '—' || v2 !== '—') {
         rows.push({ label: field.label, val1: v1, val2: v2, icon: field.icon, group: field.group });
       }
     }
 
-    // 2. Catch any extra specs from DB not covered by COMPARE_FIELDS
+    // 2. Catch extra specs from DB not covered by COMPARE_FIELDS
     const coveredKeys = new Set(COMPARE_FIELDS.flatMap((f) => f.keys.map((k) => k.toLowerCase())));
-    const allKeys = new Map<string, string>(); // lowercase -> original key
+    const allKeys = new Map<string, string>();
     
     for (const p of [p1, p2]) {
       if (!p?.specifications) continue;
@@ -277,7 +449,7 @@ function CompareContent() {
 
   return (
     <div className="relative min-h-screen bg-[#EAF2FB] text-[#0B1A33] pb-12 md:pb-16 font-manrope overflow-hidden">
-      {/* Background Ambient Pond Wallpaper matching reference look */}
+      {/* Background Ambient Pond Wallpaper */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <Image
           src="/new hero images/hero image desktop.png"
@@ -381,14 +553,20 @@ function CompareContent() {
           </div>
 
           {/* =========================================================================
-              THE SPECIFICATION TABLE (DYNAMIC FROM DB)
+              THE SPECIFICATION TABLE (DYNAMIC FROM DB, BOLD KEYS & STRUCTURED VALUES)
               ========================================================================= */}
           <div className="flex flex-col gap-1 w-full">
             {/* Desktop Table Header Row */}
-            <div className="hidden md:grid grid-cols-12 py-2 px-5 text-sm font-semibold text-[#0B1A33]">
-              <div className="col-span-4">Feature</div>
-              <div className="col-span-4 text-center">{brandName1}</div>
-              <div className="col-span-4 text-center">{brandName2}</div>
+            <div className="hidden md:grid grid-cols-12 py-3 px-5 text-sm font-bold text-[#0B1A33] border-b border-[#E2E8F0]/70 mb-1">
+              <div className="col-span-4 text-xs uppercase tracking-wider text-[#64748B] font-bold flex items-center">
+                Feature
+              </div>
+              <div className="col-span-4 text-center font-extrabold text-[#0B1A33] text-[15px]">
+                {brandName1}
+              </div>
+              <div className="col-span-4 text-center font-extrabold text-[#0B1A33] text-[15px]">
+                {brandName2}
+              </div>
             </div>
 
             {/* Specification Rows */}
@@ -400,33 +578,47 @@ function CompareContent() {
                   key={`${row.label}-${idx}`}
                   className={`w-full rounded-xl transition-colors ${
                     isTinted ? 'bg-[#F4F8FD]' : 'bg-white'
-                  }`}
+                  } hover:bg-[#EEF5FC]/70`}
                 >
                   {/* Desktop Row View */}
-                  <div className="hidden md:grid grid-cols-12 py-3 px-5 items-center text-sm font-medium text-[#1E293B]">
-                    <div className="col-span-4 flex items-center gap-3 font-medium text-[#1E293B]">
+                  <div className="hidden md:grid grid-cols-12 py-3.5 px-5 items-center text-sm">
+                    {/* Col 1: Bold Key Label + Icon */}
+                    <div className="col-span-4 flex items-center gap-3">
                       <SpecIcon type={row.icon} />
-                      <span>{row.label}</span>
+                      <span className="font-bold text-[#0B1A33] text-[13.5px] tracking-tight">
+                        {row.label}
+                      </span>
                     </div>
-                    <div className="col-span-4 text-center font-normal text-[#1E293B]">
-                      {row.val1}
+
+                    {/* Col 2: Product 1 Value (Structured & Centered) */}
+                    <div className="col-span-4 flex items-center justify-center text-center px-2">
+                      <FormattedValueView raw={row.val1} />
                     </div>
-                    <div className="col-span-4 text-center font-normal text-[#1E293B]">
-                      {row.val2}
+
+                    {/* Col 3: Product 2 Value (Structured & Centered) */}
+                    <div className="col-span-4 flex items-center justify-center text-center px-2">
+                      <FormattedValueView raw={row.val2} />
                     </div>
                   </div>
 
                   {/* Mobile Row View */}
                   <div className="md:hidden flex items-center py-2.5 px-3 text-[11px] sm:text-[12px] gap-1">
-                    <div className="w-[38%] flex items-center gap-2 font-medium text-[#1E293B] shrink-0">
+                    {/* Col 1: Bold Key Label + Icon (40% width) */}
+                    <div className="w-[40%] flex items-center gap-2 shrink-0">
                       <SpecIcon type={row.icon} />
-                      <span className="leading-tight">{row.label}</span>
+                      <span className="font-bold text-[#0B1A33] text-[11.5px] sm:text-xs leading-tight tracking-tight">
+                        {row.label}
+                      </span>
                     </div>
-                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight break-words">
-                      {row.val1}
+
+                    {/* Col 2: Product 1 Value (30% width) */}
+                    <div className="w-[30%] flex items-center justify-center text-center px-0.5">
+                      <FormattedValueView raw={row.val1} />
                     </div>
-                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight break-words">
-                      {row.val2}
+
+                    {/* Col 3: Product 2 Value (30% width) */}
+                    <div className="w-[30%] flex items-center justify-center text-center px-0.5">
+                      <FormattedValueView raw={row.val2} />
                     </div>
                   </div>
                 </div>
@@ -552,7 +744,7 @@ function CompareContent() {
                 </div>
                 <div className="rounded-xl border border-gray-100 overflow-hidden">
                   {/* Table Header */}
-                  <div className="grid grid-cols-3 bg-[#F8FAFD] border-b border-gray-100 text-[10px] sm:text-xs font-semibold text-gray-500 px-3 sm:px-4 py-2">
+                  <div className="grid grid-cols-3 bg-[#F8FAFD] border-b border-gray-100 text-[10px] sm:text-xs font-bold text-gray-700 px-3 sm:px-4 py-2">
                     <div>Specification</div>
                     <div className="text-center">{brandName1}</div>
                     <div className="text-center">{brandName2}</div>
@@ -561,23 +753,27 @@ function CompareContent() {
                   {group.rows.map((row, idx) => (
                     <div
                       key={`${row.label}-${idx}`}
-                      className={`grid grid-cols-3 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs ${
+                      className={`grid grid-cols-3 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs items-center ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFCFF]'
                       } ${idx < group.rows.length - 1 ? 'border-b border-gray-50' : ''}`}
                     >
-                      <div className="font-medium text-[#334155] flex items-center gap-1.5">
+                      <div className="font-bold text-[#0B1A33] flex items-center gap-1.5">
                         <SpecIcon type={row.icon} />
                         <span>{row.label}</span>
                       </div>
-                      <div className="text-center text-[#1E293B] break-words">{row.val1}</div>
-                      <div className="text-center text-[#1E293B] break-words">{row.val2}</div>
+                      <div className="text-center flex items-center justify-center">
+                        <FormattedValueView raw={row.val1} />
+                      </div>
+                      <div className="text-center flex items-center justify-center">
+                        <FormattedValueView raw={row.val2} />
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             ))}
 
-            {/* Features Comparison (if available) */}
+            {/* Features Comparison */}
             {(p1?.features?.length || p2?.features?.length) && (
               <div className="mb-5">
                 <div className="flex items-center gap-2 mb-2">
