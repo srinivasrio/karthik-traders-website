@@ -201,62 +201,99 @@ function FormattedValueView({ raw }: { raw: string }) {
 }
 
 // ─── Comparison field definitions with display order ──────────────────
-type IconType = 'bolt' | 'wave' | 'gear' | 'layers' | 'frame' | 'target' | 'shield' | 'droplet' | 'weight';
+type FeatureIcon =
+  | 'motor-power'
+  | 'motor-type'
+  | 'motor-phase'
+  | 'voltage'
+  | 'frequency'
+  | 'power-consumption'
+  | 'power-source'
+  | 'starter'
+  | 'cable-wire'
+  | 'gearbox-type'
+  | 'gearbox-rpm'
+  | 'gearbox-material'
+  | 'gear-oil'
+  | 'paddles'
+  | 'fan-float-material'
+  | 'fan-weight'
+  | 'float-weight'
+  | 'color'
+  | 'dom-type'
+  | 'frame-material'
+  | 'frame-weight'
+  | 'frame-thickness'
+  | 'total-weight'
+  | 'oxygen-generation'
+  | 'visible-flow'
+  | 'circulation-range'
+  | 'pond-coverage'
+  | 'water-depth'
+  | 'aerator-type'
+  | 'usage'
+  | 'automation'
+  | 'maintenance'
+  | 'installation'
+  | 'warranty'
+  | 'country'
+  | 'treatment'
+  | 'generic';
 
 interface CompareField {
   label: string;
   keys: string[];
-  icon: IconType;
+  icon: FeatureIcon;
   group: string;
 }
 
 const COMPARE_FIELDS: CompareField[] = [
   // ── Motor & Power ──
-  { label: 'Motor Power', keys: ['Motor Power'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Motor Type', keys: ['Motor Type'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Motor Phase', keys: ['Motor Phase'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Voltage', keys: ['Voltage'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Frequency', keys: ['Frequency'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Power Consumption', keys: ['Power Consumption'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Power Source', keys: ['Power Source'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Starter', keys: ['Starter'], icon: 'bolt', group: 'Motor & Power' },
-  { label: 'Cable Wire', keys: ['Wire'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Motor Power', keys: ['Motor Power'], icon: 'motor-power', group: 'Motor & Power' },
+  { label: 'Motor Type', keys: ['Motor Type'], icon: 'motor-type', group: 'Motor & Power' },
+  { label: 'Motor Phase', keys: ['Motor Phase'], icon: 'motor-phase', group: 'Motor & Power' },
+  { label: 'Voltage', keys: ['Voltage'], icon: 'voltage', group: 'Motor & Power' },
+  { label: 'Frequency', keys: ['Frequency'], icon: 'frequency', group: 'Motor & Power' },
+  { label: 'Power Consumption', keys: ['Power Consumption'], icon: 'power-consumption', group: 'Motor & Power' },
+  { label: 'Power Source', keys: ['Power Source'], icon: 'power-source', group: 'Motor & Power' },
+  { label: 'Starter', keys: ['Starter'], icon: 'starter', group: 'Motor & Power' },
+  { label: 'Cable Wire', keys: ['Wire'], icon: 'cable-wire', group: 'Motor & Power' },
   
   // ── Gear Box ──
-  { label: 'Gear Box Type', keys: ['Gear Box Type'], icon: 'gear', group: 'Gear Box' },
-  { label: 'Gear Box RPM', keys: ['Gear Box RPM'], icon: 'gear', group: 'Gear Box' },
-  { label: 'Gear Box & Motor Material', keys: ['Gear Box & Motor material'], icon: 'gear', group: 'Gear Box' },
-  { label: 'Gear Oil', keys: ['Gear oil', 'Gear Oil'], icon: 'gear', group: 'Gear Box' },
+  { label: 'Gear Box Type', keys: ['Gear Box Type'], icon: 'gearbox-type', group: 'Gear Box' },
+  { label: 'Gear Box RPM', keys: ['Gear Box RPM'], icon: 'gearbox-rpm', group: 'Gear Box' },
+  { label: 'Gear Box & Motor Material', keys: ['Gear Box & Motor material'], icon: 'gearbox-material', group: 'Gear Box' },
+  { label: 'Gear Oil', keys: ['Gear oil', 'Gear Oil'], icon: 'gear-oil', group: 'Gear Box' },
   
   // ── Paddles & Floats ──
-  { label: 'No. of Paddles', keys: ['No. of Paddle'], icon: 'wave', group: 'Paddles & Floats' },
-  { label: 'Fan & Float Material', keys: ['Fan & Float Material'], icon: 'layers', group: 'Paddles & Floats' },
-  { label: 'Fan Weight', keys: ['Fan Weight'], icon: 'weight', group: 'Paddles & Floats' },
-  { label: 'Float Weight', keys: ['Float Weight'], icon: 'weight', group: 'Paddles & Floats' },
-  { label: 'Float & Dom Color', keys: ['Float & Dom Color'], icon: 'layers', group: 'Paddles & Floats' },
-  { label: 'Dom Type', keys: ['Dom Type'], icon: 'layers', group: 'Paddles & Floats' },
+  { label: 'No. of Paddles', keys: ['No. of Paddle'], icon: 'paddles', group: 'Paddles & Floats' },
+  { label: 'Fan & Float Material', keys: ['Fan & Float Material'], icon: 'fan-float-material', group: 'Paddles & Floats' },
+  { label: 'Fan Weight', keys: ['Fan Weight'], icon: 'fan-weight', group: 'Paddles & Floats' },
+  { label: 'Float Weight', keys: ['Float Weight'], icon: 'float-weight', group: 'Paddles & Floats' },
+  { label: 'Float & Dom Color', keys: ['Float & Dom Color'], icon: 'color', group: 'Paddles & Floats' },
+  { label: 'Dom Type', keys: ['Dom Type'], icon: 'dom-type', group: 'Paddles & Floats' },
   
   // ── Frame & Structure ──
-  { label: 'Frame & Rod Material', keys: ['Frame & Rod Material'], icon: 'frame', group: 'Frame & Structure' },
-  { label: 'Frame Weight', keys: ['Frame Weight'], icon: 'weight', group: 'Frame & Structure' },
-  { label: 'Frame Thickness', keys: ['Frame Thickness', 'Frame thickness'], icon: 'frame', group: 'Frame & Structure' },
-  { label: 'Total Set Weight', keys: ['Total Set Weight'], icon: 'weight', group: 'Frame & Structure' },
+  { label: 'Frame & Rod Material', keys: ['Frame & Rod Material'], icon: 'frame-material', group: 'Frame & Structure' },
+  { label: 'Frame Weight', keys: ['Frame Weight'], icon: 'frame-weight', group: 'Frame & Structure' },
+  { label: 'Frame Thickness', keys: ['Frame Thickness', 'Frame thickness'], icon: 'frame-thickness', group: 'Frame & Structure' },
+  { label: 'Total Set Weight', keys: ['Total Set Weight'], icon: 'total-weight', group: 'Frame & Structure' },
   
   // ── Performance ──
-  { label: 'Oxygen Generation', keys: ['Oxygen Generation (Real)', 'Oxygen Generation'], icon: 'droplet', group: 'Performance' },
-  { label: 'Visible Flow', keys: ['Visible Flow'], icon: 'wave', group: 'Performance' },
-  { label: 'Circulation Range', keys: ['Effective Flow / Circulation Range'], icon: 'wave', group: 'Performance' },
-  { label: 'Pond Coverage', keys: ['Pond Coverage'], icon: 'target', group: 'Performance' },
-  { label: 'Water Depth', keys: ['Water Depth Suitable'], icon: 'droplet', group: 'Performance' },
+  { label: 'Oxygen Generation', keys: ['Oxygen Generation (Real)', 'Oxygen Generation'], icon: 'oxygen-generation', group: 'Performance' },
+  { label: 'Visible Flow', keys: ['Visible Flow'], icon: 'visible-flow', group: 'Performance' },
+  { label: 'Circulation Range', keys: ['Effective Flow / Circulation Range'], icon: 'circulation-range', group: 'Performance' },
+  { label: 'Pond Coverage', keys: ['Pond Coverage'], icon: 'pond-coverage', group: 'Performance' },
+  { label: 'Water Depth', keys: ['Water Depth Suitable'], icon: 'water-depth', group: 'Performance' },
   
   // ── General ──
-  { label: 'Type of Aerator', keys: ['Type of Aerator'], icon: 'target', group: 'General' },
-  { label: 'Usage / Application', keys: ['Usage / Application'], icon: 'target', group: 'General' },
-  { label: 'Automation Grade', keys: ['Automation Grade'], icon: 'gear', group: 'General' },
-  { label: 'Maintenance', keys: ['Maintenance', 'maintenance'], icon: 'shield', group: 'General' },
-  { label: 'Installation Services', keys: ['Installation Services Available'], icon: 'shield', group: 'General' },
-  { label: 'Warranty', keys: ['warranty', 'Warranty'], icon: 'shield', group: 'General' },
-  { label: 'Country of Origin', keys: ['Country of Origin'], icon: 'shield', group: 'General' },
+  { label: 'Type of Aerator', keys: ['Type of Aerator'], icon: 'aerator-type', group: 'General' },
+  { label: 'Usage / Application', keys: ['Usage / Application'], icon: 'usage', group: 'General' },
+  { label: 'Automation Grade', keys: ['Automation Grade'], icon: 'automation', group: 'General' },
+  { label: 'Maintenance', keys: ['Maintenance', 'maintenance'], icon: 'maintenance', group: 'General' },
+  { label: 'Installation Services', keys: ['Installation Services Available'], icon: 'installation', group: 'General' },
+  { label: 'Warranty', keys: ['warranty', 'Warranty'], icon: 'warranty', group: 'General' },
+  { label: 'Country of Origin', keys: ['Country of Origin'], icon: 'country', group: 'General' },
 ];
 
 const SKIP_KEYS = new Set([
@@ -264,30 +301,336 @@ const SKIP_KEYS = new Set([
   'Product Name', 'Model number',
 ]);
 
-// ─── SVG Icons ────────────────────────────────────────────────────────
-function SpecIcon({ type }: { type: IconType }) {
+/** Automatic fallback icon resolver for dynamic extra DB specs */
+function getIconForLabel(label: string): FeatureIcon {
+  const l = label.toLowerCase();
+  if (l.includes('motor power')) return 'motor-power';
+  if (l.includes('motor type')) return 'motor-type';
+  if (l.includes('motor phase') || l.includes('phase')) return 'motor-phase';
+  if (l.includes('voltage')) return 'voltage';
+  if (l.includes('frequency')) return 'frequency';
+  if (l.includes('consumption')) return 'power-consumption';
+  if (l.includes('power source')) return 'power-source';
+  if (l.includes('starter')) return 'starter';
+  if (l.includes('wire') || l.includes('cable')) return 'cable-wire';
+  if (l.includes('gear box type') || l.includes('gear type')) return 'gearbox-type';
+  if (l.includes('rpm') || l.includes('speed')) return 'gearbox-rpm';
+  if (l.includes('gear box & motor material') || l.includes('body material') || l.includes('housing')) return 'gearbox-material';
+  if (l.includes('oil')) return 'gear-oil';
+  if (l.includes('paddle')) return 'paddles';
+  if (l.includes('fan & float material') || l.includes('material')) return 'fan-float-material';
+  if (l.includes('fan weight')) return 'fan-weight';
+  if (l.includes('float weight')) return 'float-weight';
+  if (l.includes('color') || l.includes('colour')) return 'color';
+  if (l.includes('dom')) return 'dom-type';
+  if (l.includes('frame & rod') || l.includes('rod') || l.includes('shaft')) return 'frame-material';
+  if (l.includes('frame weight')) return 'frame-weight';
+  if (l.includes('thickness') || l.includes('diameter')) return 'frame-thickness';
+  if (l.includes('total set weight') || l.includes('set weight')) return 'total-weight';
+  if (l.includes('oxygen')) return 'oxygen-generation';
+  if (l.includes('visible flow') || l.includes('flow')) return 'visible-flow';
+  if (l.includes('circulation') || l.includes('range')) return 'circulation-range';
+  if (l.includes('pond') || l.includes('coverage')) return 'pond-coverage';
+  if (l.includes('depth')) return 'water-depth';
+  if (l.includes('type of aerator')) return 'aerator-type';
+  if (l.includes('usage') || l.includes('application')) return 'usage';
+  if (l.includes('automation')) return 'automation';
+  if (l.includes('maintenance')) return 'maintenance';
+  if (l.includes('installation')) return 'installation';
+  if (l.includes('warranty')) return 'warranty';
+  if (l.includes('origin') || l.includes('country')) return 'country';
+  if (l.includes('treatment')) return 'treatment';
+  return 'generic';
+}
+
+// ─── UNIQUE SVG ICONS FOR EVERY SINGLE FEATURE ────────────────────────
+function SpecIcon({ type }: { type: FeatureIcon }) {
   const cls = 'w-4 h-4 text-[#1D64EC] shrink-0';
   switch (type) {
-    case 'bolt':
-      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>;
-    case 'wave':
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.5c4-4 12-4 16 0M4 9.5c4-4 12-4 16 0" /></svg>;
-    case 'gear':
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83-2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
-    case 'layers':
-      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>;
-    case 'frame':
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2m12 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><rect x="7" y="7" width="10" height="10" rx="1" /></svg>;
-    case 'target':
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>;
-    case 'shield':
-      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" /></svg>;
-    case 'droplet':
-      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2C20 10.48 17.33 6.55 12 2z" /></svg>;
-    case 'weight':
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>;
+    case 'motor-power':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+      );
+    case 'motor-type':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="5" width="13" height="14" rx="2" />
+          <path d="M17 9h3v6h-3" />
+          <line x1="1" y1="12" x2="4" y2="12" />
+          <line x1="8" y1="9" x2="8" y2="15" />
+          <line x1="13" y1="9" x2="13" y2="15" />
+        </svg>
+      );
+    case 'motor-phase':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 6c3-3 6-3 9 0s6 3 9 0" />
+          <path d="M2 12c3-3 6-3 9 0s6 3 9 0" />
+          <path d="M2 18c3-3 6-3 9 0s6 3 9 0" />
+        </svg>
+      );
+    case 'voltage':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8 9l4 7 4-7" />
+        </svg>
+      );
+    case 'frequency':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="2 12 6 12 9 4 12 20 15 9 18 15 22 12" />
+        </svg>
+      );
+    case 'power-consumption':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 3v4M15 3v4M6 7h12v3a6 6 0 0 1-6 6v4" />
+        </svg>
+      );
+    case 'power-source':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="3" />
+          <circle cx="9" cy="12" r="1.5" fill="currentColor" />
+          <circle cx="15" cy="12" r="1.5" fill="currentColor" />
+        </svg>
+      );
+    case 'starter':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="3" width="14" height="18" rx="2" />
+          <circle cx="12" cy="8" r="2" fill="currentColor" />
+          <line x1="12" y1="13" x2="12" y2="17" />
+        </svg>
+      );
+    case 'cable-wire':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4" />
+          <path d="M4 12a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4" />
+          <path d="M4 5a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4" />
+        </svg>
+      );
+    case 'gearbox-type':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="8" cy="8" r="3.5" />
+          <path d="M8 2v2.5M8 11.5V14M2 8h2.5M11.5 8H14" />
+          <circle cx="16" cy="16" r="2.5" />
+          <path d="M16 11.5v2M16 18.5v2M11.5 16h2M18.5 16h2" />
+        </svg>
+      );
+    case 'gearbox-rpm':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3.34 17a10 10 0 1 1 17.32 0" />
+          <path d="M12 14l3.5-3.5" />
+          <circle cx="12" cy="14" r="1.5" fill="currentColor" />
+        </svg>
+      );
+    case 'gearbox-material':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 8h16l-2.5 10H6.5L4 8z" />
+          <line x1="8.5" y1="13" x2="15.5" y2="13" />
+        </svg>
+      );
+    case 'gear-oil':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3v4M8 7h8v12a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V7z" />
+          <path d="M8 11h8M8 15h8" />
+        </svg>
+      );
+    case 'paddles':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.93 4.93l2.12 2.12m9.9 9.9l2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9l2.12-2.12" />
+        </svg>
+      );
+    case 'fan-float-material':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+      );
+    case 'fan-weight':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 12c-2.5-4-5-5-8-5 0 5 3 8 8 5z" />
+          <path d="M12 12c2.5 4 5 5 8 5 0-5-3-8-8-5z" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+        </svg>
+      );
+    case 'float-weight':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3v14M5 7l7-4 7 4" />
+          <path d="M3 13l4-6 4 6a4 4 0 0 1-8 0zM13 13l4-6 4 6a4 4 0 0 1-8 0z" />
+          <line x1="6" y1="21" x2="18" y2="21" />
+        </svg>
+      );
+    case 'color':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="13.5" cy="6.5" r=".75" fill="currentColor" />
+          <circle cx="17.5" cy="10.5" r=".75" fill="currentColor" />
+          <circle cx="8.5" cy="7.5" r=".75" fill="currentColor" />
+          <circle cx="6.5" cy="12.5" r=".75" fill="currentColor" />
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.68 1.5-1.5 0-.38-.15-.74-.42-1.01-.27-.27-.43-.64-.43-1.04 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-4.97-4.48-9-10-9z" />
+        </svg>
+      );
+    case 'dom-type':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 17h16" />
+          <path d="M4 17c0-6 3.58-11 8-11s8 5 8 11" />
+          <circle cx="12" cy="4" r="1.5" fill="currentColor" />
+        </svg>
+      );
+    case 'frame-material':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2m12 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+          <rect x="7" y="7" width="10" height="10" rx="1" />
+        </svg>
+      );
+    case 'frame-weight':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9h12a4 4 0 0 1 4 4v5a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-5a4 4 0 0 1 4-4z" />
+          <path d="M8 9V6a4 4 0 0 1 8 0v3" />
+        </svg>
+      );
+    case 'frame-thickness':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 6H3M21 18H3" />
+          <path d="M12 6v12M9 9l3-3 3 3M9 15l3 3 3-3" />
+        </svg>
+      );
+    case 'total-weight':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="6" width="18" height="15" rx="3" />
+          <circle cx="12" cy="13" r="3" />
+          <path d="M12 13l2-2" />
+          <path d="M9 3h6" />
+        </svg>
+      );
+    case 'oxygen-generation':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="7" cy="16" r="3" />
+          <circle cx="15" cy="9" r="4" />
+          <circle cx="17" cy="18" r="2" />
+          <circle cx="8" cy="6" r="2" />
+        </svg>
+      );
+    case 'visible-flow':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 19c3-1.5 6-1.5 9 0 3 1.5 6 1.5 9 0" />
+          <path d="M12 14c-1-3-3-5-6-6M12 14c1-3 3-5 6-6" />
+          <path d="M12 14V4" />
+        </svg>
+      );
+    case 'circulation-range':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 12C2 6.48 6.48 2 12 2" />
+          <path d="M5 12a7 7 0 0 1 7-7" />
+          <path d="M8 12a4 4 0 0 1 4-4" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+          <path d="M12 12l7 7" />
+        </svg>
+      );
+    case 'pond-coverage':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M9 21V9" />
+          <circle cx="15" cy="15" r="2" fill="currentColor" />
+        </svg>
+      );
+    case 'water-depth':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 7c4-2 8 2 12 0s6-2 8 0" />
+          <path d="M12 7v14" />
+          <path d="M9 11h6M10 15h4M9 19h6" />
+          <path d="M9 20l3 3 3-3" />
+        </svg>
+      );
+    case 'aerator-type':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 16h18l-2 4H5l-2-4z" />
+          <path d="M8 16V8h8v8" />
+          <circle cx="12" cy="8" r="2" />
+        </svg>
+      );
+    case 'usage':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 16s4-5 10-5 10 5 10 5-4 5-10 5S2 16 2 16z" />
+          <circle cx="16" cy="14" r="1" fill="currentColor" />
+          <path d="M2 16l-1-2 3 1M2 16l-1 2 3-1" />
+        </svg>
+      );
+    case 'automation':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+          <path d="M9 9h6v6H9z" />
+          <path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" />
+        </svg>
+      );
+    case 'maintenance':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        </svg>
+      );
+    case 'installation':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 4l5 5L8 21H3v-5L15 4z" />
+          <path d="M18 7l-2-2" />
+        </svg>
+      );
+    case 'warranty':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2l7 3v6c0 5-3.5 9.5-7 11-3.5-1.5-7-6-7-11V5l7-3z" />
+          <path d="M12 7l1 2 2.5.5-2 1.5.5 2.5-2-1-2 1 .5-2.5-2-1.5 2.5-.5z" fill="currentColor" />
+        </svg>
+      );
+    case 'country':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3.6 9h16.8M3.6 15h16.8" />
+          <path d="M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18" />
+        </svg>
+      );
+    case 'treatment':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12a9 9 0 0 1-9 9m9-9h-4m4 0l-3-3m-9 12a9 9 0 0 1-9-9m9 9v-4m0 4l-3-3M3 12a9 9 0 0 1 9-9m-9 9h4m-4 0l3 3m9-12a9 9 0 0 1 9 9m-9-9v4m0-4l3 3" />
+        </svg>
+      );
     default:
-      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5" /></svg>;
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>
+      );
   }
 }
 
@@ -497,7 +840,7 @@ function CompareContent() {
 
   // ─── BUILD SPEC ROWS DYNAMICALLY FROM DB ──────────────────────────
   const specRows = useMemo(() => {
-    const rows: { label: string; val1: string; val2: string; icon: IconType; group: string }[] = [];
+    const rows: { label: string; val1: string; val2: string; icon: FeatureIcon; group: string }[] = [];
 
     // 1. Add rows from ordered field definitions
     for (const field of COMPARE_FIELDS) {
@@ -531,7 +874,7 @@ function CompareContent() {
         const v1 = p1 ? getSpec(p1, originalKey) : '—';
         const v2 = p2 ? getSpec(p2, originalKey) : '—';
         if (v1 !== '—' || v2 !== '—') {
-          rows.push({ label: originalKey, val1: v1, val2: v2, icon: 'target', group: 'Other' });
+          rows.push({ label: originalKey, val1: v1, val2: v2, icon: getIconForLabel(originalKey), group: 'Other' });
         }
       }
     }
