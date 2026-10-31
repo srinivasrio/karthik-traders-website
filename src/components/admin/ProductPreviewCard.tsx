@@ -53,7 +53,7 @@ export default function ProductPreviewCard({
             </div>
 
             {/* Image */}
-            <div className="relative aspect-square bg-slate-100">
+            <div className="relative aspect-square bg-transparent">
                 {primaryImage ? (
                     <img
                         src={primaryImage}

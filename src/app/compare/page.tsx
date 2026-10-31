@@ -11,6 +11,15 @@ import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 // ─── Spec Lookup Helper ────────────────────────────────────────────────
 /** Case-insensitive spec lookup; tries each key in order, returns first non-empty value. */
 function getSpec(product: Product | null | undefined, ...keys: string[]): string {
+  if (!product) return '—';
+  for (const k of keys) {
+    if (k.toLowerCase() === 'brand' && product.brand) {
+      const b = product.brand.toLowerCase();
+      if (b.includes('aqualion')) return 'Aqualion';
+      if (b.includes('seaboss') || b.includes('sea boss')) return 'Sea Boss';
+      return product.brand;
+    }
+  }
   if (!product?.specifications) return '—';
   const entries = Object.entries(product.specifications);
   for (const k of keys) {
@@ -175,6 +184,14 @@ function formatSpecValue(raw: string | null | undefined): FormattedSpec {
     return { primary: `${m} Acre`, secondary: null };
   }
 
+  // Brand
+  if (/^aqualion$/i.test(str)) {
+    return { primary: 'Aqualion', secondary: 'Premium Aeration' };
+  }
+  if (/^(seaboss|sea boss)$/i.test(str)) {
+    return { primary: 'Sea Boss', secondary: 'High Performance' };
+  }
+
   return { primary: str, secondary: null };
 }
 
@@ -186,11 +203,30 @@ function FormattedValueView({ raw }: { raw: string }) {
     return <span className="text-slate-300 font-normal">—</span>;
   }
 
+  const isAqualion = /aqualion/i.test(raw);
+  const isSeaBoss = /seaboss|sea boss/i.test(raw);
+
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <span className="font-normal text-[#1E293B] text-[11.5px] sm:text-[13px] md:text-sm tracking-tight leading-snug">
-        {primary}
-      </span>
+      <div className="inline-flex items-center gap-1.5 justify-center">
+        {isAqualion && (
+          <img
+            src="/images/logos/aqualion-logo.svg"
+            alt="Aqualion"
+            className="h-4 w-auto object-contain shrink-0"
+          />
+        )}
+        {isSeaBoss && (
+          <img
+            src="/images/logos/seaboss-logo.svg"
+            alt="Sea Boss"
+            className="h-4 w-auto object-contain shrink-0"
+          />
+        )}
+        <span className="font-normal text-[#1E293B] text-[11.5px] sm:text-[13px] md:text-sm tracking-tight leading-snug">
+          {primary}
+        </span>
+      </div>
       {secondary && (
         <span className="text-[9.5px] sm:text-[10px] md:text-[11px] text-[#64748B] font-normal leading-tight mt-0.5">
           {secondary}
@@ -250,6 +286,7 @@ interface CompareField {
 
 const COMPARE_FIELDS: CompareField[] = [
   // ── Identification ──
+  { label: 'Brand', keys: ['Brand', 'brand'], icon: 'country', group: 'Overview' },
   { label: 'Model Number', keys: ['Model number', 'Model Number', 'model'], icon: 'model-number', group: 'Overview' },
 
   // ── Motor & Power ──
@@ -301,7 +338,7 @@ const COMPARE_FIELDS: CompareField[] = [
 ];
 
 const SKIP_KEYS = new Set([
-  'brand', 'category', 'components', 'features', 'model', 'warranty',
+  'category', 'components', 'features', 'model', 'warranty',
   'Product Name',
 ]);
 
@@ -646,12 +683,37 @@ function SpecIcon({ type }: { type: FeatureIcon }) {
   }
 }
 
-// ─── Brand badge colors ──────────────────────────────────────────────
-function getBrandBadge(brand: string | undefined) {
+// ─── Brand badge colors & official logos ─────────────────────────────
+function getBrandInfo(brand: string | undefined) {
   const b = (brand || '').toLowerCase();
-  if (b.includes('aqualion')) return { label: 'Premium', bg: 'bg-[#FFF4D2]', text: 'text-[#B87000]' };
-  if (b.includes('seaboss') || b.includes('sea boss')) return { label: 'Sea Boss', bg: 'bg-[#E8F1FF]', text: 'text-[#1450C8]' };
-  return { label: brand || '', bg: 'bg-gray-100', text: 'text-gray-600' };
+  if (b.includes('aqualion')) {
+    return {
+      label: 'Aqualion',
+      tag: 'PREMIUM',
+      bg: 'bg-[#FFF4D2]',
+      text: 'text-[#B87000]',
+      border: 'border-[#FFE799]',
+      logo: '/images/logos/aqualion-logo.svg',
+    };
+  }
+  if (b.includes('seaboss') || b.includes('sea boss')) {
+    return {
+      label: 'Sea Boss',
+      tag: 'HIGH PERFORMANCE',
+      bg: 'bg-[#E8F1FF]',
+      text: 'text-[#1450C8]',
+      border: 'border-[#CDE0FF]',
+      logo: '/images/logos/seaboss-logo.svg',
+    };
+  }
+  return {
+    label: brand || 'Aerator',
+    tag: '',
+    bg: 'bg-gray-100',
+    text: 'text-gray-600',
+    border: 'border-gray-200',
+    logo: null,
+  };
 }
 
 // ─── Brand display name ──────────────────────────────────────────────
@@ -759,7 +821,7 @@ function SlotCard({
   }
 
   // ── FILLED STATE ──
-  const brand = getBrandBadge(product.brand);
+  const brandInfo = getBrandInfo(product.brand);
   const brandName = getBrandName(product);
   const modelNumber = getAeratorModelNumber(product);
   const img = product.images?.[0] || '/assets/compare-aerator-pristine.jpg';
@@ -801,9 +863,20 @@ function SlotCard({
       {/* Brand & Prominently Highlighted Model Number */}
       <div className="flex flex-col gap-0.5 px-1 pt-0.5">
         <div className="flex items-center justify-between gap-1 flex-wrap">
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide ${brand.bg} ${brand.text} shrink-0`}>
-            {brandName}
-          </span>
+          {brandInfo.logo ? (
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wide ${brandInfo.bg} ${brandInfo.text} ${brandInfo.border} border shrink-0`}>
+              <img
+                src={brandInfo.logo}
+                alt={brandInfo.label}
+                className="h-3.5 sm:h-4 w-auto object-contain shrink-0"
+              />
+              <span>{brandInfo.label}</span>
+            </span>
+          ) : (
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide ${brandInfo.bg} ${brandInfo.text} shrink-0`}>
+              {brandName}
+            </span>
+          )}
           <span className="text-[10px] sm:text-xs text-slate-400 font-semibold">
             Slot {slotIdx + 1}
           </span>
@@ -1024,13 +1097,22 @@ function CompareContent() {
               </div>
               <div className="col-span-4 text-center">
                 {p1 ? (
-                  <div className="flex flex-col items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-0.5">
                     <span className="font-poppins font-black text-base lg:text-lg text-[#0A2540] tracking-tight">
                       {getAeratorModelNumber(p1)}
                     </span>
-                    <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
-                      {brandName1}
-                    </span>
+                    <div className="inline-flex items-center gap-1.5">
+                      {getBrandInfo(p1.brand).logo && (
+                        <img
+                          src={getBrandInfo(p1.brand).logo!}
+                          alt={brandName1}
+                          className="h-3.5 w-auto object-contain shrink-0"
+                        />
+                      )}
+                      <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
+                        {brandName1}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -1044,13 +1126,22 @@ function CompareContent() {
               </div>
               <div className="col-span-4 text-center">
                 {p2 ? (
-                  <div className="flex flex-col items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-0.5">
                     <span className="font-poppins font-black text-base lg:text-lg text-[#0A2540] tracking-tight">
                       {getAeratorModelNumber(p2)}
                     </span>
-                    <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
-                      {brandName2}
-                    </span>
+                    <div className="inline-flex items-center gap-1.5">
+                      {getBrandInfo(p2.brand).logo && (
+                        <img
+                          src={getBrandInfo(p2.brand).logo!}
+                          alt={brandName2}
+                          className="h-3.5 w-auto object-contain shrink-0"
+                        />
+                      )}
+                      <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
+                        {brandName2}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -1183,10 +1274,11 @@ function CompareContent() {
                       : 'bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] hover:bg-[#D9EAFE]'
                   }`}
                 >
-                  <svg className="w-3.5 h-3.5 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 12c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
-                    <path d="M2 17c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
-                  </svg>
+                  <img
+                    src="/images/logos/seaboss-logo.svg"
+                    alt="Sea Boss"
+                    className="h-3.5 w-auto object-contain shrink-0"
+                  />
                   <span>Sea Boss</span>
                 </button>
                 <button
@@ -1198,7 +1290,11 @@ function CompareContent() {
                       : 'bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] hover:bg-[#FEEDBE]'
                   }`}
                 >
-                  <span>🦁</span>
+                  <img
+                    src="/images/logos/aqualion-logo.svg"
+                    alt="Aqualion"
+                    className="h-3.5 w-auto object-contain shrink-0"
+                  />
                   <span>Aqualion</span>
                 </button>
               </div>
@@ -1238,15 +1334,20 @@ function CompareContent() {
                         <div className="w-full flex items-center justify-center">
                           {isSeaBoss ? (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
-                              <svg className="w-3.5 h-3.5 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M2 12c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
-                                <path d="M2 17c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
-                              </svg>
+                              <img
+                                src="/images/logos/seaboss-logo.svg"
+                                alt="Sea Boss"
+                                className="h-3.5 w-auto object-contain shrink-0"
+                              />
                               <span>SEA BOSS</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
-                              <span className="text-xs">🦁</span>
+                              <img
+                                src="/images/logos/aqualion-logo.svg"
+                                alt="Aqualion"
+                                className="h-3.5 w-auto object-contain shrink-0"
+                              />
                               <span>AQUALION</span>
                             </span>
                           )}

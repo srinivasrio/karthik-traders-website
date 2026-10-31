@@ -551,7 +551,7 @@ export default function OrderDetailPage() {
                                             <td className="py-4 px-4 text-sm text-slate-900 font-medium">
                                                 <div className="flex items-center">
                                                     {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
-                                                        <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className={`h-10 w-10 rounded mr-3 object-cover ${!editItem.is_available ? 'opacity-50 grayscale' : ''}`} />
+                                                        <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className={`h-10 w-10 rounded mr-3 object-contain bg-transparent ${!editItem.is_available ? 'opacity-50 grayscale' : ''}`} />
                                                     )}
                                                     <div>
                                                         <p className="font-semibold">{productDetails?.name || item.product_name || item.product_id}</p>
@@ -629,7 +629,7 @@ export default function OrderDetailPage() {
                                         <td className="py-4 px-4 text-sm text-slate-900 font-medium">
                                             <div className="flex items-center">
                                                 {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
-                                                    <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className={`h-10 w-10 rounded mr-3 object-cover ${!isAvailable ? 'opacity-50 grayscale' : ''}`} />
+                                                    <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className={`h-10 w-10 rounded mr-3 object-contain bg-transparent ${!isAvailable ? 'opacity-50 grayscale' : ''}`} />
                                                 )}
                                                 <div>
                                                     <p className={!isAvailable ? 'text-slate-500 line-through' : 'text-slate-900'}>

@@ -256,10 +256,18 @@ export default function ProductCard({
                 color: brandMeta.fg,
               }}
             >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: brandMeta.dot }}
-              />
+              {brandMeta.logo ? (
+                <img
+                  src={brandMeta.logo}
+                  alt={brandMeta.label}
+                  className="h-3 sm:h-3.5 w-auto object-contain shrink-0"
+                />
+              ) : (
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: brandMeta.dot }}
+                />
+              )}
               {brandMeta.label}
             </span>
 

@@ -69,7 +69,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className={`${inter.className} antialiased min-h-screen`} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased min-h-screen bg-[#FBFBFB] text-[#0B1A33]" style={{ fontFamily: 'Manrope, system-ui, sans-serif' }} suppressHydrationWarning>
         <AuthProvider>
           <CartProvider>
             <ScrollToTop />

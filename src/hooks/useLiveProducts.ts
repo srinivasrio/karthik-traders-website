@@ -2,23 +2,45 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/data/products';
 
+function formatSupabaseError(error: any): string {
+    if (!error) return 'Unknown error';
+    if (typeof error === 'string') return error;
+    if (error.message) return error.message;
+    if (error.details) return error.details;
+    if (error.hint) return error.hint;
+    if (error.code) return `Postgrest code: ${error.code}`;
+    try {
+        const str = JSON.stringify(error);
+        if (str && str !== '{}') return str;
+    } catch {}
+    return String(error);
+}
+
 export function useLiveProducts(initialProducts: Product[], options?: { skipLoading?: boolean }) {
     const [products, setProducts] = useState<Product[]>(initialProducts);
     const [loading, setLoading] = useState(!options?.skipLoading);
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchLiveData = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*');
+                // Timeout after 8 seconds so UI never hangs if network is slow
+                const fetchPromise = supabase.from('products').select('*');
+                const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+                    setTimeout(() => resolve({ data: null, error: { message: 'Live data request timed out' } }), 8000)
+                );
+
+                const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
                 if (error) {
-                    console.error('Error fetching live product data:', error);
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn('Live product sync unavailable, using cached catalog:', formatSupabaseError(error));
+                    }
                     return;
                 }
 
-                if (data) {
+                if (data && Array.isArray(data) && data.length > 0 && isMounted) {
                     // Database is the absolute source of truth
                     const combined = data.map(dbProduct => {
                         // Find matching static product for fallback badges, features, etc.
@@ -56,26 +78,34 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                     const activeProducts = combined.filter(p => p.isActive !== false);
                     setProducts(activeProducts);
                 }
-            } catch (err) {
-                console.error('Failed to fetch live products:', err);
+            } catch (err: any) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('Failed to fetch live products:', err?.message || err);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchLiveData();
-    }, []); // Run once on mount. 
-    // Dependency on initialProducts? usually static, but if it changes we might want to re-run.
-    // Given usage, it's fine empty or with [initialProducts] if memoized. 
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     return { products, loading };
 }
 
 export function useLiveProduct(staticProduct: Product | null | undefined, slugFallback?: string) {
     const [product, setProduct] = useState<Product | null | undefined>(staticProduct);
-    const [loading, setLoading] = useState(true);
+    // If staticProduct is already available, do not block the UI with a full-screen loading spinner
+    const [loading, setLoading] = useState(!staticProduct);
 
     useEffect(() => {
+        let isMounted = true;
         const targetSlug = staticProduct?.slug || slugFallback;
         if (!targetSlug) {
             setLoading(false);
@@ -84,17 +114,25 @@ export function useLiveProduct(staticProduct: Product | null | undefined, slugFa
 
         const fetchLiveData = async () => {
             try {
-                const { data, error } = await supabase
+                const fetchPromise = supabase
                     .from('products')
                     .select('*')
                     .eq('slug', targetSlug)
                     .single();
 
-                if (error && error.code !== 'PGRST116') { // Ignore not found error
-                    console.error('Error fetching live product data:', error);
+                const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+                    setTimeout(() => resolve({ data: null, error: { message: 'Live data request timed out' } }), 8000)
+                );
+
+                const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+
+                if (error && (error as any).code !== 'PGRST116') { // Ignore not found error
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn(`Live product sync unavailable for "${targetSlug}":`, formatSupabaseError(error));
+                    }
                 }
 
-                if (data) {
+                if (data && isMounted) {
                     setProduct({
                         ...(staticProduct || {}), // Fallback
                         id: data.id,
@@ -117,21 +155,31 @@ export function useLiveProduct(staticProduct: Product | null | undefined, slugFa
                         isActive: data.is_active,
                         is_best_selling: data.is_best_selling ?? staticProduct?.is_best_selling ?? false
                     } as Product);
-                } else if (!data && !staticProduct) {
+                } else if (!data && !staticProduct && isMounted) {
                     // Not in DB and not in static
                     setProduct(null);
-                } else {
+                } else if (isMounted && staticProduct) {
                     setProduct(staticProduct);
                 }
-            } catch (err) {
-                console.error(err);
-                setProduct(staticProduct);
+            } catch (err: any) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn(`Error during live product sync for "${targetSlug}":`, err?.message || err);
+                }
+                if (isMounted) {
+                    setProduct(staticProduct);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchLiveData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [staticProduct, slugFallback]);
 
     return { product, loading };

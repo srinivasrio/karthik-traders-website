@@ -3,163 +3,242 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { formatPrice } from '@/data/products';
+import { Product } from '@/data/products';
 import { useLiveProducts } from '@/hooks/useLiveProducts';
 import ProductGrid from '@/components/products/ProductGrid';
-import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import FilterDropdown, { SortOption } from '@/components/ui/FilterDropdown';
-import { motion } from 'framer-motion';
-import { Product } from '@/data/products';
+import CompareFloatingTray from '@/components/products/CompareFloatingTray';
 
 type CategoryFilter = 'all' | 'motor-cover' | 'float' | 'fan' | 'frame' | 'rod' | 'kit-box';
 
 interface SparesClientProps {
-    initialProducts: Product[];
+  initialProducts: Product[];
 }
 
-const SPARES_CATEGORIES = [
-    { id: 'all', label: 'All' },
-    { id: 'motor-cover', label: 'Doms' },
-    { id: 'float', label: 'Floats' },
-    { id: 'fan', label: 'Fans' },
-    { id: 'frame', label: 'Frames' },
-    { id: 'rod', label: 'Rods' },
-    { id: 'kit-box', label: 'Kit boxes' },
-] as const;
+const SPARES_CATEGORIES: { id: CategoryFilter; label: string; activeBg: string }[] = [
+  { id: 'all', label: 'All Spares', activeBg: '#0B1A33' },
+  { id: 'motor-cover', label: 'Doms & Covers', activeBg: '#EA580C' },
+  { id: 'float', label: 'Floats', activeBg: '#0284C7' },
+  { id: 'fan', label: 'Fans', activeBg: '#16A34A' },
+  { id: 'frame', label: 'Frames', activeBg: '#7C3AED' },
+  { id: 'rod', label: 'Fan Rods', activeBg: '#2563EB' },
+  { id: 'kit-box', label: 'Kit Boxes', activeBg: '#DB2777' },
+];
 
 export default function SparesClient({ initialProducts }: SparesClientProps) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const [category, setCategory] = useState<CategoryFilter>('all');
-    const [sortBy, setSortBy] = useState<SortOption>('price-low');
-    const [isLoading, setIsLoading] = useState(false);
-    const manualChangeRef = useRef(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-    // Use hook for live data with skipLoading option
-    const { products: liveProducts, loading: productsLoading } = useLiveProducts(initialProducts, { skipLoading: true });
+  const [category, setCategory] = useState<CategoryFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('price-low');
+  const [inStockOnly, setInStockOnly] = useState(false);
 
-    // Sync with URL params on mount and change
-    useEffect(() => {
-        if (manualChangeRef.current) return;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [indicator, setIndicator] = useState<{ left: number; width: number; bg: string } | null>(null);
 
-        const catParam = searchParams.get('category');
-        if (catParam && ['motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'].includes(catParam)) {
-            setCategory(catParam as CategoryFilter);
-        }
-    }, [searchParams]);
+  const { products: liveProducts } = useLiveProducts(initialProducts, {
+    skipLoading: true,
+  });
 
-    useEffect(() => {
-        if (!productsLoading) {
-            setIsLoading(false);
-        }
-    }, [productsLoading]);
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (
+      cat &&
+      ['motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'].includes(cat)
+    ) {
+      setCategory(cat as CategoryFilter);
+    } else {
+      setCategory('all');
+    }
+  }, [searchParams]);
 
-    const handleCategorySelect = (cat: CategoryFilter) => {
-        if (cat === category) return;
-        
-        manualChangeRef.current = true;
-        setIsLoading(true);
-        setCategory(cat);
-        // Update URL to preserve state on navigation
-        const params = new URLSearchParams(searchParams.toString());
-        if (cat === 'all') {
-            params.delete('category');
-        } else {
-            params.set('category', cat);
-        }
-        router.replace(`/spares?${params.toString()}`, { scroll: false });
+  useEffect(() => {
+    const activeBtn = btnRefs.current[category];
+    const activeTab = SPARES_CATEGORIES.find((t) => t.id === category);
+    if (activeBtn && activeTab) {
+      setIndicator({
+        left: activeBtn.offsetLeft,
+        width: activeBtn.offsetWidth,
+        bg: activeTab.activeBg,
+      });
+      activeBtn.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [category]);
 
-        setTimeout(() => {
-            setIsLoading(false);
-            manualChangeRef.current = false;
-        }, 600);
-    };
+  const handleCategorySelect = (cat: CategoryFilter) => {
+    setCategory(cat);
+    const targetBtn = btnRefs.current[cat];
+    if (targetBtn) {
+      targetBtn.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    if (cat === 'all') params.delete('category');
+    else params.set('category', cat);
+    router.replace(`/spares?${params.toString()}`, { scroll: false });
+  };
 
-    const handleSortChange = (newSort: SortOption) => {
-        setIsLoading(true);
-        setSortBy(newSort);
-        setTimeout(() => setIsLoading(false), 300);
-    };
+  // Filter products
+  const filteredProducts = liveProducts.filter((product) => {
+    if (inStockOnly && product.stock !== undefined && product.stock <= 0) {
+      return false;
+    }
 
-    // Filter products
-    const filteredProducts = liveProducts.filter(product => {
-        // Base filter: Only process spares
-        const isSpare = ['spares', 'motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box'].includes(product.category as string);
-        if (!isSpare) return false;
+    if (category === 'all') return true;
+    return product.category === category;
+  });
 
-        if (category === 'all') return true;
-        // If a DB item only says 'spares', it shows in 'all', but can't be specifically filtered 
-        // unless we mapped the granular category correctly (which we will).
-        return product.category === category;
-    });
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.salePrice - b.salePrice;
+      case 'price-high':
+        return b.salePrice - a.salePrice;
+      case 'name-asc':
+        return a.name.localeCompare(b.name);
+      case 'name-desc':
+        return b.name.localeCompare(a.name);
+      default:
+        return 0;
+    }
+  });
 
-    // Sort products
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
-        switch (sortBy) {
-            case 'price-low':
-                return a.salePrice - b.salePrice;
-            case 'price-high':
-                return b.salePrice - a.salePrice;
-            case 'name-asc':
-                return a.name.localeCompare(b.name);
-            case 'name-desc':
-                return b.name.localeCompare(a.name);
-            default:
-                return 0;
-        }
-    });
+  return (
+    <div className="min-h-screen bg-[#FBFBFB] text-[#0B1A33] pb-24">
+      {/* Breadcrumb Header */}
+      <section className="bg-[#FBFBFB] pt-6 pb-4">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#5B6880]">
+              <Link href="/" className="hover:text-[#0B1A33]">Home</Link>
+              <span>/</span>
+              <span className="text-[#0B1A33] font-bold">Spares</span>
+            </nav>
+            <h1 className="sr-only">Spares</h1>
+          </div>
+        </div>
+      </section>
 
-    const handlePullDown = () => {
-        setIsLoading(true);
-        setTimeout(() => setIsLoading(false), 1000);
-    };
+      {/* Sticky Filter Bar */}
+      <div className="sticky top-[60px] sm:top-[72px] z-30 bg-[#FBFBFB]/90 backdrop-blur-md border-b border-[#E3E8F0] py-2.5">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Desktop Count */}
+          <span className="text-xs sm:text-sm font-bold text-[#5B6880] hidden sm:inline">
+            {sortedProducts.length} items
+          </span>
 
+          {/* Right side: Tabs Capsule + Straight Right Filter Dropdown */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            {/* Scrollable Tabs Capsule with Smooth Traveling Pill */}
+            <div
+              ref={containerRef}
+              className="relative h-11 flex flex-nowrap items-center gap-1 p-1 rounded-full bg-white border border-[#E3E8F0] shadow-2xs overflow-x-auto overflow-y-hidden touch-pan-x overscroll-x-contain no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] max-w-[calc(100vw-76px)] sm:max-w-full shrink"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {/* Traveling Pill Indicator */}
+              {indicator && (
+                <span
+                  className="absolute top-1 bottom-1 rounded-full pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-xs"
+                  style={{
+                    left: `${indicator.left}px`,
+                    width: `${indicator.width}px`,
+                    backgroundColor: indicator.bg,
+                  }}
+                />
+              )}
 
-
-    return (
-        <div className="min-h-screen bg-white pb-24">
-            {/* Sticky Category Filter */}
-            <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-aqua-100/50 pb-2 pt-16 md:pt-20 transition-all duration-300">
-                <div className="container-custom py-2">
-                    <div className="flex items-center justify-between px-2 mb-2">
-                        <h1 className="text-2xl font-bold text-deep-blue-900">Spares</h1>
-                        <FilterDropdown sortBy={sortBy} onSortChange={handleSortChange} />
-                    </div>
-                    {/* Mobile Grid (4 cols = 2 rows for 7 items) / Desktop Scroll */}
-                    <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:overflow-x-auto md:no-scrollbar md:px-1 md:min-w-max">
-                        {SPARES_CATEGORIES.map((cat) => (
-                            <button
-                                key={cat.id}
-                                onClick={() => handleCategorySelect(cat.id as CategoryFilter)}
-                                className={`relative px-2 py-4 md:px-6 rounded-xl md:rounded-full text-xs md:text-base font-bold transition-colors duration-200 flex items-center justify-center ${category === cat.id
-                                    ? 'text-white'
-                                    : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
-                                    }`}
-                            >
-                                {category === cat.id && (
-                                    <motion.div
-                                        layoutId="activeCategorySpare"
-                                        className="absolute inset-0 bg-aqua-500 rounded-xl md:rounded-full shadow-lg shadow-aqua-500/30"
-                                        initial={false}
-                                        transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
-                                    />
-                                )}
-                                <span className="relative z-10 text-center">{cat.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
+              {SPARES_CATEGORIES.map((t) => {
+                const active = category === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    ref={(el) => {
+                      btnRefs.current[t.id] = el;
+                    }}
+                    type="button"
+                    onClick={() => handleCategorySelect(t.id)}
+                    className={`relative z-10 h-9 px-3.5 rounded-full text-xs font-bold whitespace-nowrap flex-none shrink-0 select-none inline-flex items-center justify-center transition-colors duration-200 cursor-pointer ${
+                      active
+                        ? 'text-white'
+                        : 'text-[#3D4A63] hover:text-[#0B1A33]'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
             </div>
 
-            <MobileGestureLayout onPullDown={handlePullDown}>
-                <div className="container-custom py-6">
-                    <ProductGrid
-                        products={sortedProducts}
-                        isLoading={isLoading || productsLoading}
-                        backContext={category}
-                    />
-                </div>
-            </MobileGestureLayout>
+            {/* Filter Dropdown: Straight Right */}
+            <div className="shrink-0">
+              <FilterDropdown sortBy={sortBy} onSortChange={setSortBy} />
+            </div>
+          </div>
         </div>
-    );
+      </div>
+
+      {/* Product Content Container */}
+      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {/* In-Stock Filter Toggle */}
+        <div className="flex items-center justify-end mb-6 pb-3 border-b border-[#E3E8F0] text-xs sm:text-sm font-medium text-[#5B6880]">
+          <label className="flex items-center gap-2 cursor-pointer font-bold text-[#0B1A33]">
+            <input
+              type="checkbox"
+              checked={inStockOnly}
+              onChange={(e) => setInStockOnly(e.target.checked)}
+              className="w-4 h-4 rounded text-[#0B1A33] accent-[#0B1A33] cursor-pointer"
+            />
+            <span>In stock only</span>
+          </label>
+        </div>
+
+        {/* Product Grid or Empty State */}
+        {sortedProducts.length > 0 ? (
+          <ProductGrid
+            products={sortedProducts}
+            cardVariant="default"
+            backContext="/spares"
+          />
+        ) : (
+          <div className="rounded-[28px] border-2 border-dashed border-[#C4D9FF] bg-white p-12 text-center flex flex-col items-center gap-4 my-8">
+            <span className="w-14 h-14 rounded-2xl bg-[#E8F9FF] text-[#0B1A33] flex items-center justify-center text-2xl">
+              🔍
+            </span>
+            <h3 className="text-xl sm:text-2xl font-extrabold text-[#0B1A33] font-poppins">
+              Nothing matches those filters
+            </h3>
+            <p className="text-sm text-[#5B6880] max-w-md leading-relaxed font-medium">
+              Call Hazarathaiah on{' '}
+              <a href="tel:+919177657576" className="text-[#4338CA] font-bold">
+                +91 91776 57576
+              </a>{' '}
+              for specialized fittings and spares not shown online.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                handleCategorySelect('all');
+                setInStockOnly(false);
+                setSortBy('price-low');
+              }}
+              className="mt-2 h-11 px-6 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-sm transition-colors cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+      </div>
+
+      <CompareFloatingTray />
+    </div>
+  );
 }

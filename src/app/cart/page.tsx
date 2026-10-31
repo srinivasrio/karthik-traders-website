@@ -2,256 +2,339 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { formatPrice, Product, allProducts } from '@/data/products';
+import { formatPrice } from '@/data/products';
 import { useCart } from '@/context/CartContext';
-import { validateCoupon } from '@/app/actions/validateCoupon'; // Import server action
-import { motion, AnimatePresence } from 'framer-motion';
-import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
-import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
-
-interface CartItem extends Product {
-    quantity: number;
-}
+import { COUPONS_STORE } from '@/data/kt-ui';
 
 export default function CartPage() {
-    const { cartItems, updateQuantity, removeFromCart, clearCart, applyCoupon, coupon, discountAmount, finalPrice } = useCart();
-    const [isLoading, setIsLoading] = useState(true);
-    const [couponInput, setCouponInput] = useState('');
-    const [couponError, setCouponError] = useState('');
-    const [isValidating, setIsValidating] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
+  const {
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    applyCoupon,
+    coupon,
+    discountAmount,
+    finalPrice,
+  } = useCart();
 
-    useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 500);
-        return () => clearTimeout(timer);
-    }, []);
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-    const removeItem = (productId: string) => {
-        removeFromCart(productId);
-        if (cartItems.length <= 1) {
-            applyCoupon(null); // Clear coupon if cart becomes empty
-        }
-    };
+  // Subtotal and MRP total
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + Number(item.salePrice ?? item.price ?? 0) * item.quantity,
+    0
+  );
+  const mrpTotal = cartItems.reduce(
+    (sum, item) => sum + Number(item.mrp ?? item.salePrice ?? item.price ?? 0) * item.quantity,
+    0
+  );
+  const totalSavings = mrpTotal - subtotal;
+  const totalPayable = finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount);
 
-    const handleApplyCoupon = async () => {
-        if (!couponInput.trim()) return;
-        setIsValidating(true);
-        setCouponError('');
-        setSuccessMessage('');
-
-        try {
-            // Construct robust identifiers for validation
-            // This matches the logic in bulk-orders/page.tsx
-            const cartItemIdentifiers = cartItems.map(item => {
-                let slug = item.slug || '';
-                const uuid = item.id;
-                let shortId = '';
-
-                // Lookup strict Short ID from allProducts using Slug or UUID
-                if (slug) {
-                    // @ts-ignore - allProducts might not have explicit type here, but runtime is fine
-                    const product = (allProducts as any[]).find(p => p.slug === slug);
-                    if (product) shortId = product.id;
-                } else {
-                    // @ts-ignore
-                    const product = (allProducts as any[]).find(p => p.id === uuid);
-                    if (product) {
-                        shortId = product.id;
-                        slug = product.slug;
-                    }
-                }
-
-                return {
-                    uuid: uuid || '',
-                    slug: slug || '',
-                    shortId: shortId
-                };
-            });
-
-            console.log('Cart Page: Validating coupon against:', cartItemIdentifiers);
-            const result = await validateCoupon(couponInput, cartItemIdentifiers);
-
-            if (result.isValid && result.coupon) {
-                applyCoupon(result.coupon);
-                setSuccessMessage(`Coupon '${result.coupon.code}' applied!`);
-                setCouponInput('');
-            } else {
-                setCouponError(result.error || 'Invalid coupon');
-                applyCoupon(null);
-            }
-        } catch (err) {
-            setCouponError('Failed to validate coupon');
-            console.error(err);
-        } finally {
-            setIsValidating(false);
-        }
-    };
-
-    const handleRemoveCoupon = () => {
-        applyCoupon(null);
-        setCouponInput('');
-        setSuccessMessage('');
-        setCouponError('');
-    };
-
-    const handlePullDown = () => {
-        setIsLoading(true);
-        setTimeout(() => setIsLoading(false), 1000);
-    };
-
-    const subtotal = cartItems.reduce((sum, item) => sum + ((Number(item.salePrice) || Number(item.price) || 0) * item.quantity), 0);
-    const totalMrp = cartItems.reduce((sum, item) => sum + ((Number(item.price) || 0) * item.quantity), 0);
-    const totalSavings = totalMrp - subtotal;
-
-    if (isLoading) {
-        return <SimpleLoadingScreen />;
+  const handleApplyCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError('Enter a coupon code');
+      return;
     }
 
-    return (
-        <MobileGestureLayout onPullDown={handlePullDown}>
-            <div className="min-h-screen bg-steel-50/30 pt-16 pb-32 px-3 max-w-xl mx-auto">
+    const matched = COUPONS_STORE[code];
+    if (matched) {
+      if (subtotal < matched.min) {
+        setCouponError(`Add ${formatPrice(matched.min - subtotal)} more to use ${code}`);
+        return;
+      }
+      applyCoupon({
+        code: code,
+        discount_type: matched.type === 'percent' ? 'percentage' : 'flat',
+        discount_value: matched.value,
+        applicable_products: [],
+      });
+      setCouponError('');
+      setCouponInput('');
+    } else {
+      setCouponError('This code is not active. Check spelling or call sales.');
+    }
+  };
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-3">
-                    <h1 className="text-base font-bold text-deep-blue-900">My Cart <span className='text-steel-400 font-normal text-xs'>({cartItems.length})</span></h1>
-                    {cartItems.length > 0 && (
-                        <button
-                            onClick={clearCart}
-                            className="text-[10px] font-semibold text-rose-500 bg-rose-50 px-3 py-1.5 rounded-full hover:bg-rose-100 transition-colors"
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
+  const handleRemoveCoupon = () => {
+    applyCoupon(null);
+    setCouponError('');
+  };
 
-                {cartItems.length === 0 ? (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center justify-center py-12 text-center"
-                    >
-                        <div className="w-12 h-12 rounded-full bg-white shadow-soft flex items-center justify-center mb-3">
-                            <span className="text-xl">🛒</span>
-                        </div>
-                        <h2 className="text-base font-bold text-deep-blue-900 mb-1">Your cart is empty</h2>
-                        <p className="text-[10px] text-steel-500 mb-4">Start adding items to build your order.</p>
-                        <Link href="/aerator-sets">
-                            <motion.button
-                                whileTap={{ scale: 0.95 }}
-                                className="btn btn-primary btn-sm btn-ripple shadow-glow-aqua"
-                            >
-                                Start Shopping
-                            </motion.button>
-                        </Link>
-                    </motion.div>
-                ) : (
-                    <div className="space-y-4">
-                        <div className="space-y-3">
-                            <AnimatePresence mode='popLayout'>
-                                {cartItems.map((item) => (
-                                    <motion.div
-                                        key={item.id}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.98 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                        className="bg-white rounded-lg p-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-steel-100 flex items-center gap-3"
-                                    >
-                                        {/* 1. Product Image (Compact 48px) */}
-                                        <div className="w-12 h-12 rounded-md bg-steel-50 flex-shrink-0 border border-steel-100 relative overflow-hidden">
-                                            {(item.images && item.images.length > 0) || item.image ? (
-                                                <Image
-                                                    src={item.images?.[0] || item.image || ''}
-                                                    alt={item.name}
-                                                    fill
-                                                    className="object-contain p-1"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-lg">📦</div>
-                                            )}
-                                        </div>
+  return (
+    <div className="min-h-screen bg-[#FBFBFB] text-[#0B1A33] pb-24">
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12">
+        {/* Header */}
+        <div className="flex flex-wrap justify-between items-end gap-4 mb-6">
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-poppins text-[#0B1A33]">
+            Your Cart
+          </h1>
+          {cartItems.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(true)}
+              className="h-10 px-4 rounded-full border border-[#F5C2CF] bg-white text-[#B4123A] font-bold text-xs sm:text-sm hover:bg-[#FFF1F4] transition-colors cursor-pointer"
+            >
+              Clear cart
+            </button>
+          )}
+        </div>
 
-                                        {/* 2. Text Column (Name & Price) */}
-                                        <div className="flex-1 min-w-0 flex flex-col justify-center h-full">
-                                            <h3 className="!text-[11px] md:!text-[13px] font-medium text-deep-blue-900 leading-[1.2] line-clamp-2 mb-1 pr-1">
-                                                {item.name}
-                                            </h3>
-                                            <div className="text-xs font-semibold text-deep-blue-900">
-                                                {formatPrice(((Number(item.salePrice) || Number(item.price) || 0) * item.quantity))}
-                                            </div>
-                                        </div>
-
-                                        {/* 3. Quantity Control (Compact) */}
-                                        <div className="flex items-center bg-steel-50 rounded-md border border-steel-100 h-7 flex-shrink-0">
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                className="w-7 h-full flex items-center justify-center text-steel-500 hover:text-deep-blue-900 active:bg-steel-200 transition-colors"
-                                            >
-                                                -
-                                            </button>
-                                            <span className="w-5 text-center text-xs font-semibold text-deep-blue-900">{item.quantity}</span>
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                className="w-7 h-full flex items-center justify-center text-steel-500 hover:text-deep-blue-900 active:bg-steel-200 transition-colors"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-
-                                        {/* 4. Remove Icon (Small) */}
-                                        <button
-                                            onClick={() => removeItem(item.id)}
-                                            className="w-7 h-7 flex items-center justify-center text-steel-300 hover:text-rose-500 active:scale-90 transition-all flex-shrink-0"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* Summary Sticky Bottom-ish */}
-                        <div className="bg-white rounded-xl p-3 shadow-sm border border-steel-100 mt-3">
-                            <div className="space-y-1.5 text-xs">
-                                <div className="flex justify-between text-steel-600">
-                                    <span>Subtotal</span>
-                                    <span className="font-medium">{formatPrice(subtotal)}</span>
-                                </div>
-                                <div className="flex justify-between text-emerald-600">
-                                    <span>Savings</span>
-                                    <span className="font-medium">- {formatPrice(totalSavings)}</span>
-                                </div>
-                                {discountAmount > 0 && (
-                                    <div className="flex justify-between text-emerald-600">
-                                        <span>Coupon Discount</span>
-                                        <span className="font-medium">- {formatPrice(discountAmount)}</span>
-                                    </div>
-                                )}
-                                <div className="w-full h-px bg-steel-50 my-1.5"></div>
-                                <div className="flex justify-between items-end">
-                                    <span className="text-deep-blue-900 font-bold text-sm">Total Pay</span>
-                                    <span className="text-xl font-bold text-deep-blue-900">
-                                        {formatPrice(finalPrice)}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <Link href="/bulk-orders" className="block mt-3">
-                            <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                className="w-full py-3 rounded-xl bg-deep-blue-900 text-white font-bold text-sm shadow-lg shadow-deep-blue-900/20 btn-ripple"
-                            >
-                                Proceed to Buy
-                            </motion.button>
-                        </Link>
-                    </div>
-                )}
+        {/* Empty State */}
+        {cartItems.length === 0 ? (
+          <div className="rounded-[32px] bg-[#E8F9FF] p-10 sm:p-16 flex flex-col items-center text-center gap-4 border border-[#C4D9FF]/60 shadow-xs">
+            <span className="w-18 h-18 rounded-3xl bg-white flex items-center justify-center border border-[#C4D9FF] shadow-xs text-3xl">
+              🛒
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B1A33] font-poppins">
+              Your cart is empty
+            </h2>
+            <p className="text-sm sm:text-base text-[#3D4A63] max-w-md leading-relaxed font-medium">
+              Start with a complete aerator set, or pick genuine replacement spares for a set you already run.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center mt-2">
+              <Link
+                href="/aerator-sets"
+                className="h-12 px-6 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-sm inline-flex items-center transition-colors"
+              >
+                Shop Aerator Sets
+              </Link>
+              <Link
+                href="/spares"
+                className="h-12 px-6 rounded-full bg-white hover:bg-[#FBFBFB] border border-[#C4D9FF] text-[#0B1A33] font-extrabold text-sm inline-flex items-center transition-colors"
+              >
+                Browse Spares
+              </Link>
             </div>
-        </MobileGestureLayout >
-    );
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Column: Cart Items List */}
+            <div className="lg:col-span-8 flex flex-col rounded-[28px] bg-white border border-[#E3E8F0] shadow-sm overflow-hidden divide-y divide-[#EEF2F8]">
+              {cartItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-wrap sm:flex-nowrap items-center gap-4 p-4 sm:p-5 animate-[ktUp_0.35s_both]"
+                >
+                  {/* Thumbnail */}
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-transparent border border-[#E3E8F0] p-2 shrink-0 flex items-center justify-center">
+                    <img
+                      src={item.images?.[0] || '/assets/hero-aerator-card-t.png'}
+                      alt={item.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Title & Price details */}
+                  <div className="flex-1 min-w-[160px] flex flex-col gap-1">
+                    <Link
+                      href={
+                        item.category === 'aerator-set' || item.category === 'aerators'
+                          ? `/aerator-sets/${item.slug}`
+                          : `/products/${item.slug}`
+                      }
+                      className="font-extrabold text-sm sm:text-base text-[#0B1A33] hover:text-[#4338CA] leading-snug line-clamp-2"
+                    >
+                      {item.name}
+                    </Link>
+                    <div className="text-xs text-[#5B6880] font-medium flex items-center gap-2">
+                      <span>{formatPrice(Number(item.salePrice ?? item.price ?? 0))} each</span>
+                      {Number(item.mrp || 0) > Number(item.salePrice ?? item.price ?? 0) && (
+                        <span className="line-through text-[#7C879C]">
+                          {formatPrice(Number(item.mrp))}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quantity & Remove */}
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <span className="font-extrabold text-base sm:text-lg text-[#0B1A33] font-poppins">
+                        {formatPrice(Number(item.salePrice ?? item.price ?? 0) * item.quantity)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(item.id)}
+                        aria-label="Remove item"
+                        className="w-8 h-8 rounded-full bg-[#FFF1F4] text-[#B4123A] flex items-center justify-center hover:bg-[#FDE2E8] transition-colors cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Stepper */}
+                    <div className="flex items-center h-8 rounded-full border border-[#D5DCE8] bg-[#FBFBFB] px-1">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-extrabold text-[#0B1A33] hover:bg-white cursor-pointer"
+                      >
+                        −
+                      </button>
+                      <span className="w-8 text-center font-mono font-bold text-xs text-[#0B1A33]">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center font-extrabold text-[#0B1A33] hover:bg-white cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right Column: Sticky Summary Panel */}
+            <aside className="lg:col-span-4 lg:sticky lg:top-24 rounded-[28px] bg-[#C4D9FF] text-[#0B1A33] p-6 sm:p-7 shadow-sm flex flex-col gap-4">
+              <h2 className="text-xl font-extrabold font-poppins text-[#0B1A33]">
+                Order Summary
+              </h2>
+
+              <div className="flex flex-col gap-2.5 text-sm font-medium">
+                {mrpTotal > subtotal && (
+                  <div className="flex justify-between">
+                    <span className="text-[#3D4A63]">MRP Total</span>
+                    <span className="line-through text-[#5B6880]">{formatPrice(mrpTotal)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-[#3D4A63]">Subtotal</span>
+                  <span className="font-extrabold text-[#0B1A33]">{formatPrice(subtotal)}</span>
+                </div>
+                {totalSavings > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-[#3D4A63]">Factory Discount</span>
+                    <span className="font-extrabold text-[#0B7A4B]">− {formatPrice(totalSavings)}</span>
+                  </div>
+                )}
+                {discountAmount > 0 && coupon && (
+                  <div className="flex justify-between">
+                    <span className="text-[#3D4A63]">Coupon ({coupon.code})</span>
+                    <span className="font-extrabold text-[#4338CA]">− {formatPrice(discountAmount)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Coupon Form */}
+              {!coupon ? (
+                <form onSubmit={handleApplyCoupon} className="flex gap-2 pt-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value.toUpperCase());
+                      setCouponError('');
+                    }}
+                    placeholder="Coupon code (e.g. BULK5)"
+                    className="flex-1 min-w-0 h-11 px-3.5 rounded-xl border border-white/60 bg-white/80 text-xs font-mono font-bold uppercase text-[#0B1A33] outline-none focus:bg-white"
+                  />
+                  <button
+                    type="submit"
+                    className="h-11 px-4 rounded-xl bg-[#0B1A33] text-white font-extrabold text-xs hover:bg-[#24365A] transition-colors cursor-pointer"
+                  >
+                    Apply
+                  </button>
+                </form>
+              ) : (
+                <div className="flex justify-between items-center p-3 rounded-xl bg-white/60 border border-white text-xs">
+                  <div>
+                    <span className="font-mono font-extrabold text-[#0B1A33] block">
+                      {coupon.code} APPLIED
+                    </span>
+                    <span className="text-[#0B7A4B] font-bold">
+                      Saved {formatPrice(discountAmount)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="font-bold text-[#B4123A] underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+              {couponError && (
+                <span className="text-xs font-bold text-[#B4123A]">{couponError}</span>
+              )}
+
+              <div className="h-px bg-black/10 my-1" />
+
+              {/* Total */}
+              <div className="flex justify-between items-baseline">
+                <span className="font-extrabold text-base text-[#0B1A33]">
+                  Payable Total
+                </span>
+                <span className="text-3xl font-extrabold font-poppins text-[#0B1A33] tracking-tight">
+                  {formatPrice(totalPayable)}
+                </span>
+              </div>
+
+              <p className="text-xs text-[#3D4A63] leading-relaxed">
+                Logistics & transport are arranged directly from Nellore warehouse. No advance gateway fees are charged online.
+              </p>
+
+              <Link
+                href="/bulk-orders"
+                className="h-13 rounded-full bg-[#0B1A33] hover:bg-[#24365A] text-white font-extrabold text-base flex items-center justify-center gap-2 transition-colors shadow-md cursor-pointer mt-1"
+              >
+                <span>Proceed to Checkout</span>
+                <span>→</span>
+              </Link>
+            </aside>
+          </div>
+        )}
+      </main>
+
+      {/* Clear Cart Modal Confirmation */}
+      {showClearConfirm && (
+        <div
+          className="fixed inset-0 z-50 bg-[#0B1A33]/40 backdrop-blur-xs grid place-items-center p-4"
+          onClick={() => setShowClearConfirm(false)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-[#E3E8F0] animate-[ktUp_0.25s_both]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-extrabold text-[#0B1A33] font-poppins mb-2">
+              Clear your cart?
+            </h3>
+            <p className="text-sm text-[#5B6880] mb-6 leading-relaxed">
+              All {cartItems.length} items and any active coupons will be removed.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="h-10 px-4 rounded-full border border-[#D5DCE8] bg-white text-xs font-bold text-[#0B1A33] hover:bg-[#FBFBFB] cursor-pointer"
+              >
+                Keep items
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  clearCart();
+                  setShowClearConfirm(false);
+                }}
+                className="h-10 px-5 rounded-full bg-[#D61F4A] text-white text-xs font-bold hover:bg-[#B4123A] cursor-pointer"
+              >
+                Clear cart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

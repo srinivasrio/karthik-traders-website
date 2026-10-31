@@ -2,63 +2,81 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
+import { usePathname } from 'next/navigation';
 
 export default function FloatingCart() {
-    const { cartCount } = useCart();
-    const controls = useAnimation();
+  const { cartCount } = useCart();
+  const pathname = usePathname();
+  const [navSmall, setNavSmall] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-    // Micro-bounce effect when count changes
-    useEffect(() => {
-        if (cartCount > 0) {
-            controls.start({
-                scale: [1, 1.2, 1],
-                transition: { duration: 0.3 }
-            });
-        }
-    }, [cartCount, controls]);
+  useEffect(() => {
+    const handleMenu = (e: any) => {
+      if (e?.detail?.open !== undefined) {
+        setMenuOpen(e.detail.open);
+      }
+    };
+    window.addEventListener('kt-menu-state', handleMenu);
+    return () => window.removeEventListener('kt-menu-state', handleMenu);
+  }, []);
 
-    if (cartCount === 0) return null;
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
 
-    return (
-        <AnimatePresence>
-            <Link href="/cart">
-                <motion.button
-                    key="cart-button"
-                    layoutId="cart-container"
-                    initial={{ scale: 0.85, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.85, opacity: 0 }}
-                    className="fixed z-[9999] flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-aqua-400 to-aqua-500 shadow-[0_4px_20px_rgba(0,180,216,0.4)] text-white overflow-visible"
-                    style={{
-                        bottom: '76px',
-                        right: '16px',
-                        pointerEvents: 'auto',
-                        touchAction: 'manipulation'
-                    }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    {/* Ring Pulse Animation */}
-                    <motion.div
-                        className="absolute inset-0 rounded-full border-2 border-white/40"
-                        animate={{ scale: [1, 1.3], opacity: [0.5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-                    />
+    if (window.scrollY > 50) {
+      setNavSmall(true);
+    }
 
-                    <svg className="w-6 h-6 drop-shadow-md relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const y = window.scrollY;
+          const diff = y - lastY;
 
-                    {/* Badge with micro-bounce */}
-                    <motion.span
-                        animate={controls}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm z-20"
-                    >
-                        {cartCount}
-                    </motion.span>
-                </motion.button>
-            </Link>
-        </AnimatePresence>
-    );
+          if (y < 40) {
+            setNavSmall(false);
+          } else if (diff > 3 && y > 50) {
+            setNavSmall(true);
+          } else if (diff < -8) {
+            setNavSmall(false);
+          }
+
+          lastY = y;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Hide on cart or checkout pages or when reveal menu is open
+  if (menuOpen || cartCount === 0 || pathname === '/cart' || pathname === '/bulk-orders') {
+    return null;
+  }
+
+  return (
+    <Link
+      href="/cart"
+      aria-label={`Shopping cart with ${cartCount} items`}
+      style={{
+        bottom: navSmall ? '68px' : '88px',
+        transition: 'bottom 0.44s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease',
+      }}
+      className="lg:hidden fixed right-4 z-[56] w-[54px] h-[54px] rounded-full bg-[#0D2A5E] text-white grid place-items-center shadow-[0_14px_30px_-10px_rgba(13,42,94,0.6)] active:scale-95 group"
+    >
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20 8H6" />
+        <circle cx="9" cy="20" r="1.3" />
+        <circle cx="17" cy="20" r="1.3" />
+      </svg>
+      <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#C5BAFF] text-[#0A1F5C] text-[11px] font-extrabold grid place-items-center border-2 border-white shadow-sm">
+        {cartCount}
+      </span>
+    </Link>
+  );
 }

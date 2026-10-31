@@ -3,11 +3,16 @@ import { Product } from '@/data/products';
 
 export async function getLiveProductsAction(staticProducts: Product[]): Promise<Product[]> {
     try {
-        // Run fetch and minimum delay in parallel to ensure loading screen shows for at least 1s
-        const response = await supabase
+        const fetchPromise = supabase
             .from('products')
             .select('*');
 
+        // Safe 3.5s timeout so SSR / ISR never hangs if VPS latency spikes
+        const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: { message: 'Server fetch timeout' } }), 3500)
+        );
+
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
         const { data, error } = response;
 
         if (error) {

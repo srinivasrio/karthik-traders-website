@@ -226,9 +226,37 @@ export default function ProductDetailView({
           <div className="lg:col-span-6 flex flex-col gap-5 lg:sticky lg:top-24">
             {/* Meta Tags: Brand, Model & Stock */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F9FF] text-[#0B5C86] uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-[#0B5C86]" />
-                {product.brand === 'aqualion' ? 'Aqualion' : product.brand === 'seaboss' ? 'Sea Boss' : 'Heavy Duty'}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full uppercase tracking-wider ${
+                product.brand === 'aqualion'
+                  ? 'bg-[#FFF1D6] text-[#8A4B00] border border-[#FFDFB0]'
+                  : product.brand === 'seaboss'
+                  ? 'bg-[#E8F9FF] text-[#0B5C86] border border-[#C4D9FF]'
+                  : 'bg-slate-100 text-slate-700'
+              }`}>
+                {product.brand === 'aqualion' ? (
+                  <>
+                    <img
+                      src="/images/logos/aqualion-logo.svg"
+                      alt="Aqualion"
+                      className="h-3.5 w-auto object-contain shrink-0"
+                    />
+                    <span>Aqualion</span>
+                  </>
+                ) : product.brand === 'seaboss' ? (
+                  <>
+                    <img
+                      src="/images/logos/seaboss-logo.svg"
+                      alt="Sea Boss"
+                      className="h-3.5 w-auto object-contain shrink-0"
+                    />
+                    <span>Sea Boss</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-slate-500" />
+                    <span>Heavy Duty</span>
+                  </>
+                )}
               </span>
 
               {modelNumber && (

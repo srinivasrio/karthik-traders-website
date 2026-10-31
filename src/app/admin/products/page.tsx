@@ -594,7 +594,7 @@ function ProductsContent() {
                                             </td>
                                             <td className="px-3 py-2">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
+                                                    <div className="w-10 h-10 rounded-lg bg-transparent overflow-hidden flex-shrink-0 border border-slate-200">
                                                         {img ? (
                                                             <img
                                                                 src={img}
@@ -688,7 +688,7 @@ function ProductsContent() {
                         return (
                             <div key={product.id} className={`bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${!product.is_active ? 'opacity-60' : ''}`}>
                                 {/* Image */}
-                                <div className="relative aspect-square bg-slate-50">
+                                <div className="relative aspect-square bg-transparent">
                                     {img ? (
                                         <img src={img} alt={product.name} className="w-full h-full object-contain p-3"
                                             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />

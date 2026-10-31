@@ -5,11 +5,26 @@ export interface BrandMeta {
   bg: string;
   fg: string;
   dot: string;
+  logo?: string;
 }
 
 export const BRAND_CONFIG: Record<string, BrandMeta> = {
-  aqualion: { label: 'Aqualion', tier: 'Premium', bg: '#FFF1D6', fg: '#8A4B00', dot: '#E8A317' },
-  seaboss: { label: 'Sea Boss', tier: 'Budget + High Performance', bg: '#DDF3FF', fg: '#0B5C86', dot: '#1BA3D9' },
+  aqualion: {
+    label: 'Aqualion',
+    tier: 'Premium',
+    bg: '#FFF1D6',
+    fg: '#8A4B00',
+    dot: '#E8A317',
+    logo: '/images/logos/aqualion-logo.svg',
+  },
+  seaboss: {
+    label: 'Sea Boss',
+    tier: 'Budget + High Performance',
+    bg: '#DDF3FF',
+    fg: '#0B5C86',
+    dot: '#1BA3D9',
+    logo: '/images/logos/seaboss-logo.svg',
+  },
   pn: { label: 'PN', tier: '', bg: '#EEF0F5', fg: '#3D4A63', dot: '#7C879C' },
   generic: { label: 'Generic', tier: '', bg: '#EEF0F5', fg: '#3D4A63', dot: '#7C879C' },
   other: { label: 'Custom/Other', tier: '', bg: '#EFE9FF', fg: '#5A3FB8', dot: '#8B6CF0' }

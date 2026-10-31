@@ -1,150 +1,158 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Brand } from '@/data/products';
+import { Brand, Product } from '@/data/products';
 import ProductGrid from '@/components/products/ProductGrid';
 import { useLiveProducts } from '@/hooks/useLiveProducts';
 import BrandFilter from '@/components/products/BrandFilter';
-import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
 import FilterDropdown, { SortOption } from '@/components/ui/FilterDropdown';
-import { Product } from '@/data/products';
+import CompareFloatingTray from '@/components/products/CompareFloatingTray';
 
 interface AeratorSetsClientProps {
-    initialProducts: Product[];
+  initialProducts: Product[];
 }
 
 export default function AeratorSetsClient({ initialProducts }: AeratorSetsClientProps) {
-    const searchParams = useSearchParams();
-    const brandParam = searchParams.get('brand') as Brand | null;
+  const searchParams = useSearchParams();
+  const brandParam = searchParams.get('brand') as Brand | null;
 
-    const [selectedBrand, setSelectedBrand] = useState<Brand | 'all'>(brandParam || 'all');
-    const [sortBy, setSortBy] = useState<SortOption>('price-low');
-    const [comparingIds, setComparingIds] = useState<string[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<Brand | 'all'>(brandParam || 'all');
+  const [sortBy, setSortBy] = useState<SortOption>('price-low');
+  const [inStockOnly, setInStockOnly] = useState(false);
 
-    // Use custom hook with preloaded data and skip initial loading
-    const { products, loading: productsLoading } = useLiveProducts(initialProducts, { skipLoading: true });
+  const { products, loading: productsLoading } = useLiveProducts(initialProducts, {
+    skipLoading: true,
+  });
 
-    // Initialize loading to false since we have server data
-    const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    if (brandParam) {
+      setSelectedBrand(brandParam);
+    }
+  }, [brandParam]);
 
-    const handleBrandSelect = (brand: Brand | 'all') => {
-        if (brand === selectedBrand) return;
-        setIsLoading(true);
-        setSelectedBrand(brand);
-        // Shortened timeout for smoother transition with snappy spring
-        setTimeout(() => setIsLoading(false), 400);
-    };
+  // Filter products
+  const filteredProducts = products.filter((product) => {
+    const isAerator =
+      product.category === 'aerator-set' || product.category === 'aerators';
+    if (!isAerator) return false;
 
-    useEffect(() => {
-        // Only trigger loading if the hook triggers it (e.g. background re-fetch)
-        // But since we skip initial loading, this mostly stays false or true-then-false
-        if (!productsLoading) {
-            setIsLoading(false);
-        }
-    }, [productsLoading]);
+    if (inStockOnly && product.stock !== undefined && product.stock <= 0) {
+      return false;
+    }
 
-    useEffect(() => {
-        if (brandParam) {
-            handleBrandSelect(brandParam);
-        }
-    }, [brandParam, handleBrandSelect]);
+    if (selectedBrand === 'all') return true;
+    if (selectedBrand === 'custom') {
+      return product.brand !== 'aqualion' && product.brand !== 'seaboss';
+    }
+    return product.brand === selectedBrand;
+  });
 
-    const handleSortChange = (newSort: SortOption) => {
-        setIsLoading(true);
-        setSortBy(newSort);
-        setTimeout(() => setIsLoading(false), 300);
-    };
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.salePrice - b.salePrice;
+      case 'price-high':
+        return b.salePrice - a.salePrice;
+      case 'name-asc':
+        return a.name.localeCompare(b.name);
+      case 'name-desc':
+        return b.name.localeCompare(a.name);
+      default:
+        return 0;
+    }
+  });
 
-    // Filter products
-    const filteredProducts = products.filter(product => {
-        // Base filter: Only process aerator sets
-        const isAerator = product.category === 'aerator-set' || product.category === 'aerators';
-        if (!isAerator) return false;
-
-        if (selectedBrand === 'all') return true;
-        if (selectedBrand === 'custom') {
-            return product.brand !== 'aqualion' && product.brand !== 'seaboss';
-        }
-        return product.brand === selectedBrand;
-    });
-
-    // Sort products
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
-        switch (sortBy) {
-            case 'price-low':
-                return a.salePrice - b.salePrice;
-            case 'price-high':
-                return b.salePrice - a.salePrice;
-            case 'name-asc':
-                return a.name.localeCompare(b.name);
-            case 'name-desc':
-                return b.name.localeCompare(a.name);
-            default:
-                return 0;
-        }
-    });
-
-    // Handle compare
-    const handleCompare = (product: { id: string }) => {
-        setComparingIds(prev => {
-            if (prev.includes(product.id)) {
-                return prev.filter(id => id !== product.id);
-            }
-            if (prev.length >= 3) {
-                alert('You can compare up to 3 products at a time');
-                return prev;
-            }
-            return [...prev, product.id];
-        });
-    };
-
-    // Gestures
-    const handleSwipeLeft = () => {
-        if (selectedBrand === 'aqualion') handleBrandSelect('seaboss');
-        else if (selectedBrand === 'all') handleBrandSelect('seaboss');
-    };
-
-    const handleSwipeRight = () => {
-        if (selectedBrand === 'seaboss') handleBrandSelect('aqualion');
-        else if (selectedBrand === 'aqualion') handleBrandSelect('all');
-    };
-
-    const handlePullDown = () => {
-        setIsLoading(true);
-        setTimeout(() => setIsLoading(false), 1000);
-    };
-
-    const hasCustomBrands = products.some(product => {
-        const isAerator = product.category === 'aerator-set' || product.category === 'aerators';
-        return isAerator && product.brand !== 'aqualion' && product.brand !== 'seaboss' && product.brand !== 'generic';
-    });
-
-    return (
-        <div className="min-h-screen bg-white pb-24">
-            <BrandFilter selectedBrand={selectedBrand as any} onSelectBrand={handleBrandSelect} showCustom={hasCustomBrands}>
-                <div className="flex items-center justify-between px-2">
-                    <h1 className="text-2xl font-bold text-deep-blue-900">Aerator Sets</h1>
-                    <FilterDropdown sortBy={sortBy} onSortChange={handleSortChange} />
-                </div>
-            </BrandFilter>
-
-            <MobileGestureLayout
-                onSwipeLeft={handleSwipeLeft}
-                onSwipeRight={handleSwipeRight}
-                onPullDown={handlePullDown}
-            >
-                <div className="container-custom py-6">
-                    <ProductGrid
-                        products={sortedProducts}
-                        onCompare={handleCompare}
-                        comparingIds={comparingIds}
-                        isLoading={isLoading}
-                        className="gap-4 md:gap-8 gap-y-6"
-                        cardVariant="aerator"
-                    />
-                </div>
-            </MobileGestureLayout>
+  return (
+    <div className="min-h-screen bg-[#FBFBFB] text-[#0B1A33] pb-24">
+      {/* Breadcrumb Header */}
+      <section className="bg-[#FBFBFB] pt-6 pb-4">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#5B6880]">
+              <Link href="/" className="hover:text-[#0B1A33]">Home</Link>
+              <span>/</span>
+              <span className="text-[#0B1A33] font-bold">Aerator Sets</span>
+            </nav>
+            <h1 className="sr-only">Aerator Sets</h1>
+          </div>
         </div>
-    );
+      </section>
+
+      {/* Sticky Filter Bar */}
+      <BrandFilter
+        selectedBrand={selectedBrand as any}
+        onSelectBrand={(b) => setSelectedBrand(b)}
+        showCustom={products.some(
+          (p) =>
+            (p.category === 'aerator-set' || p.category === 'aerators') &&
+            p.brand !== 'aqualion' &&
+            p.brand !== 'seaboss' &&
+            p.brand !== 'generic'
+        )}
+        filterAction={<FilterDropdown sortBy={sortBy} onSortChange={setSortBy} />}
+      >
+        <span className="text-xs sm:text-sm font-bold text-[#5B6880]">
+          {sortedProducts.length} of {products.length} models
+        </span>
+      </BrandFilter>
+
+      {/* Product Content Container */}
+      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {/* In-Stock Filter Toggle */}
+        <div className="flex items-center justify-end mb-6 pb-3 border-b border-[#E3E8F0] text-xs sm:text-sm font-medium text-[#5B6880]">
+          <label className="flex items-center gap-2 cursor-pointer font-bold text-[#0B1A33]">
+            <input
+              type="checkbox"
+              checked={inStockOnly}
+              onChange={(e) => setInStockOnly(e.target.checked)}
+              className="w-4 h-4 rounded text-[#0B1A33] accent-[#0B1A33] cursor-pointer"
+            />
+            <span>In stock only</span>
+          </label>
+        </div>
+
+        {/* Product Grid or Empty State */}
+        {sortedProducts.length > 0 ? (
+          <ProductGrid
+            products={sortedProducts}
+            cardVariant="aerator"
+            backContext="/aerator-sets"
+          />
+        ) : (
+          <div className="rounded-[28px] border-2 border-dashed border-[#C4D9FF] bg-white p-12 text-center flex flex-col items-center gap-4 my-8">
+            <span className="w-14 h-14 rounded-2xl bg-[#E8F9FF] text-[#0B1A33] flex items-center justify-center text-2xl">
+              🔍
+            </span>
+            <h3 className="text-xl sm:text-2xl font-extrabold text-[#0B1A33] font-poppins">
+              Nothing matches those filters
+            </h3>
+            <p className="text-sm text-[#5B6880] max-w-md leading-relaxed font-medium">
+              Clear your brand/stock filters, or call Hazarathaiah on{' '}
+              <a href="tel:+919177657576" className="text-[#4338CA] font-bold">
+                +91 91776 57576
+              </a>{' '}
+              for custom configurations.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBrand('all');
+                setInStockOnly(false);
+                setSortBy('price-low');
+              }}
+              className="mt-2 h-11 px-6 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-sm transition-colors cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Floating Compare Tray */}
+      <CompareFloatingTray />
+    </div>
+  );
 }

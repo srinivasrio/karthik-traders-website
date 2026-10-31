@@ -1,134 +1,159 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 
-const mobileNavItems = [
-    {
-        name: 'Home',
-        href: '/',
-        iconSrc: '/icons/menu/home.png',
-    },
-    {
-        name: 'Aerators',
-        href: '/aerator-sets',
-        iconSrc: '/icons/menu/aerators.png',
-    },
-    {
-        name: 'Products',
-        href: '/products',
-        iconSrc: '/icons/menu/spares.png',
-    },
-    {
-        name: 'Spares',
-        href: '/spares',
-        iconSrc: '/icons/menu/products.png',
-    },
-    {
-        name: 'Long Arm',
-        href: '/long-arm',
-        iconSrc: '/icons/menu/long-arm.png',
-    },
+const navTabs = [
+  { name: 'Home', href: '/', id: 'home', icon: '/assets/nav-home.png' },
+  { name: 'Aerators', href: '/aerator-sets', id: 'aerators', icon: '/assets/nav-aerators.png' },
+  { name: 'Products', href: '/products', id: 'products', icon: '/assets/nav-products.png' },
+  { name: 'Spares', href: '/spares', id: 'spares', icon: '/assets/nav-spares.png' },
+  { name: 'Long Arm', href: '/long-arm', id: 'long-arm', icon: '/assets/nav-long-arm.png' },
 ];
 
 export default function MobileBottomNav() {
-    const pathname = usePathname();
-    const router = useRouter();
-    const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
+  const pathname = usePathname();
+  const [navSmall, setNavSmall] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-    // Prefetch all main routes on mount for instant transitions
-    useEffect(() => {
-        mobileNavItems.forEach(item => {
-            if (item.href !== '/') {
-                router.prefetch(item.href);
-            }
+  useEffect(() => {
+    const handleMenu = (e: any) => {
+      if (e?.detail?.open !== undefined) {
+        setMenuOpen(e.detail.open);
+      }
+    };
+    window.addEventListener('kt-menu-state', handleMenu);
+    return () => window.removeEventListener('kt-menu-state', handleMenu);
+  }, []);
+
+  // Super smooth scroll detection with requestAnimationFrame & gentle hysteresis
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    if (window.scrollY > 50) {
+      setNavSmall(true);
+    }
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const y = window.scrollY;
+          const diff = y - lastY;
+
+          // Always expand when near top of page
+          if (y < 40) {
+            setNavSmall(false);
+          }
+          // Smoothly reduce when scrolling down past 50px
+          else if (diff > 3 && y > 50) {
+            setNavSmall(true);
+          }
+          // Smoothly expand when intentionally scrolling up
+          else if (diff < -8) {
+            setNavSmall(false);
+          }
+
+          lastY = y;
+          ticking = false;
         });
-    }, [router]);
-
-    // Sync optimistic path with actual pathname when navigation completes
-    useEffect(() => {
-        setOptimisticPath(null);
-    }, [pathname]);
-
-    const activePath = optimisticPath || pathname;
-
-    const isActive = (href: string) => {
-        if (href === '/') {
-            return activePath === '/';
-        }
-        return activePath.startsWith(href);
+        ticking = true;
+      }
     };
 
-    const handleNavClick = (href: string) => {
-        setOptimisticPath(href);
-    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if (pathname === '/') {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            handleNavClick('/');
-        }
-    };
+  const getActiveIndex = () => {
+    if (pathname === '/') return 0;
+    if (pathname.startsWith('/aerator-sets')) return 1;
+    if (pathname.startsWith('/products')) return 2;
+    if (pathname.startsWith('/spares')) return 3;
+    if (pathname.startsWith('/long-arm')) return 4;
+    return -1;
+  };
 
-    return (
-        <nav
-            className="md:hidden fixed bottom-0 left-0 w-full z-[100] bg-white/95 backdrop-blur-md border-t border-aqua-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]"
-            style={{ bottom: '0px' }}
-        >
-            <div className="flex items-center justify-around h-16">
-                {mobileNavItems.map((item) => {
-                    const active = isActive(item.href);
-                    const isHome = item.href === '/';
+  const activeIndex = getActiveIndex();
 
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={isHome ? handleHomeClick : () => handleNavClick(item.href)}
-                            className={`flex flex-col items-center justify-center flex-1 h-full min-w-[64px] relative transition-colors duration-300 ${active ? 'text-aqua-600' : 'text-steel-400'
-                                }`}
-                        >
-                            {/* Traveling Active Background - iOS Liquid Style */}
-                            {active && (
-                                <motion.div
-                                    layoutId="activeTab"
-                                    className="absolute inset-1 bg-aqua-200 rounded-2xl -z-10 shadow-[0_0_15px_rgba(78,215,241,0.4)] border border-aqua-300/30"
-                                    initial={false}
-                                    transition={{ type: "spring", stiffness: 600, damping: 35, mass: 0.8 }}
-                                />
-                            )}
+  if (menuOpen) return null;
 
-                            {/* Icon with Liquid Glass Animation */}
-                            <motion.div
-                                whileTap={{ scale: 0.85, rotate: -3 }}
-                                animate={{
-                                    y: active ? -2 : 0,
-                                    scale: active ? 1.05 : 1,
-                                    filter: active ? 'drop-shadow(0 2px 4px rgba(78, 215, 241, 0.3))' : 'none'
-                                }}
-                                transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                                className={`flex flex-col items-center gap-1 p-1 rounded-xl`}
-                            >
-                                <div className="relative w-6 h-6">
-                                    <Image
-                                        src={item.iconSrc}
-                                        alt={item.name}
-                                        fill
-                                        className={`object-contain ${active ? 'brightness-110 saturate-100' : 'grayscale brightness-90 opacity-60'}`}
-                                    />
-                                </div>
-                                <span className={`text-[10px] font-extrabold tracking-wide transition-colors duration-300 ${active ? 'text-deep-blue-800' : 'text-steel-400'}`}>
-                                    {item.name}
-                                </span>
-                            </motion.div>
-                        </Link>
-                    );
-                })}
-            </div>
-        </nav>
-    );
+  return (
+    <nav
+      aria-label="Mobile Navigation"
+      style={{
+        width: navSmall ? 'calc(100% - 130px)' : 'calc(100% - 24px)',
+        maxWidth: navSmall ? '248px' : '440px',
+        height: navSmall ? '46px' : '62px',
+        transform: 'translate3d(-50%, 0, 0)',
+        boxShadow: 'none',
+        willChange: 'width, max-width, height, transform',
+        transition:
+          'width 0.44s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.44s cubic-bezier(0.16, 1, 0.3, 1), height 0.44s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.44s ease',
+      }}
+      className="lg:hidden fixed bottom-3 left-1/2 z-[56] rounded-full bg-white/95 backdrop-blur-2xl border border-[#D5E3F5] shadow-none grid grid-cols-5 font-poppins p-1 overflow-hidden"
+    >
+      {/* Sliding Active Pill Indicator - GPU hardware accelerated without layout lag */}
+      {activeIndex >= 0 && (
+        <div className="absolute inset-1 pointer-events-none" aria-hidden="true">
+          <span
+            className="absolute top-0 bottom-0 rounded-full bg-[#1450C8] shadow-none"
+            style={{
+              width: '20%',
+              left: 0,
+              boxShadow: 'none',
+              transform: `translate3d(${activeIndex * 100}%, 0, 0)`,
+              transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          />
+        </div>
+      )}
+
+      {navTabs.map((tab, idx) => {
+        const isActive = activeIndex === idx;
+
+        return (
+          <Link
+            key={tab.name}
+            href={tab.href}
+            prefetch={true}
+            aria-current={isActive ? 'page' : undefined}
+            className={`relative flex items-center justify-center rounded-full z-10 transition-colors duration-200 ${
+              isActive ? 'text-white' : 'text-[#5B6880] hover:text-[#0B1A33]'
+            }`}
+          >
+            {/* Nav Icon with transform centering */}
+            <span
+              aria-hidden="true"
+              className="block flex-none"
+              style={{
+                width: '20px',
+                height: '20px',
+                transform: navSmall ? 'translate3d(0, 0, 0) scale(1.02)' : 'translate3d(0, -5px, 0) scale(0.96)',
+                backgroundColor: 'currentColor',
+                WebkitMask: `url(${tab.icon}) center/contain no-repeat`,
+                mask: `url(${tab.icon}) center/contain no-repeat`,
+                transition: 'transform 0.44s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            />
+
+            {/* Nav Label - Absolute anchored, fades & glides without reflowing icon */}
+            <span
+              style={{
+                opacity: navSmall ? 0 : 1,
+                transform: navSmall ? 'translate3d(0, 6px, 0) scale(0.7)' : 'translate3d(0, 0, 0) scale(1)',
+                pointerEvents: 'none',
+                transition:
+                  'opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.44s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+              className="absolute bottom-1 left-0 right-0 text-center text-[10px] leading-tight font-bold tracking-tight overflow-hidden whitespace-nowrap block"
+            >
+              {tab.name}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
