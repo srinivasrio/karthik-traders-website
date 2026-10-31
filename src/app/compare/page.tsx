@@ -202,6 +202,7 @@ function FormattedValueView({ raw }: { raw: string }) {
 
 // ─── Comparison field definitions with display order ──────────────────
 type FeatureIcon =
+  | 'model-number'
   | 'motor-power'
   | 'motor-type'
   | 'motor-phase'
@@ -248,6 +249,9 @@ interface CompareField {
 }
 
 const COMPARE_FIELDS: CompareField[] = [
+  // ── Identification ──
+  { label: 'Model Number', keys: ['Model number', 'Model Number', 'model'], icon: 'model-number', group: 'Overview' },
+
   // ── Motor & Power ──
   { label: 'Motor Power', keys: ['Motor Power'], icon: 'motor-power', group: 'Motor & Power' },
   { label: 'Motor Type', keys: ['Motor Type'], icon: 'motor-type', group: 'Motor & Power' },
@@ -298,12 +302,13 @@ const COMPARE_FIELDS: CompareField[] = [
 
 const SKIP_KEYS = new Set([
   'brand', 'category', 'components', 'features', 'model', 'warranty',
-  'Product Name', 'Model number',
+  'Product Name',
 ]);
 
 /** Automatic fallback icon resolver for dynamic extra DB specs */
 function getIconForLabel(label: string): FeatureIcon {
   const l = label.toLowerCase();
+  if (l.includes('model')) return 'model-number';
   if (l.includes('motor power')) return 'motor-power';
   if (l.includes('motor type')) return 'motor-type';
   if (l.includes('motor phase') || l.includes('phase')) return 'motor-phase';
@@ -347,6 +352,13 @@ function getIconForLabel(label: string): FeatureIcon {
 function SpecIcon({ type }: { type: FeatureIcon }) {
   const cls = 'w-4 h-4 text-[#1D64EC] shrink-0';
   switch (type) {
+    case 'model-number':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+          <line x1="7" y1="7" x2="7.01" y2="7" />
+        </svg>
+      );
     case 'motor-power':
       return (
         <svg className={cls} viewBox="0 0 24 24" fill="currentColor">
@@ -637,8 +649,8 @@ function SpecIcon({ type }: { type: FeatureIcon }) {
 // ─── Brand badge colors ──────────────────────────────────────────────
 function getBrandBadge(brand: string | undefined) {
   const b = (brand || '').toLowerCase();
-  if (b.includes('aqualion')) return { label: 'Premium', bg: 'bg-[#E0EFFF]', text: 'text-[#1D64EC]' };
-  if (b.includes('seaboss') || b.includes('sea boss')) return { label: 'Budget', bg: 'bg-[#FFF3E6]', text: 'text-[#D97706]' };
+  if (b.includes('aqualion')) return { label: 'Premium', bg: 'bg-[#FFF4D2]', text: 'text-[#B87000]' };
+  if (b.includes('seaboss') || b.includes('sea boss')) return { label: 'Sea Boss', bg: 'bg-[#E8F1FF]', text: 'text-[#1450C8]' };
   return { label: brand || '', bg: 'bg-gray-100', text: 'text-gray-600' };
 }
 
@@ -649,6 +661,34 @@ function getBrandName(product: Product | null | undefined): string {
   if (brand.includes('aqualion')) return 'Aqualion';
   if (brand.includes('seaboss') || brand.includes('sea boss')) return 'Sea Boss';
   return product.name?.split(' ')[0] || 'Aerator';
+}
+
+// ─── Extract prominent aerator model number ─────────────────────────
+function getAeratorModelNumber(product: Product | null | undefined): string {
+  if (!product) return '—';
+  const m =
+    product.specifications?.['Model number'] ||
+    product.specifications?.['Model Number'] ||
+    product.model ||
+    product.name?.match(/\(([^)]+)\)/)?.[1];
+  return (m || product.name || '—').trim();
+}
+
+// ─── Subtitle helper matching user design ────────────────────────────
+function getAeratorSubtitle(product: Product): string {
+  const brand = (product.brand || '').toLowerCase().includes('aqualion') ? 'AQUA LION' : 'SEA BOSS';
+  const hp = product.specifications?.['Motor Power'] || '2HP';
+  const paddles = product.specifications?.['No. of Paddle'] || '4';
+  const frame = product.specifications?.['Frame & Rod Material'] || product.specifications?.['Frame Material'] || '';
+  const ssGrade = frame.includes('304') ? 'SS 304' : 'SS 202';
+  return `${brand} ${hp} ${paddles} PADDLE WHEEL AERATOR SET ( ${ssGrade} )`;
+}
+
+// ─── Price helper ────────────────────────────────────────────────────
+function getAeratorPrices(product: Product) {
+  const sale = Number(product.salePrice || product.mrp || 0);
+  const mrp = Number(product.mrp || product.salePrice || 0);
+  return { sale, mrp };
 }
 
 // =====================================================================
@@ -678,10 +718,10 @@ function SlotCard({
             onSelect(slotIdx);
           }
         }}
-        className="col-span-1 rounded-2xl bg-white border-2 border-dashed border-[#CBD5E1] hover:border-[#1D64EC] hover:bg-[#F8FAFD] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs transition-all cursor-pointer group"
+        className="col-span-1 rounded-2xl md:rounded-3xl bg-white border-2 border-dashed border-[#CBD5E1] hover:border-[#1D64EC] hover:bg-[#F8FAFD] p-2.5 sm:p-4 flex flex-col gap-2 relative shadow-2xs transition-all cursor-pointer group"
       >
         {/* Aspect Ratio Box matching product photo container */}
-        <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl overflow-hidden bg-[#F8FAFD] group-hover:bg-[#F0F7FF] flex flex-col items-center justify-center gap-1.5 sm:gap-2 transition-colors">
+        <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl sm:rounded-2xl overflow-hidden bg-[#F8FAFD] group-hover:bg-[#F0F7FF] flex flex-col items-center justify-center gap-1.5 sm:gap-2 transition-colors">
           {/* Circular + button */}
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-[#CBD5E1] group-hover:border-[#1D64EC] text-[#1D64EC] group-hover:bg-[#1D64EC] group-hover:text-white flex items-center justify-center transition-all shadow-xs">
             <svg
@@ -721,11 +761,13 @@ function SlotCard({
   // ── FILLED STATE ──
   const brand = getBrandBadge(product.brand);
   const brandName = getBrandName(product);
+  const modelNumber = getAeratorModelNumber(product);
   const img = product.images?.[0] || '/assets/compare-aerator-pristine.jpg';
+  const { sale, mrp } = getAeratorPrices(product);
 
   return (
-    <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
-      <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl overflow-hidden bg-[#F0F6FC]">
+    <div className="col-span-1 rounded-2xl md:rounded-3xl bg-white border border-[#E8EFF8] p-2.5 sm:p-4 flex flex-col gap-2 relative shadow-2xs hover:shadow-xs transition-shadow">
+      <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl sm:rounded-2xl overflow-hidden bg-[#F0F6FC]">
         <Image
           src={img}
           alt={product.name || 'Aerator'}
@@ -740,18 +782,44 @@ function SlotCard({
           onClick={(e) => onRemove(slotIdx, e)}
           aria-label={`Remove ${brandName}`}
           title="Remove aerator"
-          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-slate-500 hover:text-red-600 hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95 transition-colors"
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/95 text-slate-500 hover:text-red-600 hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95 transition-all"
         >
           ✕
         </button>
+
+        {/* Change model pill button */}
+        <button
+          type="button"
+          onClick={() => onSelect(slotIdx)}
+          aria-label={`Change aerator in slot ${slotIdx + 1}`}
+          className="absolute bottom-2 right-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-xs text-[#1D64EC] hover:bg-[#1D64EC] hover:text-white text-[10px] sm:text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
+        >
+          ⇄ Change
+        </button>
       </div>
-      <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
-        <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
-          {brandName}
-        </span>
-        <span className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${brand.bg} ${brand.text} shrink-0`}>
-          {brand.label}
-        </span>
+
+      {/* Brand & Prominently Highlighted Model Number */}
+      <div className="flex flex-col gap-0.5 px-1 pt-0.5">
+        <div className="flex items-center justify-between gap-1 flex-wrap">
+          <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide ${brand.bg} ${brand.text} shrink-0`}>
+            {brandName}
+          </span>
+          <span className="text-[10px] sm:text-xs text-slate-400 font-semibold">
+            Slot {slotIdx + 1}
+          </span>
+        </div>
+
+        {/* PROMINENT MODEL NUMBER */}
+        <div className="flex items-baseline justify-between gap-2 mt-1">
+          <span className="font-poppins font-black text-base sm:text-xl md:text-2xl text-[#0A2540] tracking-tight">
+            {modelNumber}
+          </span>
+          <div className="text-right">
+            <span className="font-poppins font-black text-sm sm:text-base md:text-lg text-[#00A859]">
+              ₹{sale.toLocaleString('en-IN')}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -783,6 +851,7 @@ function CompareContent() {
 
   const [slugs, setSlugs] = useState<string[]>(['', '']);
   const [selectorSlot, setSelectorSlot] = useState<number | null>(null);
+  const [selectorBrand, setSelectorBrand] = useState<'all' | 'seaboss' | 'aqualion'>('all');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -955,7 +1024,14 @@ function CompareContent() {
               </div>
               <div className="col-span-4 text-center">
                 {p1 ? (
-                  <span className="font-extrabold text-[#0B1A33] text-[15px]">{brandName1}</span>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="font-poppins font-black text-base lg:text-lg text-[#0A2540] tracking-tight">
+                      {getAeratorModelNumber(p1)}
+                    </span>
+                    <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
+                      {brandName1}
+                    </span>
+                  </div>
                 ) : (
                   <button
                     type="button"
@@ -968,7 +1044,14 @@ function CompareContent() {
               </div>
               <div className="col-span-4 text-center">
                 {p2 ? (
-                  <span className="font-extrabold text-[#0B1A33] text-[15px]">{brandName2}</span>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="font-poppins font-black text-base lg:text-lg text-[#0A2540] tracking-tight">
+                      {getAeratorModelNumber(p2)}
+                    </span>
+                    <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
+                      {brandName2}
+                    </span>
+                  </div>
                 ) : (
                   <button
                     type="button"
@@ -1048,73 +1131,164 @@ function CompareContent() {
       </main>
 
       {/* =========================================================================
-          MODEL SELECTION MODAL (WHEN USER CLICKS + OR ✕ TO PICK AN AERATOR)
+          MODEL SELECTION MODAL (REDESIGNED MATCHING USER'S SCREENSHOTS)
+          - Mobile view: 2 column grid cards
+          - Desktop view: 3 column grid cards
+          - Prominently highlighted model number
+          - Brand badges, subtitle, MRP and Sale Price
           ========================================================================= */}
       {selectorSlot !== null && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
-              <div>
-                <h3 className="font-poppins font-black text-lg text-[#0B1A33]">
-                  Select Aerator for Slot {selectorSlot + 1}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Pick any aerator set from Karthik Traders to compare
-                </p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/65 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#F8FAFD] rounded-[28px] md:rounded-[36px] max-w-4xl w-full border border-[#E2E8F0] shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+            {/* Modal Header Bar */}
+            <div className="p-4 sm:p-6 pb-3 border-b border-[#E2E8F0] bg-white flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-poppins font-black text-lg sm:text-2xl text-[#0B1A33] tracking-tight">
+                    Select Aerator for Slot {selectorSlot + 1}
+                  </h3>
+                  <p className="text-xs sm:text-[13px] text-[#64748B] font-medium mt-0.5">
+                    Pick an aerator model to compare all technical specifications
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectorSlot(null)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#F1F5F9] hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors active:scale-95"
+                  aria-label="Close modal"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectorSlot(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-sm cursor-pointer"
-              >
-                ✕
-              </button>
+
+              {/* Brand Filter Tabs */}
+              <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setSelectorBrand('all')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    selectorBrand === 'all'
+                      ? 'bg-[#0B1A33] text-white shadow-xs'
+                      : 'bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0B1A33]'
+                  }`}
+                >
+                  All Models ({aeratorList.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectorBrand('seaboss')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectorBrand === 'seaboss'
+                      ? 'bg-[#1450C8] text-white shadow-xs'
+                      : 'bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] hover:bg-[#D9EAFE]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
+                    <path d="M2 17c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
+                  </svg>
+                  <span>Sea Boss</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectorBrand('aqualion')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectorBrand === 'aqualion'
+                      ? 'bg-[#B87000] text-white shadow-xs'
+                      : 'bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] hover:bg-[#FEEDBE]'
+                  }`}
+                >
+                  <span>🦁</span>
+                  <span>Aqualion</span>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              {aeratorList.map((item) => {
-                const isSelected = slugs[selectorSlot] === item.slug;
-                const otherSlotIdx = selectorSlot === 0 ? 1 : 0;
-                const isOtherSelected = slugs[otherSlotIdx] === item.slug;
+            {/* Modal Cards Grid: 2 columns on mobile, 3 columns on desktop */}
+            <div className="p-3.5 sm:p-6 overflow-y-auto max-h-[calc(92vh-140px)]">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4 md:gap-5">
+                {aeratorList
+                  .filter((item) => {
+                    if (selectorBrand === 'all') return true;
+                    return (item.brand || '').toLowerCase().includes(selectorBrand);
+                  })
+                  .map((item) => {
+                    const isSelected = slugs[selectorSlot] === item.slug;
+                    const otherSlotIdx = selectorSlot === 0 ? 1 : 0;
+                    const isOtherSelected = slugs[otherSlotIdx] === item.slug;
+                    const modelNumber = getAeratorModelNumber(item);
+                    const subtitle = getAeratorSubtitle(item);
+                    const { sale, mrp } = getAeratorPrices(item);
+                    const isSeaBoss = (item.brand || '').toLowerCase().includes('seaboss');
 
-                return (
-                  <button
-                    key={item.slug}
-                    type="button"
-                    onClick={() => setSlot(selectorSlot, item.slug)}
-                    className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-left border ${
-                      isSelected
-                        ? 'border-[#1D64EC] bg-[#EBF7FF]'
-                        : 'border-gray-100 hover:border-gray-300 bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-none">
-                        <Image
-                          src={item.images?.[0] || '/assets/compare-aerator-pristine.jpg'}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm text-[#0B1A33]">{item.name}</div>
-                        <div className="text-xs text-gray-500 capitalize">
-                          {item.brand} • {getSpec(item, 'Motor Power')}
+                    return (
+                      <button
+                        key={item.slug}
+                        type="button"
+                        onClick={() => setSlot(selectorSlot, item.slug)}
+                        className={`w-full rounded-2xl sm:rounded-3xl p-3 sm:p-5 flex flex-col items-center justify-between text-center transition-all duration-200 cursor-pointer relative ${
+                          isSelected
+                            ? 'border-2 border-[#1D64EC] ring-2 ring-[#1D64EC]/25 bg-[#F0F6FF] shadow-md'
+                            : isOtherSelected
+                            ? 'border-2 border-amber-300 bg-amber-50/50 hover:border-amber-400'
+                            : 'border-2 border-[#E2E8F0] hover:border-[#1D64EC]/60 bg-white hover:bg-slate-50/60 shadow-xs hover:shadow-md hover:-translate-y-0.5'
+                        }`}
+                      >
+                        {/* Brand Pill Badge */}
+                        <div className="w-full flex items-center justify-center">
+                          {isSeaBoss ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
+                              <svg className="w-3.5 h-3.5 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M2 12c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
+                                <path d="M2 17c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 5-2.5 5-2.5" />
+                              </svg>
+                              <span>SEA BOSS</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
+                              <span className="text-xs">🦁</span>
+                              <span>AQUALION</span>
+                            </span>
+                          )}
                         </div>
-                      </div>
-                    </div>
-                    {isSelected && (
-                      <span className="text-[#1D64EC] font-bold text-sm">✓ Selected</span>
-                    )}
-                    {!isSelected && isOtherSelected && (
-                      <span className="text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-full">
-                        In Slot {otherSlotIdx + 1}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+
+                        {/* PROMINENT MODEL NUMBER */}
+                        <div className="font-poppins font-black text-xl sm:text-2xl md:text-[26px] text-[#0A2540] tracking-tight my-2">
+                          {modelNumber}
+                        </div>
+
+                        {/* Subtitle (Desktop / Tablet view) */}
+                        <div className="hidden sm:block text-[10px] sm:text-[11px] font-bold text-[#64748B] text-center uppercase tracking-wide leading-tight line-clamp-2 px-1 mb-2">
+                          {subtitle}
+                        </div>
+
+                        {/* Pricing (MRP strikethrough & bold green price) */}
+                        <div className="flex flex-col items-center justify-center mt-auto pt-1 w-full">
+                          {mrp > sale && (
+                            <span className="text-[10.5px] sm:text-xs text-[#64748B] line-through font-semibold leading-none">
+                              MRP: ₹{mrp.toLocaleString('en-IN')}
+                            </span>
+                          )}
+                          <span className="text-base sm:text-xl md:text-2xl font-black text-[#00A859] tracking-tight mt-1 leading-none">
+                            ₹{sale.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+
+                        {/* Status Badges */}
+                        {isSelected && (
+                          <span className="mt-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-[#1D64EC] text-white shadow-2xs">
+                            ✓ In Slot {selectorSlot + 1}
+                          </span>
+                        )}
+                        {!isSelected && isOtherSelected && (
+                          <span className="mt-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-amber-100 text-amber-800">
+                            In Slot {otherSlotIdx + 1}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
           </div>
         </div>

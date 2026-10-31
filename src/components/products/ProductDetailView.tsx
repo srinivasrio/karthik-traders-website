@@ -73,6 +73,12 @@ export default function ProductDetailView({
   const isOutOfStock = product.stock !== undefined && product.stock <= 0;
   const isLimitedStock = product.stock !== undefined && product.stock > 0 && product.stock <= 3;
   const isAerator = product.category === 'aerator-set' || product.category === 'aerators';
+  const modelNumber =
+    product.specifications?.['Model number'] ||
+    product.specifications?.['Model Number'] ||
+    product.model ||
+    product.name?.match(/\(([^)]+)\)/)?.[1] ||
+    '';
 
   // Extract original components data, falling back to static product catalog
   const staticFallback = getProductBySlug(product.slug);
@@ -218,12 +224,19 @@ export default function ProductDetailView({
 
           {/* Right Column: Sticky Product Info */}
           <div className="lg:col-span-6 flex flex-col gap-5 lg:sticky lg:top-24">
-            {/* Meta Tags: Brand & Stock */}
+            {/* Meta Tags: Brand, Model & Stock */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F9FF] text-[#0B5C86] uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-[#0B5C86]" />
                 {product.brand === 'aqualion' ? 'Aqualion' : product.brand === 'seaboss' ? 'Sea Boss' : 'Heavy Duty'}
               </span>
+
+              {modelNumber && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF]">
+                  <span className="text-[9px] uppercase font-bold text-[#64748B]">Model</span>
+                  <span className="text-[#0B1A33] font-black">{modelNumber}</span>
+                </span>
+              )}
 
               <span
                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full uppercase tracking-wider ${isOutOfStock
@@ -246,6 +259,16 @@ export default function ProductDetailView({
                 </span>
               )}
             </div>
+
+            {/* Model Number Hero Highlight if aerator */}
+            {modelNumber && isAerator && (
+              <div className="flex items-center gap-2 pt-0.5">
+                <span className="text-xs uppercase font-extrabold tracking-wider text-[#64748B]">Model:</span>
+                <span className="text-xl sm:text-2xl font-black font-poppins text-[#0A2540] tracking-tight bg-[#EEF4FF] px-3.5 py-1 rounded-xl border border-[#CDE0FF]">
+                  {modelNumber}
+                </span>
+              </div>
+            )}
 
             {/* Title - Compact & refined to prevent clutter */}
             <h1 className="text-base sm:text-lg lg:text-xl font-extrabold text-[#0B1A33] tracking-tight font-poppins leading-snug">
