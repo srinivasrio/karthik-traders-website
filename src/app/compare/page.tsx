@@ -192,7 +192,7 @@ function FormattedValueView({ raw }: { raw: string }) {
         {primary}
       </span>
       {secondary && (
-        <span className="text-[9.5px] sm:text-[10.5px] md:text-[11.5px] text-[#64748B] font-normal leading-tight mt-0.5">
+        <span className="text-[9.5px] sm:text-[10px] md:text-[11px] text-[#64748B] font-normal leading-tight mt-0.5">
           {secondary}
         </span>
       )}
@@ -259,7 +259,6 @@ const COMPARE_FIELDS: CompareField[] = [
   { label: 'Country of Origin', keys: ['Country of Origin'], icon: 'shield', group: 'General' },
 ];
 
-// Metadata keys to skip when scanning for extra specs
 const SKIP_KEYS = new Set([
   'brand', 'category', 'components', 'features', 'model', 'warranty',
   'Product Name', 'Model number',
@@ -302,11 +301,117 @@ function getBrandBadge(brand: string | undefined) {
 
 // ─── Brand display name ──────────────────────────────────────────────
 function getBrandName(product: Product | null | undefined): string {
-  if (!product) return 'Aerator';
+  if (!product) return '';
   const brand = (product.brand || '').toLowerCase();
   if (brand.includes('aqualion')) return 'Aqualion';
   if (brand.includes('seaboss') || brand.includes('sea boss')) return 'Sea Boss';
   return product.name?.split(' ')[0] || 'Aerator';
+}
+
+// =====================================================================
+// SLOT CARD COMPONENT (Handles Filled Aerator Card & Empty + Button)
+// =====================================================================
+function SlotCard({
+  product,
+  slotIdx,
+  onRemove,
+  onSelect,
+}: {
+  product: Product | null;
+  slotIdx: number;
+  onRemove: (idx: number, e: React.MouseEvent) => void;
+  onSelect: (idx: number) => void;
+}) {
+  // ── EMPTY STATE ──
+  if (!product) {
+    return (
+      <div
+        onClick={() => onSelect(slotIdx)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(slotIdx);
+          }
+        }}
+        className="col-span-1 rounded-2xl bg-white border-2 border-dashed border-[#CBD5E1] hover:border-[#1D64EC] hover:bg-[#F8FAFD] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs transition-all cursor-pointer group"
+      >
+        {/* Aspect Ratio Box matching product photo container */}
+        <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl overflow-hidden bg-[#F8FAFD] group-hover:bg-[#F0F7FF] flex flex-col items-center justify-center gap-1.5 sm:gap-2 transition-colors">
+          {/* Circular + button */}
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-[#CBD5E1] group-hover:border-[#1D64EC] text-[#1D64EC] group-hover:bg-[#1D64EC] group-hover:text-white flex items-center justify-center transition-all shadow-xs">
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </div>
+          <span className="font-poppins font-bold text-xs sm:text-sm text-[#0B1A33] group-hover:text-[#1D64EC] transition-colors">
+            Add Aerator
+          </span>
+          <span className="text-[10px] sm:text-[11px] text-[#64748B] font-medium">
+            Tap to select model
+          </span>
+        </div>
+
+        {/* Bottom Title / Badge row */}
+        <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
+          <span className="font-poppins font-semibold text-xs sm:text-sm text-slate-400 tracking-tight">
+            Slot {slotIdx + 1}
+          </span>
+          <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#EBF3FC] text-[#1D64EC] group-hover:bg-[#1D64EC] group-hover:text-white transition-colors shrink-0">
+            + Choose
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FILLED STATE ──
+  const brand = getBrandBadge(product.brand);
+  const brandName = getBrandName(product);
+  const img = product.images?.[0] || '/assets/compare-aerator-pristine.jpg';
+
+  return (
+    <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
+      <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl overflow-hidden bg-[#F0F6FC]">
+        <Image
+          src={img}
+          alt={product.name || 'Aerator'}
+          fill
+          className="object-cover object-center"
+          sizes="(max-width: 640px) 45vw, 450px"
+          priority
+        />
+        {/* "✕" Remove Aerator Button */}
+        <button
+          type="button"
+          onClick={(e) => onRemove(slotIdx, e)}
+          aria-label={`Remove ${brandName}`}
+          title="Remove aerator"
+          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-slate-500 hover:text-red-600 hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95 transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+      <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
+        <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
+          {brandName}
+        </span>
+        <span className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${brand.bg} ${brand.text} shrink-0`}>
+          {brand.label}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 // =====================================================================
@@ -335,7 +440,6 @@ function CompareContent() {
 
   const [slugs, setSlugs] = useState<string[]>(['', '']);
   const [selectorSlot, setSelectorSlot] = useState<number | null>(null);
-  const [showFullDetailsModal, setShowFullDetailsModal] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -352,8 +456,8 @@ function CompareContent() {
       const stored = localStorage.getItem('kt_compare');
       if (stored) {
         const list: string[] = JSON.parse(stored);
-        if (Array.isArray(list) && list.length >= 2 && list[0] && list[1]) {
-          setSlugs([list[0], list[1]]);
+        if (Array.isArray(list) && list.length >= 2) {
+          setSlugs([list[0] || '', list[1] || '']);
           return;
         }
       }
@@ -364,18 +468,31 @@ function CompareContent() {
     }
   }, [searchParams, aqualionModel, seaBossModel]);
 
-  const p1 = aeratorList.find((p) => p.slug === slugs[0]) || aqualionModel || null;
-  const p2 = aeratorList.find((p) => p.slug === slugs[1]) || seaBossModel || null;
+  const p1 = slugs[0] ? aeratorList.find((p) => p.slug === slugs[0]) || null : null;
+  const p2 = slugs[1] ? aeratorList.find((p) => p.slug === slugs[1]) || null : null;
 
+  // Set selected model into slot
   const setSlot = (idx: number, slug: string) => {
     const next = [...slugs];
     next[idx] = slug;
     setSlugs(next);
     try {
-      localStorage.setItem('kt_compare', JSON.stringify(next.filter(Boolean)));
+      localStorage.setItem('kt_compare', JSON.stringify(next));
       window.dispatchEvent(new CustomEvent('kt-store', { detail: 'kt_compare' }));
     } catch {}
     setSelectorSlot(null);
+  };
+
+  // Remove aerator from slot (shows empty card with + button)
+  const removeSlot = (idx: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = [...slugs];
+    next[idx] = '';
+    setSlugs(next);
+    try {
+      localStorage.setItem('kt_compare', JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent('kt-store', { detail: 'kt_compare' }));
+    } catch {}
   };
 
   // ─── BUILD SPEC ROWS DYNAMICALLY FROM DB ──────────────────────────
@@ -384,68 +501,46 @@ function CompareContent() {
 
     // 1. Add rows from ordered field definitions
     for (const field of COMPARE_FIELDS) {
-      const v1 = getSpec(p1, ...field.keys);
-      const v2 = getSpec(p2, ...field.keys);
-      if (v1 !== '—' || v2 !== '—') {
+      const v1 = p1 ? getSpec(p1, ...field.keys) : '—';
+      const v2 = p2 ? getSpec(p2, ...field.keys) : '—';
+      // If at least one product is loaded, only include rows where at least one has a value
+      // If both are empty, show all COMPARE_FIELDS as preview
+      if (!p1 && !p2) {
+        rows.push({ label: field.label, val1: '—', val2: '—', icon: field.icon, group: field.group });
+      } else if (v1 !== '—' || v2 !== '—') {
         rows.push({ label: field.label, val1: v1, val2: v2, icon: field.icon, group: field.group });
       }
     }
 
-    // 2. Catch extra specs from DB not covered by COMPARE_FIELDS
-    const coveredKeys = new Set(COMPARE_FIELDS.flatMap((f) => f.keys.map((k) => k.toLowerCase())));
-    const allKeys = new Map<string, string>();
-    
-    for (const p of [p1, p2]) {
-      if (!p?.specifications) continue;
-      for (const key of Object.keys(p.specifications)) {
-        const lower = key.toLowerCase();
-        if (!coveredKeys.has(lower) && !SKIP_KEYS.has(key) && !SKIP_KEYS.has(lower)) {
-          if (!allKeys.has(lower)) allKeys.set(lower, key);
+    // 2. Catch extra specs from DB not covered by COMPARE_FIELDS (when at least one product is active)
+    if (p1 || p2) {
+      const coveredKeys = new Set(COMPARE_FIELDS.flatMap((f) => f.keys.map((k) => k.toLowerCase())));
+      const allKeys = new Map<string, string>();
+      
+      for (const p of [p1, p2]) {
+        if (!p?.specifications) continue;
+        for (const key of Object.keys(p.specifications)) {
+          const lower = key.toLowerCase();
+          if (!coveredKeys.has(lower) && !SKIP_KEYS.has(key) && !SKIP_KEYS.has(lower)) {
+            if (!allKeys.has(lower)) allKeys.set(lower, key);
+          }
         }
       }
-    }
-    
-    for (const [, originalKey] of allKeys) {
-      const v1 = getSpec(p1, originalKey);
-      const v2 = getSpec(p2, originalKey);
-      if (v1 !== '—' || v2 !== '—') {
-        rows.push({ label: originalKey, val1: v1, val2: v2, icon: 'target', group: 'Other' });
+      
+      for (const [, originalKey] of allKeys) {
+        const v1 = p1 ? getSpec(p1, originalKey) : '—';
+        const v2 = p2 ? getSpec(p2, originalKey) : '—';
+        if (v1 !== '—' || v2 !== '—') {
+          rows.push({ label: originalKey, val1: v1, val2: v2, icon: 'target', group: 'Other' });
+        }
       }
     }
 
     return rows;
   }, [p1, p2]);
 
-  // Group rows for the Full Details modal
-  const groupedSpecs = useMemo(() => {
-    const groups: { name: string; rows: typeof specRows }[] = [];
-    const groupMap = new Map<string, typeof specRows>();
-    for (const row of specRows) {
-      const g = groupMap.get(row.group) || [];
-      g.push(row);
-      groupMap.set(row.group, g);
-    }
-    for (const [name, rows] of groupMap) {
-      groups.push({ name, rows });
-    }
-    return groups;
-  }, [specRows]);
-
-  // Brand info
-  const brand1 = getBrandBadge(p1?.brand);
-  const brand2 = getBrandBadge(p2?.brand);
   const brandName1 = getBrandName(p1);
   const brandName2 = getBrandName(p2);
-
-  // Product images
-  const img1 = p1?.images?.[0] || '/assets/compare-aerator-pristine.jpg';
-  const img2 = p2?.images?.[0] || '/assets/compare-aerator-pristine.jpg';
-
-  // WhatsApp Quote Link
-  const quoteText = encodeURIComponent(
-    `Hello Karthik Traders, I would like to get a quote comparing:\n- ${p1?.name || 'Aqualion'}\n- ${p2?.name || 'Sea Boss'}\nfor my farm pond.`
-  );
-  const quoteUrl = `https://wa.me/919963840058?text=${quoteText}`;
 
   return (
     <div className="relative min-h-screen bg-[#EAF2FB] text-[#0B1A33] pb-12 md:pb-16 font-manrope overflow-hidden">
@@ -489,67 +584,21 @@ function CompareContent() {
               </div>
             </div>
 
-            {/* Left Product Card */}
-            <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
-              <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl md:rounded-xl overflow-hidden bg-[#F0F6FC]">
-                <Image
-                  src={img1}
-                  alt={p1?.name || 'Aerator 1'}
-                  fill
-                  className="object-cover object-center"
-                  sizes="(max-width: 640px) 45vw, 450px"
-                  priority
-                />
-                <button
-                  type="button"
-                  onClick={() => setSelectorSlot(0)}
-                  aria-label="Change model"
-                  title="Switch aerator model"
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-[#1D64EC] hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
-                <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
-                  {brandName1}
-                </span>
-                <span className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${brand1.bg} ${brand1.text} shrink-0`}>
-                  {brand1.label}
-                </span>
-              </div>
-            </div>
+            {/* Left Product Card (Slot 1) */}
+            <SlotCard
+              product={p1}
+              slotIdx={0}
+              onRemove={removeSlot}
+              onSelect={setSelectorSlot}
+            />
 
-            {/* Right Product Card */}
-            <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
-              <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl md:rounded-xl overflow-hidden bg-[#F0F6FC]">
-                <Image
-                  src={img2}
-                  alt={p2?.name || 'Aerator 2'}
-                  fill
-                  className="object-cover object-center"
-                  sizes="(max-width: 640px) 45vw, 450px"
-                  priority
-                />
-                <button
-                  type="button"
-                  onClick={() => setSelectorSlot(1)}
-                  aria-label="Change model"
-                  title="Switch aerator model"
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-[#1D64EC] hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
-                <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
-                  {brandName2}
-                </span>
-                <span className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${brand2.bg} ${brand2.text} shrink-0`}>
-                  {brand2.label}
-                </span>
-              </div>
-            </div>
+            {/* Right Product Card (Slot 2) */}
+            <SlotCard
+              product={p2}
+              slotIdx={1}
+              onRemove={removeSlot}
+              onSelect={setSelectorSlot}
+            />
           </div>
 
           {/* =========================================================================
@@ -561,11 +610,31 @@ function CompareContent() {
               <div className="col-span-4 text-xs uppercase tracking-wider text-[#64748B] font-bold flex items-center">
                 Feature
               </div>
-              <div className="col-span-4 text-center font-extrabold text-[#0B1A33] text-[15px]">
-                {brandName1}
+              <div className="col-span-4 text-center">
+                {p1 ? (
+                  <span className="font-extrabold text-[#0B1A33] text-[15px]">{brandName1}</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSelectorSlot(0)}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold text-[#1D64EC] bg-[#EBF3FC] hover:bg-[#D9EAFE] transition-colors cursor-pointer"
+                  >
+                    <span>+ Add Aerator</span>
+                  </button>
+                )}
               </div>
-              <div className="col-span-4 text-center font-extrabold text-[#0B1A33] text-[15px]">
-                {brandName2}
+              <div className="col-span-4 text-center">
+                {p2 ? (
+                  <span className="font-extrabold text-[#0B1A33] text-[15px]">{brandName2}</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSelectorSlot(1)}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold text-[#1D64EC] bg-[#EBF3FC] hover:bg-[#D9EAFE] transition-colors cursor-pointer"
+                  >
+                    <span>+ Add Aerator</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -632,191 +701,11 @@ function CompareContent() {
             )}
           </div>
 
-          {/* =========================================================================
-              BOTTOM BUTTONS (MATCHING REFERENCE SCREENS)
-              ========================================================================= */}
-          {/* Desktop View: Centered Side-by-Side Pill Buttons */}
-          <div className="hidden md:flex items-center justify-center gap-4 pt-2">
-            <a
-              href={quoteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="h-11 px-9 rounded-2xl bg-[#1D64EC] hover:bg-[#1554C8] text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-95"
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-11 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
-              </svg>
-              <span>Get Quote</span>
-            </a>
-
-            <button
-              type="button"
-              onClick={() => setShowFullDetailsModal(true)}
-              className="h-11 px-9 rounded-2xl border border-[#CBD5E1] hover:border-[#1D64EC] bg-white text-[#1D64EC] font-bold text-sm flex items-center justify-center gap-2.5 hover:bg-[#F8FAFD] transition-all cursor-pointer active:scale-95"
-            >
-              <svg className="w-4 h-4 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <line x1="10" y1="9" x2="8" y2="9" />
-              </svg>
-              <span>View Full Details</span>
-            </button>
-          </div>
-
-          {/* Mobile View: Full Width Stacked Rounded-Full Buttons */}
-          <div className="md:hidden flex flex-col gap-2.5 pt-1">
-            <a
-              href={quoteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full h-12 rounded-full bg-[#1D64EC] active:bg-[#1554C8] text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-98"
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-11 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
-              </svg>
-              <span>Get Quote</span>
-            </a>
-
-            <button
-              type="button"
-              onClick={() => setShowFullDetailsModal(true)}
-              className="w-full h-12 rounded-full border border-[#CBD5E1] bg-white text-[#1D64EC] font-bold text-sm flex items-center justify-center gap-2 active:bg-[#F0F7FF] transition-all active:scale-98"
-            >
-              <svg className="w-4 h-4 text-[#1D64EC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <line x1="10" y1="9" x2="8" y2="9" />
-              </svg>
-              <span>View Details</span>
-            </button>
-          </div>
-
         </div>
       </main>
 
       {/* =========================================================================
-          FULL DETAILS MODAL — Shows all specs grouped by category
-          ========================================================================= */}
-      {showFullDetailsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
-              <div>
-                <h3 className="font-poppins font-black text-lg sm:text-xl text-[#0B1A33]">
-                  Full Specifications
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Complete comparison: {p1?.name || 'Aerator 1'} vs {p2?.name || 'Aerator 2'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowFullDetailsModal(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-sm cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Product Summary Cards */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="p-3 sm:p-4 rounded-2xl bg-[#F0F7FF] border border-[#C4D9FF]">
-                <div className="font-extrabold text-[#1D64EC] text-xs sm:text-sm">{p1?.name || 'Aerator 1'}</div>
-                <div className="text-[10px] sm:text-xs text-gray-600 mt-1 capitalize">{p1?.brand} • {getSpec(p1, 'Motor Power')}</div>
-              </div>
-              <div className="p-3 sm:p-4 rounded-2xl bg-[#FFF9F2] border border-[#FED7AA]">
-                <div className="font-extrabold text-[#D97706] text-xs sm:text-sm">{p2?.name || 'Aerator 2'}</div>
-                <div className="text-[10px] sm:text-xs text-gray-600 mt-1 capitalize">{p2?.brand} • {getSpec(p2, 'Motor Power')}</div>
-              </div>
-            </div>
-
-            {/* Grouped Spec Sections */}
-            {groupedSpecs.map((group) => (
-              <div key={group.name} className="mb-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1.5 h-5 rounded-full bg-[#1D64EC]" />
-                  <h4 className="font-poppins font-bold text-sm text-[#0B1A33]">{group.name}</h4>
-                </div>
-                <div className="rounded-xl border border-gray-100 overflow-hidden">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-3 bg-[#F8FAFD] border-b border-gray-100 text-[10px] sm:text-xs font-bold text-gray-700 px-3 sm:px-4 py-2">
-                    <div>Specification</div>
-                    <div className="text-center">{brandName1}</div>
-                    <div className="text-center">{brandName2}</div>
-                  </div>
-                  {/* Rows */}
-                  {group.rows.map((row, idx) => (
-                    <div
-                      key={`${row.label}-${idx}`}
-                      className={`grid grid-cols-3 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs items-center ${
-                        idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFCFF]'
-                      } ${idx < group.rows.length - 1 ? 'border-b border-gray-50' : ''}`}
-                    >
-                      <div className="font-bold text-[#0B1A33] flex items-center gap-1.5">
-                        <SpecIcon type={row.icon} />
-                        <span>{row.label}</span>
-                      </div>
-                      <div className="text-center flex items-center justify-center">
-                        <FormattedValueView raw={row.val1} />
-                      </div>
-                      <div className="text-center flex items-center justify-center">
-                        <FormattedValueView raw={row.val2} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {/* Features Comparison */}
-            {(p1?.features?.length || p2?.features?.length) && (
-              <div className="mb-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1.5 h-5 rounded-full bg-green-500" />
-                  <h4 className="font-poppins font-bold text-sm text-[#0B1A33]">Key Features</h4>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    {(p1?.features || []).map((f, i) => (
-                      <div key={i} className="flex items-start gap-1.5 text-[11px] sm:text-xs text-gray-700">
-                        <span className="text-green-500 mt-0.5 shrink-0">✓</span>
-                        <span>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-1.5">
-                    {(p2?.features || []).map((f, i) => (
-                      <div key={i} className="flex items-start gap-1.5 text-[11px] sm:text-xs text-gray-700">
-                        <span className="text-green-500 mt-0.5 shrink-0">✓</span>
-                        <span>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Modal Close Button */}
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowFullDetailsModal(false)}
-                className="h-10 px-6 rounded-full bg-[#0B1A33] text-white text-xs font-bold hover:bg-[#1D64EC] transition-colors cursor-pointer"
-              >
-                Close Specification Sheet
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          MODEL SELECTION MODAL (WHEN USER CLICKS ✕)
+          MODEL SELECTION MODAL (WHEN USER CLICKS + OR ✕ TO PICK AN AERATOR)
           ========================================================================= */}
       {selectorSlot !== null && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -842,6 +731,9 @@ function CompareContent() {
             <div className="space-y-2">
               {aeratorList.map((item) => {
                 const isSelected = slugs[selectorSlot] === item.slug;
+                const otherSlotIdx = selectorSlot === 0 ? 1 : 0;
+                const isOtherSelected = slugs[otherSlotIdx] === item.slug;
+
                 return (
                   <button
                     key={item.slug}
@@ -864,11 +756,18 @@ function CompareContent() {
                       </div>
                       <div>
                         <div className="font-bold text-sm text-[#0B1A33]">{item.name}</div>
-                        <div className="text-xs text-gray-500 capitalize">{item.brand} • {getSpec(item, 'Motor Power')}</div>
+                        <div className="text-xs text-gray-500 capitalize">
+                          {item.brand} • {getSpec(item, 'Motor Power')}
+                        </div>
                       </div>
                     </div>
                     {isSelected && (
                       <span className="text-[#1D64EC] font-bold text-sm">✓ Selected</span>
+                    )}
+                    {!isSelected && isOtherSelected && (
+                      <span className="text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-full">
+                        In Slot {otherSlotIdx + 1}
+                      </span>
                     )}
                   </button>
                 );
