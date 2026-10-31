@@ -8,14 +8,137 @@ import { aeratorSets, Product } from '@/data/products';
 import { useLiveProducts } from '@/hooks/useLiveProducts';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
-interface SpecItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  val1: string;
-  val2: string;
+// ─── Helpers ──────────────────────────────────────────────────────────
+/** Case-insensitive spec lookup; tries each key in order, returns first non-empty value. */
+function getSpec(product: Product | null | undefined, ...keys: string[]): string {
+  if (!product?.specifications) return '—';
+  const entries = Object.entries(product.specifications);
+  for (const k of keys) {
+    for (const [pk, pv] of entries) {
+      if (pk.toLowerCase() === k.toLowerCase() && pv) {
+        if (typeof pv === 'object') return JSON.stringify(pv);
+        const s = String(pv).trim();
+        if (s) return s;
+      }
+    }
+  }
+  return '—';
 }
 
+// ─── Comparison field definitions with display order ──────────────────
+// Each field maps a user-friendly label to one or more DB key variants.
+// Icons are assigned by category group.
+type IconType = 'bolt' | 'wave' | 'gear' | 'layers' | 'frame' | 'target' | 'shield' | 'droplet' | 'weight';
+
+interface CompareField {
+  label: string;
+  keys: string[];
+  icon: IconType;
+  group: string; // For grouping in the "View Full Details" modal
+}
+
+const COMPARE_FIELDS: CompareField[] = [
+  // ── Motor & Power ──
+  { label: 'Motor Power', keys: ['Motor Power'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Motor Type', keys: ['Motor Type'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Motor Phase', keys: ['Motor Phase'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Voltage', keys: ['Voltage'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Frequency', keys: ['Frequency'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Power Consumption', keys: ['Power Consumption'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Power Source', keys: ['Power Source'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Starter', keys: ['Starter'], icon: 'bolt', group: 'Motor & Power' },
+  { label: 'Cable Wire', keys: ['Wire'], icon: 'bolt', group: 'Motor & Power' },
+  
+  // ── Gear Box ──
+  { label: 'Gear Box Type', keys: ['Gear Box Type'], icon: 'gear', group: 'Gear Box' },
+  { label: 'Gear Box RPM', keys: ['Gear Box RPM'], icon: 'gear', group: 'Gear Box' },
+  { label: 'Gear Box & Motor Material', keys: ['Gear Box & Motor material'], icon: 'gear', group: 'Gear Box' },
+  { label: 'Gear Oil', keys: ['Gear oil', 'Gear Oil'], icon: 'gear', group: 'Gear Box' },
+  
+  // ── Paddles & Floats ──
+  { label: 'No. of Paddles', keys: ['No. of Paddle'], icon: 'wave', group: 'Paddles & Floats' },
+  { label: 'Fan & Float Material', keys: ['Fan & Float Material'], icon: 'layers', group: 'Paddles & Floats' },
+  { label: 'Fan Weight', keys: ['Fan Weight'], icon: 'weight', group: 'Paddles & Floats' },
+  { label: 'Float Weight', keys: ['Float Weight'], icon: 'weight', group: 'Paddles & Floats' },
+  { label: 'Float & Dom Color', keys: ['Float & Dom Color'], icon: 'layers', group: 'Paddles & Floats' },
+  { label: 'Dom Type', keys: ['Dom Type'], icon: 'layers', group: 'Paddles & Floats' },
+  
+  // ── Frame & Structure ──
+  { label: 'Frame & Rod Material', keys: ['Frame & Rod Material'], icon: 'frame', group: 'Frame & Structure' },
+  { label: 'Frame Weight', keys: ['Frame Weight'], icon: 'weight', group: 'Frame & Structure' },
+  { label: 'Frame Thickness', keys: ['Frame Thickness', 'Frame thickness'], icon: 'frame', group: 'Frame & Structure' },
+  { label: 'Total Set Weight', keys: ['Total Set Weight'], icon: 'weight', group: 'Frame & Structure' },
+  
+  // ── Performance ──
+  { label: 'Oxygen Generation', keys: ['Oxygen Generation (Real)', 'Oxygen Generation'], icon: 'droplet', group: 'Performance' },
+  { label: 'Visible Flow', keys: ['Visible Flow'], icon: 'wave', group: 'Performance' },
+  { label: 'Circulation Range', keys: ['Effective Flow / Circulation Range'], icon: 'wave', group: 'Performance' },
+  { label: 'Pond Coverage', keys: ['Pond Coverage'], icon: 'target', group: 'Performance' },
+  { label: 'Water Depth', keys: ['Water Depth Suitable'], icon: 'droplet', group: 'Performance' },
+  
+  // ── General ──
+  { label: 'Type of Aerator', keys: ['Type of Aerator'], icon: 'target', group: 'General' },
+  { label: 'Usage / Application', keys: ['Usage / Application'], icon: 'target', group: 'General' },
+  { label: 'Automation Grade', keys: ['Automation Grade'], icon: 'gear', group: 'General' },
+  { label: 'Maintenance', keys: ['Maintenance', 'maintenance'], icon: 'shield', group: 'General' },
+  { label: 'Installation Services', keys: ['Installation Services Available'], icon: 'shield', group: 'General' },
+  { label: 'Warranty', keys: ['warranty', 'Warranty'], icon: 'shield', group: 'General' },
+  { label: 'Country of Origin', keys: ['Country of Origin'], icon: 'shield', group: 'General' },
+];
+
+// Metadata keys to skip when scanning for "extra" specs not in COMPARE_FIELDS
+const SKIP_KEYS = new Set([
+  'brand', 'category', 'components', 'features', 'model', 'warranty',
+  'Product Name', 'Model number',
+]);
+
+// ─── SVG Icon Components (Compact) ───────────────────────────────────
+function SpecIcon({ type }: { type: IconType }) {
+  const cls = 'w-4 h-4 text-[#1D64EC] shrink-0';
+  switch (type) {
+    case 'bolt':
+      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>;
+    case 'wave':
+      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.5c4-4 12-4 16 0M4 9.5c4-4 12-4 16 0" /></svg>;
+    case 'gear':
+      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
+    case 'layers':
+      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>;
+    case 'frame':
+      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2m12 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><rect x="7" y="7" width="10" height="10" rx="1" /></svg>;
+    case 'target':
+      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>;
+    case 'shield':
+      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" /></svg>;
+    case 'droplet':
+      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2C20 10.48 17.33 6.55 12 2z" /></svg>;
+    case 'weight':
+      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>;
+    default:
+      return <svg className={cls} viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5" /></svg>;
+  }
+}
+
+// ─── Brand badge colors ──────────────────────────────────────────────
+function getBrandBadge(brand: string | undefined) {
+  const b = (brand || '').toLowerCase();
+  if (b.includes('aqualion')) return { label: 'Premium', bg: 'bg-[#E0EFFF]', text: 'text-[#1D64EC]' };
+  if (b.includes('seaboss') || b.includes('sea boss')) return { label: 'Budget', bg: 'bg-[#FFF3E6]', text: 'text-[#D97706]' };
+  return { label: brand || '', bg: 'bg-gray-100', text: 'text-gray-600' };
+}
+
+// ─── Brand display name ──────────────────────────────────────────────
+function getBrandName(product: Product | null | undefined): string {
+  if (!product) return 'Aerator';
+  const brand = (product.brand || '').toLowerCase();
+  if (brand.includes('aqualion')) return 'Aqualion';
+  if (brand.includes('seaboss') || brand.includes('sea boss')) return 'Sea Boss';
+  return product.name?.split(' ')[0] || 'Aerator';
+}
+
+// =====================================================================
+// MAIN COMPONENT
+// =====================================================================
 function CompareContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,101 +205,69 @@ function CompareContent() {
     setSelectorSlot(null);
   };
 
-  // 8 Exact Specification Rows matching both mobile and desktop screens
-  const specs: SpecItem[] = [
-    {
-      id: 'motor-power',
-      label: 'Motor Power',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-        </svg>
-      ),
-      val1: '2 HP',
-      val2: '2 HP',
-    },
-    {
-      id: 'aeration-capacity',
-      label: 'Aeration Capacity',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 14.5c4-4 12-4 16 0M4 9.5c4-4 12-4 16 0" />
-        </svg>
-      ),
-      val1: '1.0 – 1.2 Acre',
-      val2: '0.8 – 1.0 Acre',
-    },
-    {
-      id: 'paddle-wheels',
-      label: 'Paddle Wheels',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.93 4.93l2.12 2.12m9.9 9.9l2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9l2.12-2.12" />
-        </svg>
-      ),
-      val1: '8 Paddles',
-      val2: '8 Paddles',
-    },
-    {
-      id: 'float-material',
-      label: 'Float Material',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-        </svg>
-      ),
-      val1: 'HDPE (UV Resistant)',
-      val2: 'HDPE',
-    },
-    {
-      id: 'frame',
-      label: 'Frame',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 7V5a2 2 0 0 1 2-2h2m12 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
-          <rect x="7" y="7" width="10" height="10" rx="1" />
-        </svg>
-      ),
-      val1: 'Stainless Steel',
-      val2: 'GI (Powder Coated)',
-    },
-    {
-      id: 'power-consumption',
-      label: 'Power Consumption',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-        </svg>
-      ),
-      val1: '~1.5 kW/hr',
-      val2: '~1.5 kW/hr',
-    },
-    {
-      id: 'best-for',
-      label: 'Best For',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <circle cx="12" cy="12" r="5" />
-          <circle cx="12" cy="12" r="1" fill="currentColor" />
-        </svg>
-      ),
-      val1: 'High Density Farming',
-      val2: 'Small / Medium Farms',
-    },
-    {
-      id: 'warranty',
-      label: 'Warranty',
-      icon: (
-        <svg className="w-4 h-4 text-[#1D64EC] shrink-0" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" />
-        </svg>
-      ),
-      val1: '2 Years',
-      val2: '1 Year',
-    },
-  ];
+  // ─── BUILD SPEC ROWS DYNAMICALLY FROM DB ──────────────────────────
+  const specRows = useMemo(() => {
+    const rows: { label: string; val1: string; val2: string; icon: IconType; group: string }[] = [];
+
+    // 1. Add rows from our ordered field definitions
+    for (const field of COMPARE_FIELDS) {
+      const v1 = getSpec(p1, ...field.keys);
+      const v2 = getSpec(p2, ...field.keys);
+      // Only include row if at least one product has a value
+      if (v1 !== '—' || v2 !== '—') {
+        rows.push({ label: field.label, val1: v1, val2: v2, icon: field.icon, group: field.group });
+      }
+    }
+
+    // 2. Catch any extra specs from DB not covered by COMPARE_FIELDS
+    const coveredKeys = new Set(COMPARE_FIELDS.flatMap((f) => f.keys.map((k) => k.toLowerCase())));
+    const allKeys = new Map<string, string>(); // lowercase -> original key
+    
+    for (const p of [p1, p2]) {
+      if (!p?.specifications) continue;
+      for (const key of Object.keys(p.specifications)) {
+        const lower = key.toLowerCase();
+        if (!coveredKeys.has(lower) && !SKIP_KEYS.has(key) && !SKIP_KEYS.has(lower)) {
+          if (!allKeys.has(lower)) allKeys.set(lower, key);
+        }
+      }
+    }
+    
+    for (const [, originalKey] of allKeys) {
+      const v1 = getSpec(p1, originalKey);
+      const v2 = getSpec(p2, originalKey);
+      if (v1 !== '—' || v2 !== '—') {
+        rows.push({ label: originalKey, val1: v1, val2: v2, icon: 'target', group: 'Other' });
+      }
+    }
+
+    return rows;
+  }, [p1, p2]);
+
+  // Group rows for the Full Details modal
+  const groupedSpecs = useMemo(() => {
+    const groups: { name: string; rows: typeof specRows }[] = [];
+    const groupMap = new Map<string, typeof specRows>();
+    for (const row of specRows) {
+      const g = groupMap.get(row.group) || [];
+      g.push(row);
+      groupMap.set(row.group, g);
+    }
+    for (const [name, rows] of groupMap) {
+      groups.push({ name, rows });
+    }
+    return groups;
+  }, [specRows]);
+
+  // Brand info
+  const brand1 = getBrandBadge(p1?.brand);
+  const brand2 = getBrandBadge(p2?.brand);
+  const brandName1 = getBrandName(p1);
+  const brandName2 = getBrandName(p2);
+
+  // Product images
+  const img1 = p1?.images?.[0] || '/assets/compare-aerator-pristine.jpg';
+  const img2 = p2?.images?.[0] || '/assets/compare-aerator-pristine.jpg';
 
   // WhatsApp Quote Link
   const quoteText = encodeURIComponent(
@@ -226,165 +317,127 @@ function CompareContent() {
               </div>
             </div>
 
-            {/* Left Product: Aqualion Card */}
+            {/* Left Product Card */}
             <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
-              {/* Product Photo on Water */}
               <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl md:rounded-xl overflow-hidden bg-[#F0F6FC]">
                 <Image
-                  src="/assets/compare-aerator-pristine.jpg"
-                  alt="Aqualion Paddle Wheel Aerator"
+                  src={img1}
+                  alt={p1?.name || 'Aerator 1'}
                   fill
                   className="object-cover object-center"
                   sizes="(max-width: 640px) 45vw, 450px"
                   priority
                 />
-
-                {/* Close / Model Switch Button at Top-Right */}
                 <button
                   type="button"
                   onClick={() => setSelectorSlot(0)}
-                  aria-label="Change Aqualion model"
+                  aria-label="Change model"
                   title="Switch aerator model"
                   className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-[#1D64EC] hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95"
                 >
                   ✕
                 </button>
               </div>
-
-              {/* Title & Badge */}
               <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
                 <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
-                  Aqualion
+                  {brandName1}
                 </span>
-                <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#E0EFFF] text-[#1D64EC] shrink-0">
-                  Premium
+                <span className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${brand1.bg} ${brand1.text} shrink-0`}>
+                  {brand1.label}
                 </span>
               </div>
             </div>
 
-            {/* Right Product: Sea Boss Card */}
+            {/* Right Product Card */}
             <div className="col-span-1 rounded-2xl bg-white border border-[#E8EFF8] p-2 sm:p-3 flex flex-col gap-2 relative shadow-2xs">
-              {/* Product Photo on Water */}
               <div className="relative aspect-[16/11] md:aspect-[16/9] w-full rounded-xl md:rounded-xl overflow-hidden bg-[#F0F6FC]">
                 <Image
-                  src="/assets/compare-aerator-pristine.jpg"
-                  alt="Sea Boss Paddle Wheel Aerator"
+                  src={img2}
+                  alt={p2?.name || 'Aerator 2'}
                   fill
                   className="object-cover object-center"
                   sizes="(max-width: 640px) 45vw, 450px"
                   priority
                 />
-
-                {/* Close / Model Switch Button at Top-Right */}
                 <button
                   type="button"
                   onClick={() => setSelectorSlot(1)}
-                  aria-label="Change Sea Boss model"
+                  aria-label="Change model"
                   title="Switch aerator model"
                   className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/95 text-[#1D64EC] hover:bg-white flex items-center justify-center text-xs font-black shadow-xs cursor-pointer active:scale-95"
                 >
                   ✕
                 </button>
               </div>
-
-              {/* Title & Badge */}
               <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
                 <span className="font-poppins font-extrabold text-sm sm:text-lg md:text-xl text-[#0B1A33] tracking-tight">
-                  Sea Boss
+                  {brandName2}
                 </span>
-                <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#FFF3E6] text-[#D97706] shrink-0">
-                  Budget
+                <span className={`px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${brand2.bg} ${brand2.text} shrink-0`}>
+                  {brand2.label}
                 </span>
               </div>
             </div>
           </div>
 
           {/* =========================================================================
-              THE SPECIFICATION TABLE (8 ROWS)
+              THE SPECIFICATION TABLE (DYNAMIC FROM DB)
               ========================================================================= */}
           <div className="flex flex-col gap-1 w-full">
             {/* Desktop Table Header Row */}
             <div className="hidden md:grid grid-cols-12 py-2 px-5 text-sm font-semibold text-[#0B1A33]">
               <div className="col-span-4">Feature</div>
-              <div className="col-span-4 text-center">Aqualion</div>
-              <div className="col-span-4 text-center">Sea Boss</div>
+              <div className="col-span-4 text-center">{brandName1}</div>
+              <div className="col-span-4 text-center">{brandName2}</div>
             </div>
 
             {/* Specification Rows */}
-            {specs.map((row, idx) => {
+            {specRows.map((row, idx) => {
               const isTinted = idx % 2 === 0;
 
               return (
                 <div
-                  key={row.id}
+                  key={`${row.label}-${idx}`}
                   className={`w-full rounded-xl transition-colors ${
                     isTinted ? 'bg-[#F4F8FD]' : 'bg-white'
                   }`}
                 >
                   {/* Desktop Row View */}
                   <div className="hidden md:grid grid-cols-12 py-3 px-5 items-center text-sm font-medium text-[#1E293B]">
-                    {/* Col 1: Icon + Label */}
                     <div className="col-span-4 flex items-center gap-3 font-medium text-[#1E293B]">
-                      {row.icon}
+                      <SpecIcon type={row.icon} />
                       <span>{row.label}</span>
                     </div>
-
-                    {/* Col 2: Aqualion Value (Centered) */}
                     <div className="col-span-4 text-center font-normal text-[#1E293B]">
                       {row.val1}
                     </div>
-
-                    {/* Col 3: Sea Boss Value (Centered) */}
                     <div className="col-span-4 text-center font-normal text-[#1E293B]">
                       {row.val2}
                     </div>
                   </div>
 
-                  {/* Mobile Row View matching reference screenshot */}
+                  {/* Mobile Row View */}
                   <div className="md:hidden flex items-center py-2.5 px-3 text-[11px] sm:text-[12px] gap-1">
-                    {/* Col 1: Icon + Label */}
                     <div className="w-[38%] flex items-center gap-2 font-medium text-[#1E293B] shrink-0">
-                      {row.icon}
+                      <SpecIcon type={row.icon} />
                       <span className="leading-tight">{row.label}</span>
                     </div>
-
-                    {/* Col 2: Aqualion Value */}
-                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight">
-                      {row.id === 'float-material' ? (
-                        <>
-                          <div>HDPE</div>
-                          <div className="text-[9.5px] text-[#475569] leading-tight">(UV Resistant)</div>
-                        </>
-                      ) : row.id === 'best-for' ? (
-                        <>
-                          <div>High Density</div>
-                          <div className="text-[9.5px] text-[#475569] leading-tight">Farming</div>
-                        </>
-                      ) : (
-                        <div className="whitespace-nowrap">{row.val1}</div>
-                      )}
+                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight break-words">
+                      {row.val1}
                     </div>
-
-                    {/* Col 3: Sea Boss Value */}
-                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight">
-                      {row.id === 'frame' ? (
-                        <>
-                          <div>GI</div>
-                          <div className="text-[9.5px] text-[#475569] leading-tight">(Powder Coated)</div>
-                        </>
-                      ) : row.id === 'best-for' ? (
-                        <>
-                          <div>Small / Medium</div>
-                          <div className="text-[9.5px] text-[#475569] leading-tight">Farms</div>
-                        </>
-                      ) : (
-                        <div className="whitespace-nowrap">{row.val2}</div>
-                      )}
+                    <div className="w-[31%] text-center font-normal text-[#1E293B] leading-tight break-words">
+                      {row.val2}
                     </div>
                   </div>
                 </div>
               );
             })}
+
+            {specRows.length === 0 && (
+              <div className="text-center text-sm text-gray-400 py-8">
+                No specification data available for the selected aerators.
+              </div>
+            )}
           </div>
 
           {/* =========================================================================
@@ -454,18 +507,19 @@ function CompareContent() {
       </main>
 
       {/* =========================================================================
-          TECHNICAL SPECIFICATIONS / FULL DETAILS MODAL
+          FULL DETAILS MODAL — Shows all specs grouped by category
           ========================================================================= */}
       {showFullDetailsModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
               <div>
-                <h3 className="font-poppins font-black text-xl text-[#0B1A33]">
-                  Full Engineering Specifications
+                <h3 className="font-poppins font-black text-lg sm:text-xl text-[#0B1A33]">
+                  Full Specifications
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Direct factory comparison between Aqualion and Sea Boss aerator sets
+                  Complete comparison: {p1?.name || 'Aerator 1'} vs {p2?.name || 'Aerator 2'}
                 </p>
               </div>
               <button
@@ -477,49 +531,86 @@ function CompareContent() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 rounded-2xl bg-[#F0F7FF] border border-[#C4D9FF]">
-                <div className="font-extrabold text-[#1D64EC] text-sm">Aqualion 2HP 8-Paddle</div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Engineered for intense commercial biofloc and high stocking densities. Maximum dissolved oxygen transfer rate.
-                </div>
+            {/* Product Summary Cards */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="p-3 sm:p-4 rounded-2xl bg-[#F0F7FF] border border-[#C4D9FF]">
+                <div className="font-extrabold text-[#1D64EC] text-xs sm:text-sm">{p1?.name || 'Aerator 1'}</div>
+                <div className="text-[10px] sm:text-xs text-gray-600 mt-1 capitalize">{p1?.brand} • {getSpec(p1, 'Motor Power')}</div>
               </div>
-              <div className="p-4 rounded-2xl bg-[#FFF9F2] border border-[#FED7AA]">
-                <div className="font-extrabold text-[#D97706] text-sm">Sea Boss 2HP 8-Paddle</div>
-                <div className="text-xs text-gray-600 mt-1">
-                  High return on investment for small-to-medium semi-intensive shrimp & fish culture. Economical & durable.
-                </div>
+              <div className="p-3 sm:p-4 rounded-2xl bg-[#FFF9F2] border border-[#FED7AA]">
+                <div className="font-extrabold text-[#D97706] text-xs sm:text-sm">{p2?.name || 'Aerator 2'}</div>
+                <div className="text-[10px] sm:text-xs text-gray-600 mt-1 capitalize">{p2?.brand} • {getSpec(p2, 'Motor Power')}</div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-gray-600">Oxygen Transfer Rate (OTR)</span>
-                <span className="font-mono text-gray-900 font-bold">&gt; 2.6 kg O2/hr vs &gt; 2.2 kg O2/hr</span>
+            {/* Grouped Spec Sections */}
+            {groupedSpecs.map((group) => (
+              <div key={group.name} className="mb-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-5 rounded-full bg-[#1D64EC]" />
+                  <h4 className="font-poppins font-bold text-sm text-[#0B1A33]">{group.name}</h4>
+                </div>
+                <div className="rounded-xl border border-gray-100 overflow-hidden">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-3 bg-[#F8FAFD] border-b border-gray-100 text-[10px] sm:text-xs font-semibold text-gray-500 px-3 sm:px-4 py-2">
+                    <div>Specification</div>
+                    <div className="text-center">{brandName1}</div>
+                    <div className="text-center">{brandName2}</div>
+                  </div>
+                  {/* Rows */}
+                  {group.rows.map((row, idx) => (
+                    <div
+                      key={`${row.label}-${idx}`}
+                      className={`grid grid-cols-3 px-3 sm:px-4 py-2.5 text-[11px] sm:text-xs ${
+                        idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFCFF]'
+                      } ${idx < group.rows.length - 1 ? 'border-b border-gray-50' : ''}`}
+                    >
+                      <div className="font-medium text-[#334155] flex items-center gap-1.5">
+                        <SpecIcon type={row.icon} />
+                        <span>{row.label}</span>
+                      </div>
+                      <div className="text-center text-[#1E293B] break-words">{row.val1}</div>
+                      <div className="text-center text-[#1E293B] break-words">{row.val2}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-gray-600">Bevel Gear Material</span>
-                <span className="font-mono text-gray-900 font-bold">Forged Alloy vs Hardened Steel</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-gray-600">Shaft Type</span>
-                <span className="font-mono text-gray-900 font-bold">Solid SS-304 vs Hollow SS-202</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-gray-600">Float Wall Thickness</span>
-                <span className="font-mono text-gray-900 font-bold">4.5 mm Virgin HDPE vs 3.8 mm HDPE</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-gray-100 text-xs">
-                <span className="font-bold text-gray-600">Expected Field Lifespan</span>
-                <span className="font-mono text-gray-900 font-bold">5 - 7 Seasons vs 3 - 5 Seasons</span>
-              </div>
-            </div>
+            ))}
 
-            <div className="mt-6 flex justify-end">
+            {/* Features Comparison (if available) */}
+            {(p1?.features?.length || p2?.features?.length) && (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-5 rounded-full bg-green-500" />
+                  <h4 className="font-poppins font-bold text-sm text-[#0B1A33]">Key Features</h4>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    {(p1?.features || []).map((f, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-[11px] sm:text-xs text-gray-700">
+                        <span className="text-green-500 mt-0.5 shrink-0">✓</span>
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    {(p2?.features || []).map((f, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-[11px] sm:text-xs text-gray-700">
+                        <span className="text-green-500 mt-0.5 shrink-0">✓</span>
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Close Button */}
+            <div className="mt-4 flex justify-end">
               <button
                 type="button"
                 onClick={() => setShowFullDetailsModal(false)}
-                className="h-10 px-6 rounded-full bg-[#0B1A33] text-white text-xs font-bold hover:bg-[#1D64EC] transition-colors"
+                className="h-10 px-6 rounded-full bg-[#0B1A33] text-white text-xs font-bold hover:bg-[#1D64EC] transition-colors cursor-pointer"
               >
                 Close Specification Sheet
               </button>
@@ -569,7 +660,7 @@ function CompareContent() {
                     <div className="flex items-center gap-3">
                       <div className="relative w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-none">
                         <Image
-                          src="/assets/compare-aerator-pristine.jpg"
+                          src={item.images?.[0] || '/assets/compare-aerator-pristine.jpg'}
                           alt={item.name}
                           fill
                           className="object-cover"
@@ -577,7 +668,7 @@ function CompareContent() {
                       </div>
                       <div>
                         <div className="font-bold text-sm text-[#0B1A33]">{item.name}</div>
-                        <div className="text-xs text-gray-500 capitalize">{item.brand} • 2 HP</div>
+                        <div className="text-xs text-gray-500 capitalize">{item.brand} • {getSpec(item, 'Motor Power')}</div>
                       </div>
                     </div>
                     {isSelected && (
