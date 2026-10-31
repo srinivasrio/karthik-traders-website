@@ -163,13 +163,13 @@ export default function ContactForm() {
 
                     {/* Quick Contacts */}
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <a href="tel:+919963840058" className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white border border-steel-100 shadow-sm hover:border-aqua-200 transition-colors group">
+                        <a href="tel:+918688566023" className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white border border-steel-100 shadow-sm hover:border-aqua-200 transition-colors group">
                             <div className="w-10 h-10 rounded-full bg-aqua-50 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
                                 📞
                             </div>
                             <div className="text-left">
                                 <p className="text-xs text-steel-500 font-bold uppercase tracking-wider">Karthik</p>
-                                <p className="text-deep-blue-900 font-bold font-mono">+91 99638 40058</p>
+                                <p className="text-deep-blue-900 font-bold font-mono">+91 86885 66023</p>
                             </div>
                         </a>
                         <a href="tel:+919177657576" className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white border border-steel-100 shadow-sm hover:border-green-200 transition-colors group">

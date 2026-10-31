@@ -1,104 +1,144 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function PrivacyPolicyPage() {
-    const router = useRouter();
+  const sections = [
+    {
+      n: '01',
+      id: 'collection',
+      h: 'Data We Collect',
+      ps: [
+        'We collect customer name, mobile phone number, delivery farm address, and order records when you request quotes or place orders.',
+        'If you register an account, we also store your village, district, state, and farming preference (e.g. shrimp or fish culture) to tailor recommendations.',
+      ],
+    },
+    {
+      n: '02',
+      id: 'usage',
+      h: 'How We Use Your Data',
+      ps: [
+        'To fulfill equipment orders, dispatch goods via regional freight lines, issue tax invoices, and provide instant WhatsApp dispatch tracking updates.',
+        'We do not engage in automated marketing spam. You only receive operational communication directly related to your farm inquiries and orders.',
+      ],
+    },
+    {
+      n: '03',
+      id: 'sharing',
+      h: 'Data Sharing & Zero Selling Guarantee',
+      ps: [
+        'We share delivery details strictly with designated logistics and transport drivers to ensure your aerators reach your farm pond safely.',
+        'Your contact and farm details are never sold, traded, or rented to any third-party marketing brokers.',
+      ],
+    },
+    {
+      n: '04',
+      id: 'security',
+      h: 'Account Security & Cookies',
+      ps: [
+        'User accounts are safeguarded with phone OTP verification and encrypted passwords on Supabase. Access to billing records is strictly restricted to authorized staff.',
+        'We use minimal local storage in your browser solely to remember your shopping cart and model comparison selections across sessions.',
+      ],
+    },
+  ];
 
-    const handleBack = () => {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            router.push('/');
-        }
-    };
+  return (
+    <div className="min-h-screen bg-[#FBFBFB] text-[#0B1A33] pb-24">
+      {/* Header Banner */}
+      <section className="bg-[#FBFBFB] pt-8 md:pt-14 pb-8">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-3">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#5B6880]">
+            <Link href="/" className="hover:text-[#0B1A33]">Home</Link>
+            <span>/</span>
+            <span className="text-[#0B1A33] font-bold">Privacy Policy</span>
+          </nav>
+          <span className="text-xs font-extrabold tracking-widest text-[#4338CA] uppercase">
+            LEGAL POLICIES
+          </span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-poppins text-[#0B1A33] max-w-3xl leading-tight">
+            Privacy Policy
+          </h1>
+          <p className="text-base sm:text-lg text-[#3D4A63] font-medium max-w-2xl leading-relaxed mt-1">
+            What customer information we collect, why we need it, and how your data is protected.
+          </p>
 
-    return (
-        <div className="min-h-screen bg-white">
-            {/* Spacer to account for fixed header */}
-            <div className="h-16 md:h-20" />
-
-            <div className="container-custom py-8 pb-24">
-                {/* Back Button */}
-                <button
-                    onClick={handleBack}
-                    className="flex items-center gap-2 text-aqua-600 hover:text-aqua-800 mb-6 font-medium transition-colors"
-                >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Back
-                </button>
-
-                <h1 className="text-3xl font-bold mb-8 text-deep-blue-900">Privacy Policy</h1>
-                <div className="prose max-w-none text-slate-700 space-y-6">
-                    <p>
-                        At Karthik Traders, your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you interact with our business, website, or services. By using our services, you agree to the terms of this policy.
-                    </p>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">1. Information We Collect</h2>
-                    <p>When you contact or purchase from Karthik Traders, we may collect the following information:</p>
-                    <ul className="list-disc pl-5">
-                        <li><strong>Personal Information:</strong> Name, phone number, email address, delivery address, and payment details.</li>
-                        <li><strong>Order Information:</strong> Products purchased, order date, order status, and transaction details.</li>
-                        <li><strong>Communication Information:</strong> Messages sent via WhatsApp, email, or phone calls for order or service support.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">2. How We Use Your Information</h2>
-                    <p>Your personal information is used for the following purposes:</p>
-                    <ul className="list-disc pl-5">
-                        <li>To process and fulfill orders, including delivery and payment.</li>
-                        <li>To respond to inquiries and provide customer support.</li>
-                        <li>To send updates about products, promotions, or offers, only if you agree to receive them.</li>
-                        <li>To improve our services and business operations.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">3. Information Sharing</h2>
-                    <ul className="list-disc pl-5">
-                        <li>We do not sell your personal information to third parties.</li>
-                        <li>Information may be shared with delivery partners or payment service providers only to complete your order.</li>
-                        <li>We may disclose information if required by law or to protect the rights and safety of Karthik Traders or its customers.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">4. Data Security</h2>
-                    <ul className="list-disc pl-5">
-                        <li>We take reasonable measures to protect your personal information from unauthorized access, disclosure, or misuse.</li>
-                        <li>All payment and transaction details are handled securely and are not stored longer than necessary.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">5. Cookies and Tracking</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Our website may use cookies or similar technologies to enhance your browsing experience.</li>
-                        <li>Cookies help us analyze traffic, remember preferences, and improve services.</li>
-                        <li>You can choose to disable cookies in your browser, but some features may not function properly.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">6. Your Rights</h2>
-                    <ul className="list-disc pl-5">
-                        <li>You have the right to access, update, or delete your personal information by contacting us.</li>
-                        <li>You can opt-out of marketing communications at any time by contacting us via WhatsApp, phone, or email.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">7. Children&apos;s Privacy</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Our services are not intended for children under 18.</li>
-                        <li>We do not knowingly collect information from children.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">8. Changes to This Policy</h2>
-                    <p>
-                        Karthik Traders may update this Privacy Policy from time to time.
-                        Any changes will be posted on our website or communicated to customers via WhatsApp or email.
-                        Continued use of our services after updates constitutes acceptance of the updated policy.
-                    </p>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">9. Contact Us</h2>
-                    <p>For any questions or concerns regarding this Privacy Policy, you can contact us:</p>
-                    <p>WhatsApp / Phone: 9963840058</p>
-                    <p>Email: karthiktrader111@gmail.com</p>
-                    <p className="font-semibold mt-4">Note: By using Karthik Traders&apos; services, you agree to the collection and use of your information as described in this Privacy Policy.</p>
-                </div>
-            </div>
+          {/* Legal Navigation Pills */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Link
+              href="/terms-conditions"
+              className="h-9 px-4 rounded-full bg-white border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs inline-flex items-center hover:bg-[#E8F9FF] transition-colors"
+            >
+              Terms & Conditions
+            </Link>
+            <Link
+              href="/privacy-policy"
+              className="h-9 px-4 rounded-full bg-[#0B1A33] text-white font-extrabold text-xs inline-flex items-center shadow-xs"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/refund-policy"
+              className="h-9 px-4 rounded-full bg-white border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs inline-flex items-center hover:bg-[#E8F9FF] transition-colors"
+            >
+              Refund Policy
+            </Link>
+          </div>
         </div>
-    );
+      </section>
+
+      {/* Main Content */}
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
+          <nav
+            aria-label="On this page"
+            className="hidden lg:flex lg:col-span-4 sticky top-24 flex-col gap-1 border-l-2 border-[#E3E8F0] pl-4"
+          >
+            <span className="text-xs font-extrabold tracking-wider text-[#5B6880] uppercase mb-2">
+              SECTIONS
+            </span>
+            {sections.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className="py-1.5 text-xs sm:text-sm font-bold text-[#5B6880] hover:text-[#0B1A33] transition-colors"
+              >
+                {s.n}. {s.h}
+              </a>
+            ))}
+          </nav>
+
+          <div className="lg:col-span-8 flex flex-col gap-6">
+            {sections.map((s) => (
+              <article
+                key={s.id}
+                id={s.id}
+                className="scroll-mt-24 p-6 sm:p-7 rounded-3xl bg-white border border-[#E3E8F0] shadow-2xs flex flex-col gap-3"
+              >
+                <div className="flex items-baseline gap-3">
+                  <span className="font-mono text-xs font-extrabold text-[#4338CA]">
+                    {s.n}
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#0B1A33] font-poppins">
+                    {s.h}
+                  </h2>
+                </div>
+                {s.ps.map((p, idx) => (
+                  <p key={idx} className="text-sm sm:text-base text-[#3D4A63] leading-relaxed font-medium">
+                    {p}
+                  </p>
+                ))}
+              </article>
+            ))}
+
+            <div className="p-6 rounded-3xl bg-[#E8F9FF] border border-[#C4D9FF] flex flex-col gap-2 text-sm text-[#0B1A33]">
+              <span className="font-extrabold text-base">Privacy or Data Queries?</span>
+              <p className="text-xs sm:text-sm text-[#3D4A63] leading-relaxed">
+                Reach us at <a href="mailto:karthiktrader111@gmail.com" className="font-bold text-[#4338CA]">karthiktrader111@gmail.com</a> or call <a href="tel:+918688566023" className="font-bold text-[#4338CA]">+91 86885 66023</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

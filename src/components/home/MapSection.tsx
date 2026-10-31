@@ -77,7 +77,7 @@ export default function MapSection() {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <span className="text-xl">📞</span>
-                                    <p className="text-deep-blue-900 font-bold font-mono">+91 99638 40058</p>
+                                    <p className="text-deep-blue-900 font-bold font-mono">+91 86885 66023</p>
                                 </div>
                             </div>
                         </div>

@@ -52,8 +52,8 @@ export default function Error({
                 {/* Contact Support */}
                 <p className="mt-8 text-sm text-slate-500">
                     Need help?{' '}
-                    <a href="tel:+919963840058" className="text-aqua-600 hover:underline">
-                        Call us: +91 99638 40058
+                    <a href="tel:+918688566023" className="text-aqua-600 hover:underline">
+                        Call us: +91 86885 66023
                     </a>
                 </p>
             </div>

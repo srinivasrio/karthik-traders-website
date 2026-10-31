@@ -1,118 +1,166 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function TermsConditionsPage() {
-    const router = useRouter();
+  const sections = [
+    {
+      n: '01',
+      id: 'products',
+      h: 'Products and Specifications',
+      ps: [
+        'Karthik Traders sells paddle wheel aerator sets, electric motors, speed reduction gearboxes, HDPE floats, fans, and long arm components. Specifications, photos, and component lists on this website accurately describe the items as supplied.',
+        'Minor variations in casting colour or finish may occur between manufacturing batches without compromising structural strength or performance.',
+      ],
+    },
+    {
+      n: '02',
+      id: 'installation',
+      h: 'Installation & Electrical Responsibility',
+      ps: [
+        'Karthik Traders does not provide physical pond field installation. All products include assembly guidelines and wiring specifications.',
+        'Customers are solely responsible for hiring qualified electricians and ensuring proper starter relay overload protection, correct voltage supply (3-phase 415V or single-phase 220V), and water submergence before turning equipment on.',
+      ],
+    },
+    {
+      n: '03',
+      id: 'orders',
+      h: 'Orders and Dispatch',
+      ps: [
+        'An order is formally accepted and logged once confirmed by our sales team via phone or WhatsApp. Orders cannot be cancelled or modified once handed over to transport carriers.',
+        'Estimated delivery timelines are shared during dispatch confirmation based on regional transport frequency.',
+      ],
+    },
+    {
+      n: '04',
+      id: 'pricing',
+      h: 'Pricing, Payments & Invoices',
+      ps: [
+        'Prices are listed in Indian Rupees (₹) showing MRP and discounted factory rates. Listed rates include applicable GST. Official GST tax invoices are generated for every dispatch.',
+        'This website does not charge gateway processing fees. Payment terms (NEFT/RTGS, UPI, or cash at counter) are finalized during order confirmation with our sales manager.',
+      ],
+    },
+    {
+      n: '05',
+      id: 'warranty',
+      h: 'Warranty Terms & Conditions',
+      ps: [
+        'Standard Aerator Sets & Sea Boss: 1 Year Replacement Warranty covering manufacturing defects on motor and gearbox.',
+        'Aqualion PR 20 B: Double Warranty — 1 Year Comprehensive Warranty + 1 Year Extended Service Warranty.',
+        'Warranty does not cover dry runs without water, electrical phase drop without relay starter, unauthorized motor opening, or transport physical breakage.',
+      ],
+    },
+    {
+      n: '06',
+      id: 'liability',
+      h: 'Limitation of Liability & Jurisdiction',
+      ps: [
+        'To the extent permitted by law, our liability is strictly limited to repair, replacement, or refund of the purchased component.',
+        'These terms are governed by the laws of India. Any legal disputes are exclusively subject to the jurisdiction of courts in Nellore, Andhra Pradesh.',
+      ],
+    },
+  ];
 
-    const handleBack = () => {
-        // Check if there's history to go back to
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            // Fallback to homepage
-            router.push('/');
-        }
-    };
+  return (
+    <div className="min-h-screen bg-[#FBFBFB] text-[#0B1A33] pb-24">
+      {/* Header Banner */}
+      <section className="bg-[#FBFBFB] pt-8 md:pt-14 pb-8">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-3">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#5B6880]">
+            <Link href="/" className="hover:text-[#0B1A33]">Home</Link>
+            <span>/</span>
+            <span className="text-[#0B1A33] font-bold">Terms & Conditions</span>
+          </nav>
+          <span className="text-xs font-extrabold tracking-widest text-[#4338CA] uppercase">
+            LEGAL POLICIES
+          </span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-poppins text-[#0B1A33] max-w-3xl leading-tight">
+            Terms & Conditions
+          </h1>
+          <p className="text-base sm:text-lg text-[#3D4A63] font-medium max-w-2xl leading-relaxed mt-1">
+            The rules and terms governing purchases, warranties, and deliveries from Karthik Traders.
+          </p>
 
-    return (
-        <div className="min-h-screen bg-white">
-            {/* Spacer to account for fixed header */}
-            <div className="h-16 md:h-20" />
-
-            <div className="container-custom py-8 pb-24">
-                {/* Back Button */}
-                <button
-                    onClick={handleBack}
-                    className="flex items-center gap-2 text-aqua-600 hover:text-aqua-800 mb-6 font-medium transition-colors"
-                >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Back
-                </button>
-
-                <h1 className="text-3xl font-bold mb-8 text-deep-blue-900">Terms &amp; Conditions</h1>
-                <div className="prose max-w-none text-slate-700 space-y-6">
-                    <p>
-                        Welcome to Karthik Traders. By purchasing products or using our services, you agree to the following Terms &amp; Conditions. Please read them carefully.
-                    </p>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">1. Products and Services</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Karthik Traders sells aquaculture aerators, paddle wheel aerators, and related spare parts.</li>
-                        <li>All products are sold as-is, with specifications and details provided at the time of purchase.</li>
-                        <li>We do not provide installation services. Customers are responsible for self-installation or hiring a professional.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">2. Orders</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Orders can be placed via WhatsApp, phone, website, or in person.</li>
-                        <li>Once an order is placed, it cannot be modified after dispatch.</li>
-                        <li>We reserve the right to accept or reject any order for any reason, including product availability.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">3. Pricing and Payment</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Prices are as displayed at the time of purchase and are subject to change without prior notice.</li>
-                        <li>Payments must be completed via accepted payment methods before order processing.</li>
-                        <li>Any applicable taxes, shipping, or handling charges are to be borne by the customer.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">4. Delivery</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Delivery timelines are estimates and may vary depending on location and availability.</li>
-                        <li>Karthik Traders is not responsible for delays caused by third-party shipping services, weather, or unforeseen circumstances.</li>
-                        <li>Customers are responsible for providing accurate delivery details.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">5. Refund and Cancellation</h2>
-                    <ul className="list-disc pl-5">
-                        <li><strong>Order Cancellation:</strong> Orders can be cancelled within 24 hours of purchase. After 24 hours, cancellations will not be accepted.</li>
-                        <li><strong>Refunds:</strong> Refunds are issued only after receiving the returned product in original, unused condition.</li>
-                        <li><strong>Non-Refundable Items:</strong> Customized products or spare parts cannot be refunded once dispatched.</li>
-                        <li><strong>Shipping Charges:</strong> Shipping and handling charges are non-refundable.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">6. Warranty and Repairs</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Karthik Traders provides warranty on products as specified at the time of purchase.</li>
-                        <li>Warranty covers manufacturing defects only and does not cover damages due to misuse, improper installation, or external factors.</li>
-                        <li>Repairs under warranty will be free of labor charges, but spare parts replacement may incur a cost.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">7. Limitation of Liability</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Karthik Traders is not liable for any indirect, incidental, or consequential damages arising from the use of our products.</li>
-                        <li>Customers use the products at their own risk and are responsible for proper installation and maintenance.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">8. Intellectual Property</h2>
-                    <ul className="list-disc pl-5">
-                        <li>All logos, designs, and content of Karthik Traders are our intellectual property.</li>
-                        <li>Unauthorized use of our brand, logos, or content is strictly prohibited.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">9. Privacy</h2>
-                    <ul className="list-disc pl-5">
-                        <li>Customer information is collected and used only for order processing and communication.</li>
-                        <li>We do not sell customer information to third parties.</li>
-                        <li>For more details, see our Privacy Policy.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">10. Governing Law</h2>
-                    <ul className="list-disc pl-5">
-                        <li>These Terms &amp; Conditions are governed by the laws of India.</li>
-                        <li>Any disputes arising from transactions with Karthik Traders will be subject to the jurisdiction of local courts where the business operates.</li>
-                    </ul>
-
-                    <h2 className="text-xl font-bold text-deep-blue-800">11. Contact Information</h2>
-                    <p>For queries or concerns regarding our Terms &amp; Conditions:</p>
-                    <p>WhatsApp / Phone: 9963840058, 9177657576</p>
-                    <p>Email: karthiktrader111@gmail.com</p>
-                    <p className="font-semibold mt-4">Note: By placing an order with Karthik Traders, you acknowledge and agree to these Terms &amp; Conditions.</p>
-                </div>
-            </div>
+          {/* Legal Navigation Pills */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Link
+              href="/terms-conditions"
+              className="h-9 px-4 rounded-full bg-[#0B1A33] text-white font-extrabold text-xs inline-flex items-center shadow-xs"
+            >
+              Terms & Conditions
+            </Link>
+            <Link
+              href="/privacy-policy"
+              className="h-9 px-4 rounded-full bg-white border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs inline-flex items-center hover:bg-[#E8F9FF] transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/refund-policy"
+              className="h-9 px-4 rounded-full bg-white border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs inline-flex items-center hover:bg-[#E8F9FF] transition-colors"
+            >
+              Refund Policy
+            </Link>
+          </div>
         </div>
-    );
+      </section>
+
+      {/* Main Content */}
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
+          {/* Left Column: Sticky Section Links */}
+          <nav
+            aria-label="On this page"
+            className="hidden lg:flex lg:col-span-4 sticky top-24 flex-col gap-1 border-l-2 border-[#E3E8F0] pl-4"
+          >
+            <span className="text-xs font-extrabold tracking-wider text-[#5B6880] uppercase mb-2">
+              SECTIONS
+            </span>
+            {sections.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className="py-1.5 text-xs sm:text-sm font-bold text-[#5B6880] hover:text-[#0B1A33] transition-colors"
+              >
+                {s.n}. {s.h}
+              </a>
+            ))}
+          </nav>
+
+          {/* Right Column: Section Articles */}
+          <div className="lg:col-span-8 flex flex-col gap-6">
+            {sections.map((s) => (
+              <article
+                key={s.id}
+                id={s.id}
+                className="scroll-mt-24 p-6 sm:p-7 rounded-3xl bg-white border border-[#E3E8F0] shadow-2xs flex flex-col gap-3"
+              >
+                <div className="flex items-baseline gap-3">
+                  <span className="font-mono text-xs font-extrabold text-[#4338CA]">
+                    {s.n}
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#0B1A33] font-poppins">
+                    {s.h}
+                  </h2>
+                </div>
+                {s.ps.map((p, idx) => (
+                  <p key={idx} className="text-sm sm:text-base text-[#3D4A63] leading-relaxed font-medium">
+                    {p}
+                  </p>
+                ))}
+              </article>
+            ))}
+
+            {/* Questions Banner */}
+            <div className="p-6 rounded-3xl bg-[#E8F9FF] border border-[#C4D9FF] flex flex-col gap-2 text-sm text-[#0B1A33]">
+              <span className="font-extrabold text-base">Questions about these terms?</span>
+              <p className="text-xs sm:text-sm text-[#3D4A63] leading-relaxed">
+                Contact Karthik on <a href="tel:+918688566023" className="font-bold text-[#4338CA]">+91 86885 66023</a> or Hazarathaiah on <a href="tel:+919177657576" className="font-bold text-[#4338CA]">+91 91776 57576</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

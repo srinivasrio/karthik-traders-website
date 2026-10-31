@@ -77,7 +77,7 @@ export const LegalContent = {
 
             <h3 className="text-lg font-bold text-deep-blue-800">11. Contact Information</h3>
             <p>For queries or concerns regarding our Terms & Conditions:</p>
-            <p>WhatsApp / Phone: 9963840058, 9177657576</p>
+            <p>WhatsApp / Phone: 8688566023, 9177657576</p>
             <p>Email: karthiktrader111@gmail.com</p>
         </div>
     ),
@@ -145,7 +145,7 @@ export const LegalContent = {
 
             <h3 className="text-lg font-bold text-deep-blue-800">9. Contact Us</h3>
             <p>For any questions or concerns regarding this Privacy Policy, you can contact us:</p>
-            <p>WhatsApp / Phone: 9963840058</p>
+            <p>WhatsApp / Phone: 8688566023</p>
             <p>Email: karthiktrader111@gmail.com</p>
         </div>
     ),
@@ -189,7 +189,7 @@ export const LegalContent = {
 
             <h3 className="text-lg font-bold text-deep-blue-800">5. Contact Information</h3>
             <p>For cancellations, refunds, or product queries, please contact us:</p>
-            <p>WhatsApp / Phone: 9963840058</p>
+            <p>WhatsApp / Phone: 8688566023</p>
             <p>Email: karthiktrader111@gmail.com</p>
         </div>
     )

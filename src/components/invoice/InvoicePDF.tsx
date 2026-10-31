@@ -292,7 +292,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                             <Text style={styles.addressLine}>Shop no 13, Opp. Madhura Sweets Line,</Text>
                             <Text style={styles.addressLine}>Near MRF Tyres Line, Subedar Pet,</Text>
                             <Text style={styles.addressLine}>Nellore, Andhra Pradesh - 524001.</Text>
-                            <Text style={{ ...styles.addressLine, marginTop: 4, fontWeight: 'bold' }}>Mobile: +91 99638 40058</Text>
+                            <Text style={{ ...styles.addressLine, marginTop: 4, fontWeight: 'bold' }}>Mobile: +91 86885 66023</Text>
 
                             <View style={{ marginTop: 12 }}>
                                 <Text style={{ fontSize: 10, fontWeight: 'bold' }}>
@@ -395,7 +395,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                 <View style={styles.footer}>
                     <Text style={styles.title}>THANK YOU!</Text>
                     <Text style={styles.footerText}>For any questions concerning this invoice, please contact:</Text>
-                    <Text style={styles.footerText}>Karthik Traders | +91 99638 40058 | karthiktrader111@gmail.com</Text>
+                    <Text style={styles.footerText}>Karthik Traders | +91 86885 66023 | karthiktrader111@gmail.com</Text>
                     <Text style={styles.footerWebsite}>www.karthiktraders.in</Text>
                 </View>
 

@@ -1,319 +1,366 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import BrandInfoModal from '@/components/ui/BrandInfoModal';
-
-const footerLinks = {
-    products: [
-        { name: 'Aerator Sets', href: '/aerator-sets' },
-        { name: 'Motors', href: '/products' },
-        { name: 'Gearboxes', href: '/products' },
-        { name: 'Spares', href: '/spares' },
-        { name: 'Long Arm Systems', href: '/long-arm' },
-    ],
-    brands: [
-        { name: 'Aqualion Premium', href: '/aerator-sets?brand=aqualion' },
-        { name: 'Sea Boss', href: '/aerator-sets?brand=seaboss' },
-    ],
-    support: [
-        { name: 'Bulk Orders', href: '/#contact' },
-        { name: 'Compare Products', href: '/compare' },
-        { name: 'Dealer Enquiry', href: '/#contact' },
-        { name: 'Warranty Info', href: '#' },
-    ],
-    contact: [
-        { name: 'Karthik: 9963840058', href: 'tel:+919963840058' },
-        { name: 'Hazarathaiah: 9177657576', href: 'tel:+919177657576' },
-        // Map link handled conditionally in component
-        { name: 'Instagram', href: 'https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg==' },
-        { name: 'Facebook', href: 'https://www.facebook.com/share/1E2YvYdWZZ/' },
-    ],
-};
+import Image from 'next/image';
+import { CONTACT_INFO } from '@/data/kt-ui';
 
 export default function Footer() {
-    const pathname = usePathname();
-    const isHomePage = pathname === '/';
-    const [brandModal, setBrandModal] = useState<'aqualion' | 'seaboss' | null>(null);
+  const currentYear = new Date().getFullYear();
 
-    return (
-        <footer className="relative bg-[#C2E2FA] text-deep-blue-900 overflow-hidden">
-            {/* Background Glow - Subtle Aqua/White */}
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+  const fishes = [
+    { src: '/uploads/fish.svg', w: 58, h: 45, left: '10%', delay: '0s', dur: '3.6s', land: '230px' },
+    { src: '/uploads/fish-2.svg', w: 86, h: 36, left: '34%', delay: '-1.4s', dur: '4.4s', land: '230px' },
+    { src: '/uploads/fish.svg', w: 46, h: 36, left: '60%', delay: '-2.6s', dur: '3.3s', land: '230px' },
+    { src: '/uploads/fish-2.svg', w: 74, h: 31, left: '80%', delay: '-0.6s', dur: '4.8s', land: '230px' },
+  ];
 
-            {/* Wave Decoration - Liquid White to Light Blue */}
-            <div className="relative h-16 bg-gradient-to-b from-white to-[#C2E2FA]">
-                <svg
-                    className="absolute bottom-0 left-0 right-0 w-full h-16 text-[#C2E2FA]"
-                    viewBox="0 0 1440 64"
-                    fill="currentColor"
-                    preserveAspectRatio="none"
-                >
-                    <path
-                        d="M0 32C240 64 480 0 720 32C960 64 1200 0 1440 32V64H0V32Z"
-                    />
-                </svg>
-            </div>
+  const columns = [
+    {
+      title: 'SHOP',
+      links: [
+        { label: 'Aerator Sets', href: '/aerator-sets' },
+        { label: 'Motors & Gearboxes', href: '/products' },
+        { label: 'Spares', href: '/spares' },
+        { label: 'Long Arm Systems', href: '/long-arm' },
+        { label: 'Compare Models', href: '/compare' },
+      ],
+    },
+    {
+      title: 'HELP & SUPPORT',
+      links: [
+        { label: 'Our Brands', href: '/#brands' },
+        { label: 'Bulk Orders', href: '/#bulk' },
+        { label: 'Dealer Enquiry', href: '/contact#enquiry' },
+        { label: 'Warranty Policy', href: '/terms-conditions#warranty' },
+        { label: 'Visit Store (Nellore)', href: '/#address' },
+      ],
+    },
+    {
+      title: 'CONNECT',
+      links: [
+        { label: 'Call: +91 86885 66023', href: 'tel:+918688566023' },
+        { label: 'Technical: +91 91776 57576', href: 'tel:+919177657576' },
+        { label: 'WhatsApp Chat', href: 'https://wa.me/918688566023', external: true },
+        { label: 'Instagram', href: CONTACT_INFO.instagram, external: true },
+        { label: 'Facebook', href: CONTACT_INFO.facebook, external: true },
+      ],
+    },
+    {
+      title: 'COMPANY & LEGAL',
+      links: [
+        { label: 'About Us', href: '/about-us' },
+        { label: 'Contact Us', href: '/contact' },
+        { label: 'Refund & Cancellation', href: '/refund-policy' },
+        { label: 'Privacy Policy', href: '/privacy-policy' },
+        { label: 'Terms & Conditions', href: '/terms-conditions' },
+      ],
+    },
+  ];
 
-            <div className="container-custom pt-12 pb-32 md:py-16 relative z-10">
-                {/* Main Footer Content */}
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
-                    {/* Brand Section */}
-                    <div className="col-span-2 md:col-span-4 lg:col-span-1 mb-4 lg:mb-0">
-                        <div className="flex items-center gap-3 mb-4">
-                            <img
-                                src="/images/logo.png"
-                                alt="Karthik Traders"
-                                className="h-10 w-auto"
-                            />
-                            <div>
-                                <h3 className="font-bold text-lg text-deep-blue-900">Karthik Traders</h3>
-                                <p className="text-sm text-deep-blue-700">Aquaculture Aerators &amp; Spare Parts</p>
-                            </div>
-                        </div>
-                        <p className="text-deep-blue-800/80 text-sm mb-6 max-w-xs leading-relaxed font-medium">
-                            India&apos;s trusted supplier of premium aquaculture equipment.
-                            Serving shrimp &amp; fish farms with quality aerators and spares.
-                        </p>
-                        {/* Brand Badges */}
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setBrandModal('aqualion')}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-amber-500/30 backdrop-blur-sm hover:bg-white hover:scale-105 transition-all duration-300"
-                            >
-                                <img src="/images/logos/aqualion-logo.svg" alt="Aqualion" className="h-8 w-auto" />
-                                <span className="text-amber-700 text-sm font-bold">Aqualion</span>
-                            </button>
-                            <button
-                                onClick={() => setBrandModal('seaboss')}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-aqua-600/30 backdrop-blur-sm hover:bg-white hover:scale-105 transition-all duration-300"
-                            >
-                                <img src="/images/logos/seaboss-logo.svg" alt="Sea Boss" className="h-8 w-auto" />
-                                <span className="text-deep-blue-700 text-sm font-bold">Sea Boss</span>
-                            </button>
-                        </div>
-                    </div>
+  return (
+    <footer className="relative mt-16 md:mt-28 bg-[#E8F9FF] text-[#0B1A33] font-manrope overflow-hidden">
+      {/* Top Transition Curve */}
+      <svg
+        viewBox="0 0 1440 80"
+        preserveAspectRatio="none"
+        className="absolute -top-[1px] left-0 w-full h-14 block z-10 pointer-events-none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0 0h1440v28c-120 26-240 34-360 22S840 10 720 20 480 66 360 60 120 22 0 34z"
+          fill="#FBFBFB"
+        />
+        <path
+          d="M0 44c120-14 240-14 360 4s240 30 360 14 240-38 360-34 240 22 360 18"
+          fill="none"
+          stroke="#C4D9FF"
+          strokeWidth="1.5"
+        />
+        <path
+          d="M0 58c140-10 260-4 380 8s250 14 360 0 230-30 360-26 220 18 340 14"
+          fill="none"
+          stroke="#C5BAFF"
+          strokeWidth="1"
+          opacity="0.8"
+        />
+      </svg>
 
-                    {/* Products */}
-                    <div>
-                        <h4 className="font-bold text-deep-blue-950 mb-4">Products</h4>
-                        <ul className="space-y-2">
-                            {footerLinks.products.map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-deep-blue-800 hover:text-aqua-700 text-sm transition-colors block hover:translate-x-1 duration-300 font-medium"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+      {/* Interactive Water Surface & Jumping Fish Stage */}
+      <div
+        className="absolute left-0 right-0 top-[90px] h-28 pointer-events-none overflow-visible"
+        aria-hidden="true"
+      >
+        {/* Wave Layer 1 */}
+        <svg
+          viewBox="0 0 2880 80"
+          preserveAspectRatio="none"
+          className="absolute left-0 top-5 w-[200%] h-[70px] pointer-events-none"
+          style={{ animation: 'ktFlow 22s linear 0s infinite' }}
+        >
+          <path
+            d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
+            fill="#C4D9FF"
+            opacity="0.55"
+          />
+        </svg>
 
-                    {/* Brands */}
-                    <div>
-                        <h4 className="font-bold text-deep-blue-950 mb-4">Our Brands</h4>
-                        <ul className="space-y-2">
-                            {footerLinks.brands.map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-deep-blue-800 hover:text-aqua-700 text-sm transition-colors block hover:translate-x-1 duration-300 font-medium"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Support */}
-                    <div>
-                        <h4 className="font-bold text-deep-blue-950 mb-4">Support</h4>
-                        <ul className="space-y-2">
-                            {footerLinks.support.map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-deep-blue-800 hover:text-aqua-700 text-sm transition-colors block hover:translate-x-1 duration-300 font-medium"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Contact */}
-                    <div>
-                        <h4 className="font-bold text-deep-blue-950 mb-4">Contact</h4>
-                        <ul className="space-y-2">
-                            {footerLinks.contact.filter(link => link.name !== 'Instagram' && link.name !== 'Facebook').map((link) => (
-                                <li key={link.name}>
-                                    <a
-                                        href={link.href}
-                                        className="text-deep-blue-800 hover:text-aqua-700 text-sm transition-colors block hover:translate-x-1 duration-300 font-medium"
-                                    >
-                                        {link.name}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                        {/* Social Media Icons */}
-                        <div className="flex items-center gap-4 mt-4">
-                            {/* Instagram */}
-                            <a
-                                href="https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg=="
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group transition-transform hover:scale-110 duration-300"
-                                aria-label="Instagram"
-                            >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    className="w-8 h-8"
-                                    fill="none"
-                                >
-                                    <defs>
-                                        <linearGradient id="instagram-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                                            <stop offset="0%" stopColor="#FFDC80" />
-                                            <stop offset="25%" stopColor="#F77737" />
-                                            <stop offset="50%" stopColor="#E1306C" />
-                                            <stop offset="75%" stopColor="#C13584" />
-                                            <stop offset="100%" stopColor="#833AB4" />
-                                        </linearGradient>
-                                    </defs>
-                                    <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#instagram-gradient)" />
-                                    <circle cx="12" cy="12" r="4" stroke="white" strokeWidth="2" fill="none" />
-                                    <circle cx="17.5" cy="6.5" r="1.5" fill="white" />
-                                </svg>
-                            </a>
-                            {/* Facebook */}
-                            <a
-                                href="https://www.facebook.com/share/1E2YvYdWZZ/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group transition-transform hover:scale-110 duration-300"
-                                aria-label="Facebook"
-                            >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    className="w-8 h-8"
-                                    fill="#1877F2"
-                                >
-                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Trust Badges */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-8 border-t border-deep-blue-900/10">
-                    <div className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-xl">
-                            🛡️
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-deep-blue-900">1 Year Warranty</p>
-                            <p className="text-xs text-deep-blue-700">On all aerator sets</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-xl">
-                            🔧
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-deep-blue-900">Genuine Spares</p>
-                            <p className="text-xs text-deep-blue-700">Always available</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-xl">
-                            💎
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-deep-blue-900">Transparent Pricing</p>
-                            <p className="text-xs text-deep-blue-700">No hidden costs</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-xl">
-                            🚚
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-deep-blue-900">Pan India Delivery</p>
-                            <p className="text-xs text-deep-blue-700">To your farm</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Brand & Map Sections */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-8 border-t border-deep-blue-900/10">
-                    {/* About Us */}
-                    <div className="lg:col-span-2">
-                        <h4 className="font-bold text-deep-blue-950 mb-4">About Us</h4>
-                        <p className="text-sm text-deep-blue-800/80 leading-relaxed mb-4">
-                            Karthik Traders is a well-established and trusted name in the aquaculture industry, with over 10 years of experience. We supply high-quality aquaculture aerators and spare parts, serving fish and shrimp farmers with reliable solutions.
-                        </p>
-                        <Link href="/about-us" className="text-aqua-600 font-bold hover:text-aqua-700 text-sm inline-flex items-center group">
-                            Read More
-                            <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                            </svg>
-                        </Link>
-                    </div>
-
-                    {/* Quick Link Pages */}
-                    <div>
-                        <h4 className="font-bold text-deep-blue-950 mb-4">Quick Links</h4>
-                        <ul className="space-y-2">
-                            <li><Link href="/about-us" className="text-deep-blue-800 hover:text-aqua-700 text-sm">About Us</Link></li>
-                            <li><Link href="/contact" className="text-deep-blue-800 hover:text-aqua-700 text-sm">Contact Us</Link></li>
-                            <li><Link href="/refund-policy" className="text-deep-blue-800 hover:text-aqua-700 text-sm">Refund & Cancellation Policy</Link></li>
-                            <li><Link href="/privacy-policy" className="text-deep-blue-800 hover:text-aqua-700 text-sm">Privacy Policy</Link></li>
-                            <li><Link href="/terms-conditions" className="text-deep-blue-800 hover:text-aqua-700 text-sm">Terms & Conditions</Link></li>
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Bottom Bar */}
-                <div className="pt-8 border-t border-deep-blue-900/10 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <p className="text-deep-blue-700/80 text-sm text-center md:text-left font-medium">
-                        © {new Date().getFullYear()} Karthik Traders. All rights reserved.
-                    </p>
-                    <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-6 gap-y-2">
-                        <Link href="/privacy-policy" className="text-deep-blue-700 hover:text-aqua-700 text-sm transition-colors font-medium">
-                            Privacy Policy
-                        </Link>
-                        <Link href="/terms-conditions" className="text-deep-blue-700 hover:text-aqua-700 text-sm transition-colors font-medium">
-                            Terms & Conditions
-                        </Link>
-                        <span className="hidden md:inline text-deep-blue-300">|</span>
-                        <span className="text-deep-blue-700/80 text-sm font-medium">
-                            Developed by{' '}
-                            <a
-                                href="https://www.iamsrinivas.tech"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-deep-blue-900 hover:text-aqua-700 transition-colors font-bold"
-                            >
-                                Srinivas Kumar
-                            </a>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            {/* Explicit Spacer for Mobile Bottom Nav - Increased Height */}
-            <div className="h-32 md:h-0 w-full" aria-hidden="true" />
-
-            <BrandInfoModal
-                isOpen={!!brandModal}
-                onClose={() => setBrandModal(null)}
-                brand={brandModal}
+        {/* Animated Jumping Fish with Splashes */}
+        {fishes.map((f, i) => (
+          <div
+            key={i}
+            className="absolute top-11 w-0 h-0"
+            style={{ left: f.left }}
+          >
+            {/* Splash Ring A */}
+            <span
+              className="absolute -left-[26px] -top-1 w-[52px] h-3 rounded-full border-2 border-white opacity-0"
+              style={{
+                animation: `ktSplashA ${f.dur} ease-out ${f.delay} infinite`,
+              }}
             />
-        </footer>
-    );
+            {/* Splash Ring B */}
+            <span
+              className="absolute -top-1 w-[52px] h-3 rounded-full border-2 border-white opacity-0"
+              style={{
+                left: f.land,
+                animation: `ktSplashB ${f.dur} ease-out ${f.delay} infinite`,
+              }}
+            />
+            {/* Fish trajectory */}
+            <div
+              className="absolute left-0 top-0 w-0 h-0 opacity-0"
+              style={{
+                animation: `ktJX ${f.dur} linear ${f.delay} infinite`,
+                willChange: 'transform',
+              }}
+            >
+              <div
+                className="absolute left-0 top-0 w-0 h-0"
+                style={{
+                  animation: `ktJY ${f.dur} linear ${f.delay} infinite`,
+                  willChange: 'transform',
+                }}
+              >
+                <div
+                  className="absolute left-0 top-0 w-0 h-0"
+                  style={{
+                    animation: `ktJR ${f.dur} linear ${f.delay} infinite`,
+                    willChange: 'transform',
+                  }}
+                >
+                  <img
+                    src={f.src}
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      width: `${f.w}px`,
+                      left: `-${f.w / 2}px`,
+                      top: `-${f.h / 2}px`,
+                      transform: 'scaleX(-1)',
+                      filter: 'drop-shadow(0 6px 6px rgba(11,26,51,0.18))',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Wave Layer 2 */}
+        <svg
+          viewBox="0 0 2880 80"
+          preserveAspectRatio="none"
+          className="absolute left-0 top-8 w-[200%] h-[70px] pointer-events-none"
+          style={{ animation: 'ktFlowR 16s linear -4s infinite' }}
+        >
+          <path
+            d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
+            fill="#C5BAFF"
+            opacity="0.5"
+          />
+        </svg>
+
+        {/* Wave Layer 3 */}
+        <svg
+          viewBox="0 0 2880 80"
+          preserveAspectRatio="none"
+          className="absolute left-0 top-11 w-[200%] h-[70px] pointer-events-none"
+          style={{ animation: 'ktFlow 11s linear -2s infinite' }}
+        >
+          <path
+            d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
+            fill="#A9C4F5"
+            opacity="0.72"
+          />
+        </svg>
+
+        <div className="absolute left-0 right-0 top-24 h-2.5 bg-gradient-to-b from-[#B5CBF6] to-[#E8F9FF]" />
+      </div>
+
+      {/* Main Footer Container */}
+      <div className="relative max-w-[1320px] mx-auto pt-52 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-9 lg:gap-8">
+          {/* Brand Info (2 columns wide) */}
+          <div className="lg:col-span-2 flex flex-col gap-4 max-w-sm">
+            <Link
+              href="/"
+              aria-label="Karthik Traders home"
+              className="flex items-center gap-3 text-decoration-none"
+            >
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-none">
+                <Image
+                  src="/assets/logo-emblem.png"
+                  alt="Karthik Traders emblem"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="font-poppins font-extrabold text-lg sm:text-xl text-[#0A1F5C] tracking-tight whitespace-nowrap">
+                KARTHIK TRADERS
+              </span>
+            </Link>
+
+            <div className="flex gap-2 flex-wrap pt-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF1D6] text-[#8A4B00] text-xs font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E8A317]" />
+                Aqualion · Premium
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DDF3FF] text-[#0B5C86] text-xs font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1BA3D9]" />
+                Sea Boss · Budget + High Performance
+              </span>
+            </div>
+
+            {/* Original Social Media Icons */}
+            <div className="flex items-center gap-3.5 pt-2">
+              {/* Instagram */}
+              <a
+                href="https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group transition-transform hover:scale-110 duration-200"
+                aria-label="Instagram"
+              >
+                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none">
+                  <defs>
+                    <linearGradient id="instagram-gradient-kt" x1="0%" y1="100%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#FFDC80" />
+                      <stop offset="25%" stopColor="#F77737" />
+                      <stop offset="50%" stopColor="#E1306C" />
+                      <stop offset="75%" stopColor="#C13584" />
+                      <stop offset="100%" stopColor="#833AB4" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#instagram-gradient-kt)" />
+                  <circle cx="12" cy="12" r="4" stroke="white" strokeWidth="2" fill="none" />
+                  <circle cx="17.5" cy="6.5" r="1.5" fill="white" />
+                </svg>
+              </a>
+
+              {/* Facebook */}
+              <a
+                href="https://www.facebook.com/share/1E2YvYdWZZ/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group transition-transform hover:scale-110 duration-200"
+                aria-label="Facebook"
+              >
+                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#1877F2">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </a>
+
+              {/* WhatsApp */}
+              <a
+                href="https://wa.me/918688566023"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group transition-transform hover:scale-110 duration-200"
+                aria-label="WhatsApp"
+              >
+                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#25D366">
+                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.41a8.183 8.183 0 012.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24h.02zm-3.56 3.84c-.2-.01-.43.08-.58.26-.23.27-.86.84-.86 2.05s.88 2.38 1 2.55c.13.16 1.71 2.67 4.18 3.7.59.25 1.05.39 1.41.51.59.19 1.13.16 1.56.1.47-.07 1.45-.59 1.66-1.16.2-.57.2-1.06.14-1.16-.06-.1-.23-.17-.48-.29-.26-.13-1.45-.71-1.68-.79-.22-.09-.39-.13-.55.13-.16.25-.63.79-.77.95-.14.16-.28.18-.53.06-.25-.13-1.07-.39-2.03-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.26-.02-.4.11-.53.11-.11.26-.29.39-.44.13-.14.17-.24.26-.4.09-.16.04-.3-.02-.43-.07-.12-.55-1.33-.76-1.82-.2-.48-.42-.41-.58-.42l-.49-.01z" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Links Columns */}
+          {columns.map((col) => (
+            <div key={col.title} className="flex flex-col gap-2.5">
+              <span className="text-[11px] font-extrabold tracking-wider text-[#5B6880] uppercase mb-1">
+                {col.title}
+              </span>
+              {col.links.map((link) =>
+                link.external ? (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs sm:text-[13px] font-bold text-[#0B1A33] hover:text-[#1450C8] transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="text-xs sm:text-[13px] font-bold text-[#0B1A33] hover:text-[#1450C8] transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Trust Indicators Row */}
+        <div className="mt-12 pt-8 border-t border-[#C4D9FF]/60 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-white/60 border border-[#C4D9FF]/40">
+            <span className="text-xl">🛡️</span>
+            <span className="font-extrabold text-xs text-[#0B1A33]">1 Year Warranty</span>
+            <span className="text-[10.5px] text-[#5B6880]">On aerator motors & gearboxes</span>
+          </div>
+          <div className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-white/60 border border-[#C4D9FF]/40">
+            <span className="text-xl">🔧</span>
+            <span className="font-extrabold text-xs text-[#0B1A33]">Genuine Spares</span>
+            <span className="text-[10.5px] text-[#5B6880]">Always ready in stock</span>
+          </div>
+          <div className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-white/60 border border-[#C4D9FF]/40">
+            <span className="text-xl">💎</span>
+            <span className="font-extrabold text-xs text-[#0B1A33]">Transparent Pricing</span>
+            <span className="text-[10.5px] text-[#5B6880]">Direct wholesale rates</span>
+          </div>
+          <div className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-white/60 border border-[#C4D9FF]/40">
+            <span className="text-xl">🚚</span>
+            <span className="font-extrabold text-xs text-[#0B1A33]">Pan India Delivery</span>
+            <span className="text-[10.5px] text-[#5B6880]">Reliable farm dispatch</span>
+          </div>
+        </div>
+
+        {/* Bottom Legal & Attribution */}
+        <div className="mt-10 py-6 border-t border-[#C4D9FF] flex flex-wrap gap-4 items-center justify-between text-xs text-[#3D4A63]">
+          <div>
+            © {currentYear} Karthik Traders. All rights reserved. Opp. Madhura Sweets Line, Subedar Pet, Nellore.
+          </div>
+          <div>
+            Developed by{' '}
+            <a
+              href="https://www.iamsrinivas.tech"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-extrabold text-[#1450C8] hover:underline"
+            >
+              Srinivas Kumar
+            </a>
+          </div>
+        </div>
+
+        {/* Space for mobile bottom bar */}
+        <div className="h-24 lg:h-6" />
+      </div>
+    </footer>
+  );
 }

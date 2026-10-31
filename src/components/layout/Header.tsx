@@ -521,7 +521,7 @@ export default function Header() {
                   </span>
                 </div>
                 <div className="font-extrabold text-base text-[#0B1A33]">Karthik</div>
-                <div className="font-mono text-xs font-bold text-[#1450C8]">+91 99638 40058</div>
+                <div className="font-mono text-xs font-bold text-[#1450C8]">+91 86885 66023</div>
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   <a
                     href={CONTACT_INFO.sales.tel}

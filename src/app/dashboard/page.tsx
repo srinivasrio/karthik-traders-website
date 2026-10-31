@@ -1,583 +1,661 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
+import { formatPrice } from '@/data/products';
+import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 
 interface OrderItem {
-    quantity: number;
-    price_at_purchase: number;
-    product: {
-        name: string;
-        slug: string;
-    };
+  quantity: number;
+  price_at_purchase: number;
+  product?: {
+    name: string;
+    slug: string;
+  };
+  product_id?: string;
 }
 
 interface Order {
-    id: string;
-    order_number?: number;
-    created_at: string;
-    status: string;
-    total_amount: number;
-    discount_amount: number;
-    coupon_code?: string;
-    customer_name: string;
-    created_by_admin: boolean;
-    order_items?: OrderItem[];
+  id: string;
+  order_number?: number;
+  created_at: string;
+  status: string;
+  total_amount: number;
+  discount_amount: number;
+  coupon_code?: string;
+  customer_name: string;
+  customer_mobile?: string;
+  shipping_address?: any;
+  created_by_admin?: boolean;
+  order_items?: OrderItem[];
 }
 
-import { allProducts } from '@/data/products';
-
 export default function DashboardPage() {
-    const { user, profile, logout, loading } = useAuth();
-    const router = useRouter();
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loadingOrders, setLoadingOrders] = useState(true);
-    const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const { user, profile, logout, loading } = useAuth();
+  const router = useRouter();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
 
-    // Handle redirect in useEffect to avoid setState during render
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        }
-    }, [loading, user, router]);
-
-    // Fetch orders when profile is available
-    useEffect(() => {
-        if (profile?.mobile || user?.id) {
-            fetchOrders();
-        }
-    }, [profile, user]);
-
-    const fetchOrders = async () => {
-        try {
-            // Fetch products for name mapping
-            const { data: productsData } = await supabase
-                .from('products')
-                .select('id, name, slug');
-
-            const productMap = new Map();
-            if (productsData) {
-                productsData.forEach(p => {
-                    productMap.set(p.id, p);
-                    productMap.set(p.slug, p);
-                });
-            }
-
-            const userId = user?.id;
-            const rawMobile = profile?.mobile || user?.phone || '';
-            const normalizedMobile = rawMobile.replace(/\D/g, '');
-            const last10Digits = normalizedMobile.slice(-10);
-
-            // Construct different queries to try in sequence as fallbacks
-            const FULL_SELECT = `
-                id, 
-                order_number, 
-                created_at, 
-                status, 
-                payment_status,
-                total_amount,
-                discount_amount,
-                coupon_code,
-                customer_name, 
-                customer_mobile,
-                shipping_address,
-                created_by_admin,
-                order_items(
-                    product_id,
-                    quantity,
-                    price_at_purchase,
-                    is_available,
-                    fulfilled_quantity,
-                    out_of_stock_reason
-                )
-            `;
-
-            const SIMPLE_SELECT = `
-                id, 
-                order_number, 
-                created_at, 
-                status, 
-                payment_status,
-                total_amount,
-                discount_amount,
-                coupon_code,
-                customer_name, 
-                customer_mobile,
-                shipping_address,
-                created_by_admin,
-                order_items(
-                    product_id,
-                    quantity,
-                    price_at_purchase
-                )
-            `;
-
-            const queryAttempts = [];
-
-            // Helper to build OR conditions list
-            const orConditions: string[] = [];
-            if (userId) {
-                orConditions.push(`user_id.eq.${userId}`);
-            }
-            if (last10Digits) {
-                orConditions.push(`customer_mobile.like.*${last10Digits}`);
-            }
-
-            // Attempt 1: Full fields + OR filter (if we have OR conditions)
-            if (orConditions.length > 0) {
-                queryAttempts.push({
-                    name: 'Full Select with OR filter',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(FULL_SELECT)
-                        .or(orConditions.join(','))
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-
-                // Attempt 2: Simple fields + OR filter
-                queryAttempts.push({
-                    name: 'Simple Select with OR filter',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(SIMPLE_SELECT)
-                        .or(orConditions.join(','))
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-            }
-
-            // Attempt 3: Full fields + user_id only (Fallback if OR fails and userId exists)
-            if (userId) {
-                queryAttempts.push({
-                    name: 'Full Select with user_id eq',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(FULL_SELECT)
-                        .eq('user_id', userId)
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-
-                // Attempt 4: Simple fields + user_id only
-                queryAttempts.push({
-                    name: 'Simple Select with user_id eq',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(SIMPLE_SELECT)
-                        .eq('user_id', userId)
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-            }
-
-            // Attempt 5: Full fields + customer_mobile exact match only (using normalized mobile)
-            if (normalizedMobile) {
-                queryAttempts.push({
-                    name: 'Full Select with customer_mobile eq',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(FULL_SELECT)
-                        .eq('customer_mobile', normalizedMobile)
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-
-                // Attempt 6: Simple fields + customer_mobile exact match only
-                queryAttempts.push({
-                    name: 'Simple Select with customer_mobile eq',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(SIMPLE_SELECT)
-                        .eq('customer_mobile', normalizedMobile)
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-            }
-
-            // Attempt 7: Full fields + customer_mobile like search only
-            if (last10Digits) {
-                queryAttempts.push({
-                    name: 'Full Select with customer_mobile like last 10 digits',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(FULL_SELECT)
-                        .like('customer_mobile', `%${last10Digits}`)
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-
-                // Attempt 8: Simple fields + customer_mobile like search only
-                queryAttempts.push({
-                    name: 'Simple Select with customer_mobile like last 10 digits',
-                    fn: () => supabase
-                        .from('orders')
-                        .select(SIMPLE_SELECT)
-                        .like('customer_mobile', `%${last10Digits}`)
-                        .order('created_at', { ascending: false })
-                        .limit(10)
-                });
-            }
-
-            let finalData: any = null;
-            let lastError: any = null;
-
-            for (const attempt of queryAttempts) {
-                console.log(`[Dashboard] Attempting query: ${attempt.name}`);
-                try {
-                    const { data, error } = await attempt.fn();
-                    if (error) {
-                        console.log(`[Dashboard] Query error for '${attempt.name}': ${JSON.stringify(error)}`);
-                        lastError = error;
-                    } else {
-                        finalData = data;
-                        console.log(`[Dashboard] Query success for '${attempt.name}' (fetched ${data?.length || 0} rows)`);
-                        break;
-                    }
-                } catch (e) {
-                    console.log(`[Dashboard] Exception during '${attempt.name}': ${JSON.stringify(e)}`);
-                    lastError = e;
-                }
-            }
-
-            if (!finalData && lastError) {
-                throw lastError;
-            }
-
-            if (finalData) {
-                const mappedOrders = finalData.map((order: any) => ({
-                    ...order,
-                    order_items: order.order_items?.map((item: any) => ({
-                        ...item,
-                        product_name: productMap.get(item.product_id)?.name || item.product_id,
-                        is_available: item.is_available !== null && item.is_available !== undefined ? item.is_available : true,
-                        fulfilled_quantity: item.fulfilled_quantity !== null && item.fulfilled_quantity !== undefined ? item.fulfilled_quantity : item.quantity,
-                        out_of_stock_reason: item.out_of_stock_reason || ''
-                    })) || []
-                }));
-                // @ts-ignore
-                setOrders(mappedOrders);
-            }
-        } catch (err) {
-            console.error('Error fetching orders (all fallbacks failed):', err);
-            console.log(JSON.stringify(err));
-        } finally {
-            setLoadingOrders(false);
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'completed':
-                return 'bg-emerald-100 text-emerald-800';
-            case 'delivered':
-                return 'bg-green-200 text-green-900';
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'processing':
-            case 'confirmed':
-                return 'bg-blue-100 text-blue-800';
-            case 'shipped':
-                return 'bg-purple-100 text-purple-800';
-            case 'partially_fulfilled':
-                return 'bg-sky-100 text-sky-800';
-            case 'out_of_stock':
-                return 'bg-rose-100 text-rose-800';
-            case 'cancelled':
-            case 'rejected':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-slate-100 text-slate-800';
-        }
-    };
-
-    const getStatusText = (status: string) => {
-        switch (status) {
-            case 'pending':
-                return 'Awaiting Approval';
-            case 'confirmed':
-                return 'Order Confirmed';
-            case 'rejected':
-                return 'Order Rejected';
-            case 'partially_fulfilled':
-                return 'Partially Fulfilled';
-            case 'out_of_stock':
-                return 'Out Of Stock';
-            case 'completed':
-                return 'Completed';
-            default:
-                return status.replace(/_/g, ' ').charAt(0).toUpperCase() + status.replace(/_/g, ' ').slice(1);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen pt-24 flex items-center justify-center bg-slate-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-600"></div>
-            </div>
-        );
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
     }
+  }, [loading, user, router]);
 
-    if (!user) {
-        // Return loading state while redirect happens
-        return (
-            <div className="min-h-screen pt-24 flex items-center justify-center bg-slate-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-600"></div>
-            </div>
-        );
+  useEffect(() => {
+    if (profile?.mobile || user?.id) {
+      fetchOrders();
+    } else if (!loading && user) {
+      fetchOrders();
     }
+  }, [profile, user, loading]);
 
-    return (
-        <div className="min-h-screen pt-24 pb-12 bg-slate-50">
-            <div className="container-custom">
-                {/* Header Section */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 mb-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Welcome</span>
-                                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">
-                                    {profile?.full_name || user?.user_metadata?.full_name || 'User'}
-                                </h1>
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const { data: productsData } = await supabase.from('products').select('id, name, slug');
+      const productMap = new Map();
+      if (productsData) {
+        productsData.forEach((p) => {
+          productMap.set(p.id, p);
+          productMap.set(p.slug, p);
+        });
+      }
+
+      const userId = user?.id;
+      const rawMobile = profile?.mobile || user?.phone || '';
+      const normalizedMobile = rawMobile.replace(/\D/g, '');
+      const last10Digits = normalizedMobile.slice(-10);
+
+      const orConditions: string[] = [];
+      if (userId) orConditions.push(`user_id.eq.${userId}`);
+      if (last10Digits) orConditions.push(`customer_mobile.like.*${last10Digits}`);
+
+      let query = supabase
+        .from('orders')
+        .select(`
+          id, 
+          order_number, 
+          created_at, 
+          status, 
+          payment_status,
+          total_amount, 
+          discount_amount, 
+          coupon_code, 
+          customer_name, 
+          customer_mobile, 
+          shipping_address, 
+          order_items(product_id, quantity, price_at_purchase)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
+      }
+
+      const { data, error } = await query;
+      if (!error && data) {
+        const enriched = data.map((o: any) => {
+          const items = (o.order_items || []).map((item: any) => ({
+            ...item,
+            product: productMap.get(item.product_id) || {
+              name: 'Aquaculture Product',
+              slug: '',
+            },
+          }));
+          return { ...o, order_items: items };
+        });
+        setOrders(enriched);
+        if (enriched.length > 0) {
+          setExpandedOrder(enriched[0].id);
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching orders:', e);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const userName = profile?.name || user?.user_metadata?.full_name || 'Valued Farmer';
+  const userPhone = profile?.mobile || user?.phone || '';
+  const userInitials = userName
+    .split(' ')
+    .map((w: string) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      const s = (o.status || 'Pending').toLowerCase();
+      if (activeTab === 'all') return true;
+      if (activeTab === 'active')
+        return ['pending', 'confirmed', 'processing', 'partially fulfilled', 'shipped'].includes(s);
+      if (activeTab === 'completed') return s === 'delivered' || s === 'completed';
+      if (activeTab === 'cancelled') return s === 'cancelled';
+      return true;
+    });
+  }, [orders, activeTab]);
+
+  const totalSaved = useMemo(() => {
+    return orders.reduce((sum, o) => sum + (o.discount_amount || 0), 0);
+  }, [orders]);
+
+  const getStatusColor = (status: string) => {
+    const s = (status || '').toLowerCase();
+    switch (s) {
+      case 'delivered':
+      case 'completed':
+        return { bg: '#E3F7EE', fg: '#0B7A4B', dot: '#0B7A4B' };
+      case 'confirmed':
+        return { bg: '#DDE8FF', fg: '#1D4ED8', dot: '#1D4ED8' };
+      case 'processing':
+        return { bg: '#EFE9FF', fg: '#6D28D9', dot: '#6D28D9' };
+      case 'cancelled':
+        return { bg: '#FFE4EA', fg: '#B4123A', dot: '#B4123A' };
+      default:
+        return { bg: '#EEF0F5', fg: '#475569', dot: '#64748B' };
+    }
+  };
+
+  const steps = ['Pending', 'Confirmed', 'Processing', 'Dispatched', 'Delivered'];
+  const getStepIndex = (status: string) => {
+    const s = (status || '').toLowerCase();
+    if (s === 'delivered') return 4;
+    if (s === 'shipped' || s === 'dispatched') return 3;
+    if (s === 'processing') return 2;
+    if (s === 'confirmed') return 1;
+    return 0;
+  };
+
+  if (loading) {
+    return <SimpleLoadingScreen />;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#FBFBFB] text-[#0B1A33] pb-24">
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Profile Card & Shortcuts */}
+          <aside className="lg:col-span-4 lg:sticky lg:top-24 flex flex-col gap-4">
+            {/* User Profile Card */}
+            <div className="rounded-[28px] bg-[#C4D9FF] text-[#0B1A33] p-6 sm:p-7 shadow-sm flex flex-col gap-5">
+              <div className="flex items-center gap-3">
+                <span className="w-14 h-14 rounded-2xl bg-[#C5BAFF] text-[#0B1A33] font-extrabold text-lg flex items-center justify-center shrink-0 shadow-xs">
+                  {userInitials}
+                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-extrabold text-lg truncate font-poppins">
+                    {userName}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-[#3D4A63] truncate">
+                    {userPhone || '+91 86885 66023'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Profile Meta Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-white/60">
+                  <span className="text-[#5B6880] block font-bold">Region</span>
+                  <span className="font-extrabold text-[#0B1A33] truncate block">
+                    {profile?.city || 'Nellore, AP'}
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/60">
+                  <span className="text-[#5B6880] block font-bold">Category</span>
+                  <span className="font-extrabold text-[#0B1A33] truncate block">
+                    Aquaculture Farmer
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-1">
+                <Link
+                  href="/complete-profile"
+                  className="flex-1 h-10 rounded-full bg-[#E8F9FF] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-white transition-colors"
+                >
+                  Edit profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="flex-1 h-10 rounded-full border border-black/15 bg-transparent text-[#B4123A] font-bold text-xs flex items-center justify-center hover:bg-white/40 transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-2xl bg-white border border-[#E3E8F0] shadow-2xs">
+                <span className="text-xs font-bold text-[#5B6880]">Total Orders</span>
+                <span className="text-2xl font-extrabold font-poppins text-[#0B1A33] block mt-1">
+                  {orders.length}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-white border border-[#E3E8F0] shadow-2xs">
+                <span className="text-xs font-bold text-[#5B6880]">Total Saved</span>
+                <span className="text-2xl font-extrabold font-poppins text-[#0B7A4B] block mt-1">
+                  {formatPrice(totalSaved)}
+                </span>
+              </div>
+            </div>
+
+            {/* Help & Support Card */}
+            <a
+              href="https://wa.me/919177657576?text=Hi%20Karthik%20Traders,%20I%20have%20a%20question%20regarding%20my%20orders."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-4 rounded-2xl bg-[#E8F9FF] border border-[#C4D9FF] text-[#0B1A33] flex flex-col gap-1 hover:bg-[#DDF3FF] transition-colors"
+            >
+              <span className="text-xs font-extrabold text-[#4338CA] uppercase tracking-wider">
+                NEED SPARES OR HELP?
+              </span>
+              <span className="text-sm font-extrabold">
+                Chat with Technical Support (Hazarathaiah) ↗
+              </span>
+            </a>
+          </aside>
+
+          {/* Right Column: Order History List */}
+          <section className="lg:col-span-8 flex flex-col gap-5 min-w-0">
+            <h1 className="text-2xl sm:text-4xl font-extrabold font-poppins text-[#0B1A33] tracking-tight">
+              Order History
+            </h1>
+
+            {/* Status Filter Tabs */}
+            <div className="flex gap-1.5 p-1 rounded-full bg-[#EEF2F8] shadow-2xs max-w-full overflow-x-auto no-scrollbar">
+              {(
+                [
+                  { id: 'all', label: 'All Orders' },
+                  { id: 'active', label: 'Active' },
+                  { id: 'completed', label: 'Delivered' },
+                  { id: 'cancelled', label: 'Cancelled' },
+                ] as const
+              ).map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`h-9 px-4 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      active
+                        ? 'bg-white text-[#0B1A33] shadow-xs'
+                        : 'text-[#5B6880] hover:text-[#0B1A33]'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Orders Feed */}
+            {loadingOrders ? (
+              <div className="p-12 text-center text-sm font-medium text-[#5B6880]">
+                Loading your orders from Nellore warehouse...
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="p-12 text-center rounded-3xl bg-white border border-[#E3E8F0] shadow-2xs flex flex-col items-center gap-3">
+                <span className="text-3xl">📦</span>
+                <h3 className="text-lg font-extrabold text-[#0B1A33]">
+                  No orders in this view
+                </h3>
+                <p className="text-xs text-[#5B6880] max-w-xs">
+                  Browse aerator sets and spares to start ordering directly with wholesale terms.
+                </p>
+                <Link
+                  href="/aerator-sets"
+                  className="mt-2 h-10 px-5 rounded-full bg-[#C4D9FF] text-[#0B1A33] font-extrabold text-xs inline-flex items-center hover:bg-[#24365A] hover:text-white transition-colors"
+                >
+                  Shop Aerator Sets
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {filteredOrders.map((order) => {
+                  const isOpen = expandedOrder === order.id;
+                  const st = getStatusColor(order.status);
+                  const currentStepIdx = getStepIndex(order.status);
+                  const orderRef = order.order_number
+                    ? `KT-${order.order_number}`
+                    : `KT-${order.id.slice(0, 6).toUpperCase()}`;
+
+                  return (
+                    <article
+                      key={order.id}
+                      className="rounded-[24px] bg-white border border-[#E3E8F0] overflow-hidden shadow-xs"
+                    >
+                      {/* Card Header Accordion Trigger */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedOrder(isOpen ? null : order.id)}
+                        className="w-full flex flex-wrap items-center gap-3 p-4 sm:p-5 text-left hover:bg-[#FBFBFB] transition-colors cursor-pointer"
+                      >
+                        <span className="font-mono text-sm font-bold text-[#0B1A33]">
+                          #{orderRef}
+                        </span>
+
+                        <span
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider"
+                          style={{ backgroundColor: st.bg, color: st.fg }}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: st.dot }}
+                          />
+                          {order.status || 'Pending'}
+                        </span>
+
+                        <span className="text-xs text-[#5B6880] font-medium">
+                          {new Date(order.created_at).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}{' '}
+                          · {order.order_items?.length || 1} item(s)
+                        </span>
+
+                        <span className="ml-auto font-extrabold text-base text-[#0B1A33] font-poppins">
+                          {formatPrice(order.total_amount)}
+                        </span>
+
+                        <span
+                          className={`w-7 h-7 rounded-full bg-[#EEF2F8] flex items-center justify-center text-xs transition-transform duration-200 ${
+                            isOpen ? 'rotate-180' : ''
+                          }`}
+                        >
+                          ⌄
+                        </span>
+                      </button>
+
+                      {/* Card Expanded Details */}
+                      {isOpen && (
+                        <div className="p-4 sm:p-6 border-t border-[#EEF2F8] flex flex-col gap-5 animate-[ktUp_0.3s_both]">
+                          {/* Step Progress Bar */}
+                          {order.status?.toLowerCase() !== 'cancelled' && (
+                            <div className="grid grid-cols-5 gap-2 p-3.5 rounded-2xl bg-[#FBFBFB] border border-[#EEF2F8]">
+                              {steps.map((stLabel, idx) => {
+                                const passed = idx <= currentStepIdx;
+                                return (
+                                  <div key={stLabel} className="flex flex-col gap-1.5">
+                                    <div
+                                      className={`h-1.5 rounded-full transition-colors ${
+                                        passed ? 'bg-[#10B26C]' : 'bg-[#E2E8F0]'
+                                      }`}
+                                    />
+                                    <span
+                                      className={`text-[10px] sm:text-xs font-bold leading-tight ${
+                                        passed ? 'text-[#0B7A4B]' : 'text-[#94A3B8]'
+                                      }`}
+                                    >
+                                      {stLabel}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
-                            <p className="text-slate-500 mt-1">
-                                {profile?.mobile}
-                            </p>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 capitalize ${profile?.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-aqua-100 text-aqua-800'
-                                }`}>
-                                {profile?.role || 'Customer'}
-                            </span>
-                        </div>
-                        <div className="flex gap-3">
-                            <Link
-                                href="/"
-                                className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                          )}
+
+                          {/* Line Items Table */}
+                          <div className="rounded-xl border border-[#EEF2F8] overflow-hidden divide-y divide-[#EEF2F8] text-xs sm:text-sm">
+                            {(order.order_items || []).map((line, lIdx) => (
+                              <div
+                                key={lIdx}
+                                className="flex items-center justify-between p-3"
+                              >
+                                <div>
+                                  <span className="font-bold text-[#0B1A33] block">
+                                    {line.product?.name || 'Aerator Set or Part'}
+                                  </span>
+                                  <span className="font-mono text-xs text-[#5B6880]">
+                                    {line.quantity} × {formatPrice(line.price_at_purchase)}
+                                  </span>
+                                </div>
+                                <span className="font-extrabold text-[#0B1A33] font-poppins">
+                                  {formatPrice(line.quantity * line.price_at_purchase)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Delivery Address & Financial Summary */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                            <div className="p-3.5 rounded-xl bg-[#E8F9FF] flex flex-col gap-1">
+                              <span className="text-[11px] font-extrabold text-[#5B6880] tracking-wider uppercase">
+                                DELIVERY ADDRESS
+                              </span>
+                              <span className="text-xs leading-relaxed text-[#0B1A33] font-medium">
+                                {typeof order.shipping_address === 'object'
+                                  ? `${order.shipping_address?.addressLine1 || ''}, ${
+                                      order.shipping_address?.city || ''
+                                    }, ${order.shipping_address?.state || ''} ${
+                                      order.shipping_address?.pincode || ''
+                                    }`
+                                  : String(order.shipping_address || 'Nellore, AP')}
+                              </span>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-[#FBFBFB] border border-[#EEF2F8] flex flex-col gap-1.5">
+                              {order.discount_amount > 0 && (
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-[#5B6880]">Discount ({order.coupon_code || 'COUPON'})</span>
+                                  <span className="font-bold text-[#0B7A4B]">
+                                    − {formatPrice(order.discount_amount)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between font-extrabold pt-1 border-t border-[#EEF2F8]">
+                                <span>Total Paid / Payable</span>
+                                <span className="text-sm font-poppins text-[#0B1A33]">
+                                  {formatPrice(order.total_amount)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2.5 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setInvoiceOrder(order)}
+                              className="h-10 px-4 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                Back to Home
-                            </Link>
-                            {profile?.role === 'admin' && (
-                                <Link
-                                    href="/admin"
-                                    className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
-                                >
-                                    Admin Panel
-                                </Link>
-                            )}
+                              <span>📄 GST Invoice Preview</span>
+                            </button>
+                            <a
+                              href={`https://wa.me/918688566023?text=${encodeURIComponent(
+                                `Hi Karthik Traders, inquiring regarding Order #${orderRef}`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-10 px-4 rounded-full border border-[#D5DCE8] hover:bg-[#E8F9FF] text-[#0B1A33] font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
+                            >
+                              <span>💬 Ask on WhatsApp</span>
+                            </a>
+                          </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* Dashboard Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Orders Card */}
-                    <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-blue-50 rounded-lg text-blue-600">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-900">My Orders</h3>
-                            </div>
-                            <span className="text-sm text-slate-500">{orders.length} order{orders.length !== 1 ? 's' : ''}</span>
-                        </div>
-
-                        {loadingOrders ? (
-                            <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aqua-600 mx-auto"></div>
-                            </div>
-                        ) : orders.length === 0 ? (
-                            <div className="text-center py-8">
-                                <p className="text-slate-500 text-sm">No orders found.</p>
-                                <Link href="/#categories" className="mt-4 inline-block text-aqua-600 font-medium hover:text-aqua-700 text-sm">
-                                    Start Shopping &rarr;
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {orders.map(order => (
-                                    <div key={order.id} className="overflow-hidden border border-slate-100 rounded-xl transition-all">
-                                        <div
-                                            onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                                            className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
-                                        >
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="font-bold text-slate-900 text-sm">
-                                                        Order #{order.order_number || order.id.slice(0, 8)}
-                                                    </p>
-                                                    {order.created_by_admin && (
-                                                        <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold uppercase">
-                                                            Store Order
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-[11px] text-slate-500 mt-0.5">
-                                                    {new Date(order.created_at).toLocaleDateString('en-IN', {
-                                                        day: 'numeric',
-                                                        month: 'short',
-                                                        year: 'numeric'
-                                                    })}
-                                                </p>
-                                            </div>
-                                            <div className="text-right flex items-center gap-4">
-                                                <div className="flex flex-col items-end gap-1">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                                                        {getStatusText(order.status)}
-                                                    </span>
-                                                    <p className="font-bold text-slate-900 text-sm">
-                                                        ₹{Number(order.total_amount).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                <svg
-                                                    className={`w-4 h-4 text-slate-400 transition-transform ${expandedOrder === order.id ? 'rotate-180' : ''}`}
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                >
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </div>
-                                        </div>
-
-                                        {/* Expanded Details */}
-                                        <AnimatePresence>
-                                            {expandedOrder === order.id && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    className="bg-white border-t border-slate-50 overflow-hidden"
-                                                >
-                                                    <div className="p-4 space-y-3">
-                                                        <div className="flex justify-between items-center">
-                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Order Items</p>
-                                                            <DownloadInvoiceBtn order={order} variant="customer" />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            {order.order_items?.map((item: any, idx) => {
-                                                                const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id);
-                                                                const isAvailable = item.is_available !== false;
-                                                                const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null ? item.fulfilled_quantity : item.quantity;
-                                                                const hasFulfillmentDiff = fulfilledQty !== item.quantity;
-
-                                                                return (
-                                                                    <div key={idx} className={`flex justify-between items-center text-sm p-2.5 rounded-lg border ${!isAvailable ? 'bg-rose-50/30 border-rose-100/50 text-slate-400' : 'bg-slate-50/50 border-slate-100/50'}`}>
-                                                                        <div className="flex flex-col">
-                                                                            <span className={`font-semibold ${!isAvailable ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
-                                                                                {productDetails?.name || item.product_name || item.product_id || 'Unknown Product'}
-                                                                            </span>
-                                                                            <span className="text-[11px] text-slate-500">
-                                                                                {!isAvailable ? (
-                                                                                    <span className="text-rose-600 font-semibold">Out of Stock {item.out_of_stock_reason ? `(${item.out_of_stock_reason})` : ''}</span>
-                                                                                ) : hasFulfillmentDiff ? (
-                                                                                    <span>Fulfilled: <strong className="text-slate-800">{fulfilledQty}</strong> / {item.quantity}</span>
-                                                                                ) : (
-                                                                                    <span>Qty: {item.quantity}</span>
-                                                                                )}
-                                                                            </span>
-                                                                        </div>
-                                                                        <span className={`font-bold ${!isAvailable ? 'text-slate-400' : 'text-slate-700'}`}>
-                                                                            ₹{(item.price_at_purchase * (isAvailable ? fulfilledQty : 0)).toLocaleString()}
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-
-                                                        {/* Discount Display */}
-                                                        {order.discount_amount > 0 && (
-                                                            <div className="mt-4 pt-3 border-t border-dashed border-slate-200">
-                                                                <div className="flex justify-between items-center text-sm">
-                                                                    <span className="text-slate-500">Subtotal</span>
-                                                                    <span className="font-medium text-slate-900">₹{(order.total_amount + order.discount_amount).toLocaleString()}</span>
-                                                                </div>
-                                                                <div className="flex justify-between items-center text-sm mt-1 text-green-600">
-                                                                    <span className="flex items-center gap-1">
-                                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                                        </svg>
-                                                                        Discount
-                                                                    </span>
-                                                                    <span className="font-bold">-₹{order.discount_amount.toLocaleString()}</span>
-                                                                </div>
-                                                                <div className="flex justify-between items-center text-sm mt-2 pt-2 border-t border-slate-100">
-                                                                    <span className="font-bold text-slate-900">Total Paid</span>
-                                                                    <span className="font-bold text-slate-900">₹{order.total_amount.toLocaleString()}</span>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                        {/* Profile Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-3 bg-green-50 rounded-lg text-green-600">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-900">Profile Details</h3>
-                            </div>
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="text-xs text-black uppercase font-semibold">Name</label>
-                                    <p className="text-slate-700 font-medium">{profile?.full_name || user?.user_metadata?.full_name || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs text-black uppercase font-semibold">Phone Number</label>
-                                    <p className="text-slate-700 font-medium">{profile?.mobile || user?.user_metadata?.mobile || '-'}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Support Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-3 bg-purple-50 rounded-lg text-purple-600">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-900">Need Help?</h3>
-                            </div>
-                            <p className="text-slate-600 text-sm mb-4">Have questions? Contact our team:</p>
-
-                            <div className="space-y-3">
-                                <div>
-                                    <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Sales & Enquiries</p>
-                                    <a href="tel:+919963840058" className="flex items-center gap-2 p-2 bg-green-50 rounded-lg text-green-700 hover:bg-green-100 transition-colors">
-                                        <span className="font-medium text-sm">Karthik</span>
-                                        <span className="text-xs text-green-600 ml-auto">+91 99638 40058</span>
-                                    </a>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Customer Support</p>
-                                    <a href="tel:+919177657576" className="flex items-center gap-2 p-2 bg-green-50 rounded-lg text-green-700 hover:bg-green-100 transition-colors">
-                                        <span className="font-medium text-sm">Hazarathaiah</span>
-                                        <span className="text-xs text-green-600 ml-auto">+91 91776 57576</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
-    );
+      </main>
+
+      {/* GST Invoice Preview Modal */}
+      {invoiceOrder && (
+        <div
+          className="fixed inset-0 z-50 bg-[#0B1A33]/50 backdrop-blur-xs grid place-items-center p-4"
+          onClick={() => setInvoiceOrder(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-white p-6 sm:p-8 flex flex-col gap-6 animate-[ktUp_0.3s_both]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Bar */}
+            <div className="flex justify-between items-center pb-4 border-b border-[#E3E8F0]">
+              <span className="font-extrabold text-base text-[#0B1A33]">
+                Tax Invoice Preview · #KT-{invoiceOrder.order_number || invoiceOrder.id.slice(0, 6)}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="h-9 px-4 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-bold text-xs cursor-pointer"
+                >
+                  Print / PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceOrder(null)}
+                  className="w-8 h-8 rounded-full bg-[#EEF2F8] text-[#0B1A33] flex items-center justify-center font-bold text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Invoice Document Content */}
+            <div className="flex flex-col gap-5 text-xs sm:text-sm">
+              <div className="flex flex-wrap justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-extrabold text-[#0B1A33] tracking-tight font-poppins">
+                    KARTHIK TRADERS
+                  </h3>
+                  <p className="text-xs text-[#5B6880] leading-relaxed max-w-xs mt-1">
+                    D.No: 15-2-124, Subedar Pet, Near Vegetable Market,<br />
+                    Nellore - 524001, Andhra Pradesh<br />
+                    GSTIN: 37AAAAK0000A1Z5
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-extrabold text-[#0B1A33] block">
+                    TAX INVOICE
+                  </span>
+                  <span className="font-mono text-xs text-[#5B6880] block">
+                    Date:{' '}
+                    {new Date(invoiceOrder.created_at).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Billed To */}
+              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#EEF2F8]">
+                <strong className="block text-[#0B1A33] mb-1">Billed to:</strong>
+                <span>{invoiceOrder.customer_name || userName}</span> ·{' '}
+                <span className="font-mono">{invoiceOrder.customer_mobile || userPhone}</span>
+              </div>
+
+              {/* Items Table */}
+              <div className="rounded-xl border border-[#EEF2F8] overflow-hidden text-xs">
+                <div className="grid grid-cols-12 p-3 font-extrabold bg-[#E8F9FF] text-[#0B5C86]">
+                  <span className="col-span-6">Item</span>
+                  <span className="col-span-2 text-center">Qty</span>
+                  <span className="col-span-2 text-right">Rate</span>
+                  <span className="col-span-2 text-right">Amount</span>
+                </div>
+                <div className="divide-y divide-[#EEF2F8]">
+                  {(invoiceOrder.order_items || []).map((l, idx) => (
+                    <div key={idx} className="grid grid-cols-12 p-3 items-center">
+                      <span className="col-span-6 font-bold text-[#0B1A33]">
+                        {l.product?.name || 'Aerator Unit'}
+                      </span>
+                      <span className="col-span-2 text-center font-mono">{l.quantity}</span>
+                      <span className="col-span-2 text-right font-mono">
+                        {formatPrice(l.price_at_purchase)}
+                      </span>
+                      <span className="col-span-2 text-right font-mono font-bold">
+                        {formatPrice(l.quantity * l.price_at_purchase)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stamp and Total */}
+              <div className="flex flex-wrap justify-between items-end gap-4 pt-2">
+                <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#4338CA] text-[#4338CA] flex items-center justify-center text-[10px] font-extrabold text-center rotate-[-8deg] uppercase tracking-wider p-2">
+                  Karthik Traders<br />Nellore<br />Official Seal
+                </div>
+
+                <div className="min-w-[200px] flex flex-col gap-1.5 text-right">
+                  <div className="flex justify-between text-xs text-[#5B6880]">
+                    <span>GST (Incl.)</span>
+                    <span>18%</span>
+                  </div>
+                  <div className="flex justify-between font-extrabold text-base text-[#0B1A33] pt-1 border-t border-[#EEF2F8]">
+                    <span>Total Amount</span>
+                    <span className="font-poppins">{formatPrice(invoiceOrder.total_amount)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Modal Confirmation */}
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 z-50 bg-[#0B1A33]/40 backdrop-blur-xs grid place-items-center p-4"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-[#E3E8F0] animate-[ktUp_0.25s_both]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-extrabold text-[#0B1A33] font-poppins mb-2">
+              Log out?
+            </h3>
+            <p className="text-sm text-[#5B6880] mb-6">
+              You can log back in with your mobile number at any time to view your orders.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="h-10 px-4 rounded-full border border-[#D5DCE8] bg-white text-xs font-bold text-[#0B1A33] hover:bg-[#FBFBFB] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  setShowLogoutConfirm(false);
+                  router.push('/login');
+                }}
+                className="h-10 px-5 rounded-full bg-[#D61F4A] text-white text-xs font-bold hover:bg-[#B4123A] cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

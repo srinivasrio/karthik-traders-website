@@ -1,163 +1,352 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import MobileGestureLayout from '@/components/layout/MobileGestureLayout';
-import { supabase } from '@/lib/supabase';
-
+import Link from 'next/link';
+import { CONTACT_INFO } from '@/data/kt-ui';
 
 export default function ContactPage() {
-    const handleBack = () => {
-        if (typeof window !== 'undefined' && window.history.length > 1) {
-            window.history.back();
-        }
-    };
+  const [topic, setTopic] = useState('Aerator Sets');
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    city: '',
+    message: '',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
 
-    return (
-        <div className="min-h-screen bg-white pb-24">
-            {/* Spacer to account for fixed header */}
-            <div className="h-16 md:h-20" />
+  const topics = ['Aerator Sets', 'Motors & Gearboxes', 'Spares', 'Dealer Bulk Enquiry'];
 
-            <MobileGestureLayout>
-                <div className="container-custom py-6">
-                    {/* Back Button */}
-                    <button
-                        onClick={handleBack}
-                        className="flex items-center gap-2 text-aqua-600 hover:text-aqua-800 mb-6 font-medium transition-colors"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Back
-                    </button>
+  const validate = () => {
+    const err: Record<string, string> = {};
+    if (!formData.name.trim()) err.name = 'Full name is required';
+    if (!/^\d{10}$/.test(formData.phone)) err.phone = 'Enter a valid 10-digit mobile number';
+    if (!formData.city.trim()) err.city = 'City/Town is required';
+    if (!formData.message.trim()) err.message = 'Please enter your message or query';
+    return err;
+  };
 
-                    {/* Contact Form & Header */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <div>
-                            <motion.h1
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-3xl font-bold text-deep-blue-900 mb-2"
-                            >
-                                Contact Us
-                            </motion.h1>
-                            <p className="text-steel-600 text-base mb-6">
-                                Looking for bulk quantities or have a specific requirement? We're here to help. Reach out to us directly via phone or visit our location.
-                            </p>
-                        </div>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const err = validate();
+    if (Object.keys(err).length > 0) {
+      setErrors(err);
+      return;
+    }
+    setErrors({});
+    setSubmitting(true);
 
-                        {/* Contact Details Cards */}
-                        <div className="grid grid-cols-1 gap-4">
-                            {/* Phone Numbers */}
-                            <div className="bg-white p-5 rounded-xl border border-steel-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-deep-blue-900 mb-3 flex items-center gap-2">
-                                    <span>📞</span> Phone
-                                </h3>
-                                <div className="space-y-3">
-                                    <a href="tel:+919963840058" className="flex items-center justify-between p-3 rounded-lg bg-steel-50 hover:bg-aqua-50 transition-colors group">
-                                        <div className="flex flex-col">
-                                            <span className="text-xs text-steel-500 font-medium">Karthik</span>
-                                            <span className="text-deep-blue-900 font-bold font-mono">+91 99638 40058</span>
-                                        </div>
-                                        <span className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                                        </span>
-                                    </a>
-                                    <a href="tel:+919177657576" className="flex items-center justify-between p-3 rounded-lg bg-steel-50 hover:bg-aqua-50 transition-colors group">
-                                        <div className="flex flex-col">
-                                            <span className="text-xs text-steel-500 font-medium">Hazarathaiah</span>
-                                            <span className="text-deep-blue-900 font-bold font-mono">+91 91776 57576</span>
-                                        </div>
-                                        <span className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                                        </span>
-                                    </a>
-                                </div>
-                            </div>
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          mobile: formData.phone.trim(),
+          location: formData.city.trim(),
+          message: `[Topic: ${topic}] ${formData.message.trim()}`,
+        }),
+      });
 
-                            {/* Social & Address */}
-                            <div className="bg-white p-5 rounded-xl border border-steel-100 shadow-sm flex flex-col justify-between">
-                                <div>
-                                    <h3 className="text-lg font-bold text-deep-blue-900 mb-4 flex items-center gap-2">
-                                        Connect
-                                    </h3>
-                                    <div className="flex gap-4 mb-8">
-                                        <a
-                                            href="https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg=="
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-pink-500/20 group"
-                                            title="Instagram"
-                                        >
-                                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                                            </svg>
-                                        </a>
-                                        <a
-                                            href="https://www.facebook.com/share/1E2YvYdWZZ/"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="w-12 h-12 rounded-xl bg-[#1877F2] text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-blue-500/20 group"
-                                            title="Facebook"
-                                        >
-                                            <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                            </svg>
-                                        </a>
-                                    </div>
-                                </div>
+      if (res.ok) {
+        setSent(true);
+      } else {
+        alert('Could not submit inquiry right now. Please call us directly.');
+      }
+    } catch {
+      alert('Network issue. Please call us directly.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-                                <div>
-                                    <h3 className="text-sm font-bold text-deep-blue-900 mb-1">Address</h3>
-                                    <p className="text-sm text-steel-600 leading-relaxed">
-                                        Opp. Madhura Sweets Line, Near MRF Tyres Line,<br />
-                                        Subedar Pet,<br />
-                                        Nellore, Andhra Pradesh 524001
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Google Map Section */}
-                    <div className="bg-white rounded-xl border border-steel-100 shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-steel-50 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-deep-blue-900 flex items-center gap-2">
-                                <span>📍</span> Our Location
-                            </h2>
-                            <a
-                                href="https://share.google/KMiK7tY8aneqBFtPU"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs font-bold text-aqua-600 hover:underline flex items-center gap-1"
-                            >
-                                Open in Maps
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                            </a>
-                        </div>
-
-                        <div className="relative w-full h-[300px] md:h-[400px] bg-steel-50">
-                            <iframe
-                                src="https://maps.google.com/maps?q=Karthik+Traders+Aquaculture+Nellore&t=&z=15&ie=UTF8&iwloc=&output=embed"
-                                title="Karthik Traders Location"
-                                width="100%"
-                                height="100%"
-                                style={{ border: 0 }}
-                                allowFullScreen
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                                className="absolute inset-0 w-full h-full"
-                            ></iframe>
-                        </div>
-
-                        <div className="p-3 bg-aqua-50/50 text-center">
-                            <p className="text-xs text-deep-blue-800 font-medium">
-                                Visit our location or find directions using Google Maps.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </MobileGestureLayout>
+  return (
+    <div className="min-h-screen bg-[#FBFBFB] text-[#0B1A33] pb-24">
+      {/* Header Banner */}
+      <section className="bg-[#FBFBFB] pt-8 md:pt-14 pb-8">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-3">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#5B6880]">
+            <Link href="/" className="hover:text-[#0B1A33]">Home</Link>
+            <span>/</span>
+            <span className="text-[#0B1A33] font-bold">Contact</span>
+          </nav>
+          <span className="text-xs font-extrabold tracking-widest text-[#4338CA] uppercase">
+            CONTACT & STORE DETAILS
+          </span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-poppins text-[#0B1A33] max-w-3xl leading-tight">
+            Talk to Karthik Traders
+          </h1>
+          <p className="text-base sm:text-lg text-[#3D4A63] font-medium max-w-2xl leading-relaxed mt-1">
+            Call or WhatsApp our team directly, visit the Subedar Pet Nellore store, or submit your inquiry below.
+          </p>
         </div>
-    );
+      </section>
+
+      {/* Main Content */}
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex flex-col gap-8">
+        {/* Contact Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Karthik Card */}
+          <div className="rounded-[28px] bg-[#C4D9FF] text-[#0B1A33] p-6 sm:p-7 flex flex-col justify-between gap-5 shadow-xs">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-extrabold tracking-wider text-[#3D4A63] uppercase">
+                SALES & BULK ORDERS
+              </span>
+              <h2 className="text-2xl font-extrabold font-poppins text-[#0B1A33]">
+                Karthik
+              </h2>
+              <span className="font-mono text-lg font-bold text-[#0B1A33]">
+                +91 86885 66023
+              </span>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <a
+                href="tel:+918688566023"
+                className="flex-1 h-11 rounded-full bg-[#0B1A33] text-white font-extrabold text-xs flex items-center justify-center hover:bg-[#24365A] transition-colors"
+              >
+                Call
+              </a>
+              <a
+                href="https://wa.me/918688566023?text=Hello%20Karthik%20Traders,%20I%20have%20an%20inquiry."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 h-11 rounded-full bg-[#128C4A] text-white font-extrabold text-xs flex items-center justify-center hover:bg-[#0E6B39] transition-colors"
+              >
+                WhatsApp
+              </a>
+            </div>
+          </div>
+
+          {/* Hazarathaiah Card */}
+          <div className="rounded-[28px] bg-[#E8F9FF] text-[#0B1A33] p-6 sm:p-7 flex flex-col justify-between gap-5 border border-[#C4D9FF] shadow-xs">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-extrabold tracking-wider text-[#0B5C86] uppercase">
+                TECHNICAL SUPPORT & SPARES
+              </span>
+              <h2 className="text-2xl font-extrabold font-poppins text-[#0B1A33]">
+                Hazarathaiah
+              </h2>
+              <span className="font-mono text-lg font-bold text-[#0B1A33]">
+                +91 91776 57576
+              </span>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <a
+                href="tel:+919177657576"
+                className="flex-1 h-11 rounded-full bg-[#0B1A33] text-white font-extrabold text-xs flex items-center justify-center hover:bg-[#24365A] transition-colors"
+              >
+                Call
+              </a>
+              <a
+                href="https://wa.me/919177657576?text=Hello%20Hazarathaiah%20garu,%20I%20need%20technical%20spares%20support."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 h-11 rounded-full bg-[#128C4A] text-white font-extrabold text-xs flex items-center justify-center hover:bg-[#0E6B39] transition-colors"
+              >
+                WhatsApp
+              </a>
+            </div>
+          </div>
+
+          {/* Email & Social Card */}
+          <div className="rounded-[28px] bg-white border border-[#E3E8F0] p-6 sm:p-7 flex flex-col justify-between gap-5 shadow-xs">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-extrabold tracking-wider text-[#5B6880] uppercase">
+                EMAIL & SOCIAL
+              </span>
+              <a
+                href="mailto:karthiktrader111@gmail.com"
+                className="text-base sm:text-lg font-extrabold text-[#0B1A33] hover:text-[#4338CA] break-all"
+              >
+                karthiktrader111@gmail.com
+              </a>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <a
+                href="https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 h-11 rounded-full border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-[#E8F9FF] transition-colors"
+              >
+                Instagram ↗
+              </a>
+              <a
+                href="https://www.facebook.com/share/1E2YvYdWZZ/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 h-11 rounded-full border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-[#E8F9FF] transition-colors"
+              >
+                Facebook ↗
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* 2-Column: Map & Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Map */}
+          <div className="lg:col-span-6 rounded-[28px] overflow-hidden border border-[#E3E8F0] bg-white shadow-sm flex flex-col">
+            <div className="h-80 w-full relative">
+              <iframe
+                title="Karthik Traders Location Map"
+                src="https://maps.google.com/maps?q=Karthik+Traders+Aquaculture+Nellore&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                loading="lazy"
+                className="w-full h-full border-0"
+              />
+            </div>
+            <div className="p-5 bg-white flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF2F8]">
+              <p className="text-xs sm:text-sm text-[#3D4A63] leading-relaxed max-w-sm font-medium">
+                D.No: 15-2-124, Subedar Pet, Near Vegetable Market, Nellore - 524001, Andhra Pradesh.
+              </p>
+              <a
+                href={CONTACT_INFO.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-10 px-5 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-xs inline-flex items-center transition-colors"
+              >
+                Directions ↗
+              </a>
+            </div>
+          </div>
+
+          {/* Inquiry Form */}
+          <div className="lg:col-span-6 rounded-[28px] bg-white border border-[#E3E8F0] p-6 sm:p-8 shadow-sm flex flex-col gap-4">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#0B1A33] font-poppins">
+              Send an Enquiry
+            </h2>
+
+            {/* Topic Pills */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {topics.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTopic(t)}
+                  className={`h-8 px-3 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    topic === t
+                      ? 'bg-[#0B1A33] text-white shadow-xs'
+                      : 'bg-[#FBFBFB] border border-[#D5DCE8] text-[#3D4A63] hover:text-[#0B1A33]'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {!sent ? (
+              <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3.5">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="ct-name" className="text-xs font-extrabold text-[#3D4A63] uppercase">
+                    Your Name
+                  </label>
+                  <input
+                    id="ct-name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Full name"
+                    className={`h-11 px-3.5 rounded-xl border bg-[#FBFBFB] text-sm font-medium text-[#0B1A33] outline-none ${
+                      errors.name ? 'border-[#E5355F]' : 'border-[#D5DCE8] focus:border-[#4338CA]'
+                    }`}
+                  />
+                  {errors.name && <span className="text-xs font-bold text-[#E5355F]">{errors.name}</span>}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="ct-phone" className="text-xs font-extrabold text-[#3D4A63] uppercase">
+                      Mobile Number
+                    </label>
+                    <div className="flex items-center h-11 px-3 rounded-xl border border-[#D5DCE8] bg-[#FBFBFB]">
+                      <span className="font-mono text-xs font-bold text-[#5B6880] pr-2">+91</span>
+                      <input
+                        id="ct-phone"
+                        type="tel"
+                        maxLength={10}
+                        value={formData.phone}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            phone: e.target.value.replace(/\D/g, '').slice(0, 10),
+                          })
+                        }
+                        placeholder="98765 43210"
+                        className="flex-1 min-w-0 border-0 outline-none bg-transparent text-sm font-medium text-[#0B1A33]"
+                      />
+                    </div>
+                    {errors.phone && <span className="text-xs font-bold text-[#E5355F]">{errors.phone}</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="ct-city" className="text-xs font-extrabold text-[#3D4A63] uppercase">
+                      City / Farm Town
+                    </label>
+                    <input
+                      id="ct-city"
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      placeholder="e.g. Kavali / Bhimavaram"
+                      className={`h-11 px-3.5 rounded-xl border bg-[#FBFBFB] text-sm font-medium text-[#0B1A33] outline-none ${
+                        errors.city ? 'border-[#E5355F]' : 'border-[#D5DCE8] focus:border-[#4338CA]'
+                      }`}
+                    />
+                    {errors.city && <span className="text-xs font-bold text-[#E5355F]">{errors.city}</span>}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="ct-msg" className="text-xs font-extrabold text-[#3D4A63] uppercase">
+                    Message
+                  </label>
+                  <textarea
+                    id="ct-msg"
+                    rows={3}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    placeholder="Tell us about your requirements..."
+                    className={`p-3 rounded-xl border bg-[#FBFBFB] text-sm font-medium text-[#0B1A33] outline-none resize-y ${
+                      errors.message ? 'border-[#E5355F]' : 'border-[#D5DCE8] focus:border-[#4338CA]'
+                    }`}
+                  />
+                  {errors.message && <span className="text-xs font-bold text-[#E5355F]">{errors.message}</span>}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="mt-1 h-12 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-sm transition-colors cursor-pointer shadow-xs disabled:opacity-60"
+                >
+                  {submitting ? 'Sending...' : 'Send Enquiry'}
+                </button>
+              </form>
+            ) : (
+              <div className="py-8 text-center flex flex-col items-center gap-3">
+                <span className="w-12 h-12 rounded-full bg-[#E3F7EE] text-[#0B7A4B] flex items-center justify-center text-2xl font-bold">
+                  ✓
+                </span>
+                <h3 className="text-xl font-extrabold text-[#0B1A33] font-poppins">
+                  Enquiry Received
+                </h3>
+                <p className="text-xs sm:text-sm text-[#5B6880] max-w-sm">
+                  Thanks, {formData.name}. Karthik or Hazarathaiah will call +91 {formData.phone} shortly.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSent(false);
+                    setFormData({ name: '', phone: '', city: '', message: '' });
+                  }}
+                  className="mt-2 text-xs font-bold text-[#4338CA] underline cursor-pointer"
+                >
+                  Send another inquiry
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

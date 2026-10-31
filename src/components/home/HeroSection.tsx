@@ -156,7 +156,7 @@ export default function HeroSection() {
           {/* Direct Call Cards (Bottom of Hero Image, same arrangement as mobile) */}
           <div className="absolute left-[4.5%] bottom-[5%] z-20 flex gap-4 items-stretch">
             <a
-              href="tel:+919963840058"
+              href="tel:+918688566023"
               className="flex items-center gap-3 py-2.5 px-5 rounded-full bg-[#128C4A] text-white shadow-[0_14px_28px_-14px_rgba(18,140,74,0.7)] hover:bg-[#0E7A40] transition-all active:scale-95 group"
             >
               <span className="w-9 h-9 rounded-full bg-white/20 grid place-items-center flex-none">
@@ -166,7 +166,7 @@ export default function HeroSection() {
               </span>
               <div className="flex flex-col leading-tight">
                 <span className="font-extrabold text-sm xl:text-base">Karthik · Sales</span>
-                <span className="text-xs font-mono opacity-90">+91 99638 40058</span>
+                <span className="text-xs font-mono opacity-90">+91 86885 66023</span>
               </div>
             </a>
 
@@ -374,7 +374,7 @@ export default function HeroSection() {
           <div className="absolute left-3.5 right-3.5 bottom-3.5 z-10 flex flex-col gap-2.5">
             <SlideToCall
               label="Slide to Call Karthik · Sales"
-              phone="+919963840058"
+              phone="+918688566023"
               delayIndex={0}
             />
             <SlideToCall
