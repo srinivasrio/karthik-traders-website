@@ -124,13 +124,6 @@ export default function BrandsSection() {
             >
               Shop Aqualion →
             </Link>
-            <button
-              type="button"
-              onClick={() => setActiveBrand('aqualion')}
-              className="h-11 px-5 rounded-full bg-transparent border border-[#D5DCE8] text-[#0B1A33] font-bold text-sm hover:bg-[#FFF1D6] transition-colors cursor-pointer"
-            >
-              Brand info
-            </button>
           </div>
         </div>
 
@@ -181,13 +174,6 @@ export default function BrandsSection() {
             >
               Shop Sea Boss →
             </Link>
-            <button
-              type="button"
-              onClick={() => setActiveBrand('seaboss')}
-              className="h-11 px-5 rounded-full bg-transparent border border-[#9FBFE8] text-[#0B1A33] font-bold text-sm hover:bg-white transition-colors cursor-pointer"
-            >
-              Brand info
-            </button>
           </div>
         </div>
       </div>

@@ -159,19 +159,25 @@ export default function ProductCard({
     window.dispatchEvent(new CustomEvent('kt-store', { detail: 'kt_cart' }));
   };
 
-  // Stock Ribbon details
-  const stockRibbonText = isOut ? 'OUT OF STOCK' : isLow ? 'LIMITED STOCK' : 'IN STOCK';
-  const stockRibbonBg = isOut
-    ? 'linear-gradient(180deg, #F0486F, #C91E48)'
-    : isLow
-    ? 'linear-gradient(180deg, #DC2A32, #C21C25)'
-    : 'linear-gradient(180deg, #14C08A, #059669)';
+  // Stock / Best Selling Ribbon details (Best Selling takes precedence if in stock)
+  const isBestSelling = Boolean(product.is_best_selling);
+  let stockRibbonText = 'IN STOCK';
+  let stockRibbonBg = 'linear-gradient(180deg, #14C08A, #059669)';
+  let stockRibbonShadow = 'rgba(5, 100, 70, 0.4)';
 
-  const stockRibbonShadow = isOut
-    ? 'rgba(150, 20, 60, 0.4)'
-    : isLow
-    ? 'rgba(120, 10, 20, 0.35)'
-    : 'rgba(5, 100, 70, 0.4)';
+  if (isOut) {
+    stockRibbonText = 'OUT OF STOCK';
+    stockRibbonBg = 'linear-gradient(180deg, #F0486F, #C91E48)';
+    stockRibbonShadow = 'rgba(150, 20, 60, 0.4)';
+  } else if (isLow) {
+    stockRibbonText = 'LIMITED STOCK';
+    stockRibbonBg = 'linear-gradient(180deg, #DC2A32, #C21C25)';
+    stockRibbonShadow = 'rgba(120, 10, 20, 0.35)';
+  } else if (isBestSelling) {
+    stockRibbonText = '★ BEST SELLING';
+    stockRibbonBg = 'linear-gradient(180deg, #6366F1, #4338CA)';
+    stockRibbonShadow = 'rgba(50, 40, 140, 0.4)';
+  }
 
   return (
     <article
@@ -193,7 +199,18 @@ export default function ProductCard({
           />
         </Link>
 
-        {/* Stock Ribbon (Top Right) */}
+        {/* Brand Logo (Top Left) */}
+        {brandMeta.logo && (
+          <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 px-2 py-1 rounded-xl bg-white/95 backdrop-blur-xs shadow-xs border border-slate-100 flex items-center justify-center pointer-events-none">
+            <img
+              src={brandMeta.logo}
+              alt={brandMeta.label}
+              className="h-6 sm:h-8 w-auto max-w-[85px] sm:max-w-[110px] object-contain shrink-0"
+            />
+          </div>
+        )}
+
+        {/* Status Ribbon (Top Right) */}
         <span
           className="absolute top-2.5 right-1.5 sm:top-3 sm:right-2 pointer-events-none inline-block z-10"
           style={{
@@ -216,78 +233,28 @@ export default function ProductCard({
             {stockRibbonText}
           </span>
         </span>
-
-        {/* Best Selling Purple Ribbon (Bottom Left) */}
-        {product.is_best_selling && (
-          <span
-            className="absolute bottom-2.5 left-1.5 sm:bottom-3 sm:left-2 pointer-events-none inline-block z-10"
-            style={{
-              transform: 'rotate(-6deg)',
-              transformOrigin: 'left center',
-              filter: 'drop-shadow(0 4px 5px rgba(50, 40, 140, 0.4))',
-            }}
-          >
-            <span
-              className={`block font-bebas text-white tracking-wider leading-none ${
-                compact
-                  ? 'text-[10px] px-2 py-0.5'
-                  : 'text-[10px] sm:text-[13px] px-2 py-0.5 sm:px-3 sm:py-1'
-              }`}
-              style={{
-                background: 'linear-gradient(180deg, #6366F1, #4338CA)',
-                clipPath: 'polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%)',
-              }}
-            >
-              ★ BEST SELLING
-            </span>
-          </span>
-        )}
       </div>
 
       {/* Card Content */}
       <div className={`flex-1 flex flex-col ${compact ? 'p-2.5 gap-1.5' : 'p-2.5 sm:p-5 gap-1.5 sm:gap-3'}`}>
-        {/* Brand Chip & Warranty Badge */}
-        <div className="flex items-center justify-between gap-1.5 flex-wrap">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span
-              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full font-black text-xs sm:text-[13px] px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-2xs border"
-              style={{
-                backgroundColor: brandMeta.bg,
-                color: brandMeta.fg,
-                borderColor: brandKey === 'aqualion' ? '#FFDFB0' : brandKey === 'seaboss' ? '#C4D9FF' : '#E3E8F0',
-              }}
-            >
-              {brandMeta.logo ? (
-                <img
-                  src={brandMeta.logo}
-                  alt={brandMeta.label}
-                  className="h-5 sm:h-6 w-auto object-contain shrink-0"
-                />
-              ) : (
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: brandMeta.dot }}
-                />
-              )}
-              <span>{brandMeta.label}</span>
-            </span>
-
-            {modelNumber && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF]">
-                <span className="text-[8px] sm:text-[9px] uppercase font-bold text-[#64748B]">Model</span>
-                <span className="text-[#0B1A33] font-black">{modelNumber}</span>
-              </span>
-            )}
+        {/* Brand Capsule & Model Capsule Side by Side (Equal Size) */}
+        <div className="grid grid-cols-2 gap-2 w-full">
+          {/* Brand Capsule (without logo inside) */}
+          <div
+            className="flex items-center justify-center text-center rounded-xl font-black text-[11px] sm:text-xs py-1.5 px-2 border truncate shadow-2xs"
+            style={{
+              backgroundColor: brandMeta.bg,
+              color: brandMeta.fg,
+              borderColor: brandKey === 'aqualion' ? '#FFDFB0' : brandKey === 'seaboss' ? '#C4D9FF' : '#E3E8F0',
+            }}
+          >
+            <span className="tracking-wider uppercase truncate">{brandMeta.label}</span>
           </div>
 
-          {product.badge && product.badge.toLowerCase().includes('warranty') && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[10.5px] font-extrabold text-white bg-gradient-to-b from-[#22B8E8] to-[#0E8FC7] shadow-sm">
-              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3 4.5 6v5.5c0 4.4 3.1 8.2 7.5 9.5 4.4-1.3 7.5-5.1 7.5-9.5V6zM8.7 12l2.3 2.3 4.3-4.6" />
-              </svg>
-              <span>{product.badge}</span>
-            </span>
-          )}
+          {/* Model Capsule */}
+          <div className="flex items-center justify-center text-center rounded-xl text-[11px] sm:text-xs font-black bg-[#E8F1FF] text-[#0B1A33] border border-[#CDE0FF] py-1.5 px-2 truncate shadow-2xs">
+            <span className="truncate">{modelNumber || 'Standard'}</span>
+          </div>
         </div>
 
         {/* Product Title */}

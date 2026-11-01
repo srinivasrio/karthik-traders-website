@@ -8,10 +8,10 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const fishes = [
-    { src: '/uploads/fish.svg', w: 58, h: 45, left: '10%', delay: '0s', dur: '3.6s', land: '230px' },
-    { src: '/uploads/fish-2.svg', w: 86, h: 36, left: '34%', delay: '-1.4s', dur: '4.4s', land: '230px' },
-    { src: '/uploads/fish.svg', w: 46, h: 36, left: '60%', delay: '-2.6s', dur: '3.3s', land: '230px' },
-    { src: '/uploads/fish-2.svg', w: 74, h: 31, left: '80%', delay: '-0.6s', dur: '4.8s', land: '230px' },
+    { src: '/images/fishes/fish-1.svg', w: 78, h: 60, left: '12%', delay: '0s', dur: '4.2s', land: '240px', height: '-88px' },
+    { src: '/images/fishes/fish-2.svg', w: 108, h: 46, left: '35%', delay: '-1.6s', dur: '4.8s', land: '270px', height: '-102px' },
+    { src: '/images/fishes/fish-1.svg', w: 68, h: 52, left: '60%', delay: '-2.8s', dur: '3.9s', land: '210px', height: '-78px' },
+    { src: '/images/fishes/fish-2.svg', w: 98, h: 42, left: '80%', delay: '-0.7s', dur: '5.2s', land: '260px', height: '-94px' },
   ];
 
   const columns = [
@@ -99,8 +99,8 @@ export default function Footer() {
         >
           <path
             d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
-            fill="#C4D9FF"
-            opacity="0.55"
+            fill="#B8DBFF"
+            opacity="0.65"
           />
         </svg>
 
@@ -108,30 +108,51 @@ export default function Footer() {
         {fishes.map((f, i) => (
           <div
             key={i}
-            className="absolute top-11 w-0 h-0"
-            style={{ left: f.left }}
+            className="absolute top-10 w-0 h-0 pointer-events-none"
+            style={{
+              left: f.left,
+              ['--jump-dist' as any]: f.land,
+              ['--jump-height' as any]: f.height,
+            }}
           >
-            {/* Splash Ring A */}
+            {/* Splash Ring A (Breach Point) */}
             <span
-              className="absolute -left-[26px] -top-1 w-[52px] h-3 rounded-full border-2 border-white opacity-0"
+              className="absolute -left-[24px] -top-1 w-[48px] h-3.5 rounded-full border-2 border-white/90 bg-white/30 backdrop-blur-xs opacity-0"
               style={{
                 animation: `ktSplashA ${f.dur} ease-out ${f.delay} infinite`,
               }}
             />
-            {/* Splash Ring B */}
+            {/* Splash Droplet at Breach */}
             <span
-              className="absolute -top-1 w-[52px] h-3 rounded-full border-2 border-white opacity-0"
+              className="absolute -left-1 -top-2 w-2 h-2 rounded-full bg-white opacity-0"
               style={{
-                left: f.land,
+                animation: `ktSplashDropA ${f.dur} ease-out ${f.delay} infinite`,
+              }}
+            />
+
+            {/* Splash Ring B (Landing Re-entry Point) */}
+            <span
+              className="absolute -top-1 w-[52px] h-4 rounded-full border-2 border-white/90 bg-white/30 backdrop-blur-xs opacity-0"
+              style={{
+                left: `calc(${f.land} - 26px)`,
                 animation: `ktSplashB ${f.dur} ease-out ${f.delay} infinite`,
               }}
             />
-            {/* Fish trajectory */}
+            {/* Splash Droplet at Landing */}
+            <span
+              className="absolute -top-2 w-2.5 h-2.5 rounded-full bg-white opacity-0"
+              style={{
+                left: f.land,
+                animation: `ktSplashDropB ${f.dur} ease-out ${f.delay} infinite`,
+              }}
+            />
+
+            {/* Dolphin Trajectory: X (Forward) -> Y (Parabolic height) -> R (Rotation arch) */}
             <div
               className="absolute left-0 top-0 w-0 h-0 opacity-0"
               style={{
                 animation: `ktJX ${f.dur} linear ${f.delay} infinite`,
-                willChange: 'transform',
+                willChange: 'transform, opacity',
               }}
             >
               <div
@@ -150,14 +171,15 @@ export default function Footer() {
                 >
                   <img
                     src={f.src}
-                    alt=""
+                    alt="Fish"
                     style={{
                       position: 'absolute',
                       width: `${f.w}px`,
+                      height: `${f.h}px`,
                       left: `-${f.w / 2}px`,
                       top: `-${f.h / 2}px`,
-                      transform: 'scaleX(-1)',
-                      filter: 'drop-shadow(0 6px 6px rgba(11,26,51,0.18))',
+                      transform: 'scaleX(-1)', // flips SVG so nose points in jump direction (right)
+                      filter: 'drop-shadow(0 8px 10px rgba(11,26,51,0.22))',
                     }}
                   />
                 </div>
@@ -175,8 +197,8 @@ export default function Footer() {
         >
           <path
             d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
-            fill="#C5BAFF"
-            opacity="0.5"
+            fill="#A3D4FF"
+            opacity="0.6"
           />
         </svg>
 
@@ -189,12 +211,12 @@ export default function Footer() {
         >
           <path
             d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
-            fill="#A9C4F5"
-            opacity="0.72"
+            fill="#8AC3FF"
+            opacity="0.75"
           />
         </svg>
 
-        <div className="absolute left-0 right-0 top-24 h-2.5 bg-gradient-to-b from-[#B5CBF6] to-[#E8F9FF]" />
+        <div className="absolute left-0 right-0 top-24 h-4 bg-gradient-to-b from-[#8AC3FF]/60 to-[#E8F9FF]" />
       </div>
 
       {/* Main Footer Container */}

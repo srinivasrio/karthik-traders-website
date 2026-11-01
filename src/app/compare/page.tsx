@@ -807,13 +807,10 @@ function SlotCard({
           </span>
         </div>
 
-        {/* Bottom Title / Badge row */}
-        <div className="flex items-center justify-between gap-1 px-1 pt-0.5">
-          <span className="font-poppins font-semibold text-xs sm:text-sm text-slate-400 tracking-tight">
-            Slot {slotIdx + 1}
-          </span>
-          <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#EBF3FC] text-[#1D64EC] group-hover:bg-[#1D64EC] group-hover:text-white transition-colors shrink-0">
-            + Choose
+        {/* Bottom Action row */}
+        <div className="flex items-center justify-center px-1 pt-0.5">
+          <span className="w-full py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold bg-[#EBF3FC] text-[#1D64EC] group-hover:bg-[#1D64EC] group-hover:text-white transition-colors text-center shadow-2xs">
+            + Choose Aerator
           </span>
         </div>
       </div>
@@ -860,25 +857,25 @@ function SlotCard({
         </button>
       </div>
 
-      {/* Brand & Prominently Highlighted Model Number */}
-      <div className="flex flex-col gap-0.5 px-1 pt-0.5">
-        <div className="flex items-center justify-between gap-1 flex-wrap">
+      {/* Brand Logo on Left, Brand Capsule on Right, Prominent Model Number */}
+      <div className="flex flex-col gap-1 px-1 pt-1">
+        <div className="flex items-center justify-between gap-2">
+          {/* HUGE Logo on Left */}
           {brandInfo.logo ? (
-            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-[13px] font-black uppercase tracking-wide ${brandInfo.bg} ${brandInfo.text} ${brandInfo.border} border shrink-0 shadow-2xs`}>
-              <img
-                src={brandInfo.logo}
-                alt={brandInfo.label}
-                className="h-6 sm:h-7 w-auto object-contain shrink-0"
-              />
-              <span>{brandInfo.label}</span>
-            </span>
+            <img
+              src={brandInfo.logo}
+              alt={brandInfo.label}
+              className="h-8 sm:h-10 md:h-12 w-auto max-w-[130px] sm:max-w-[160px] object-contain shrink-0"
+            />
           ) : (
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide ${brandInfo.bg} ${brandInfo.text} shrink-0`}>
-              {brandName}
-            </span>
+            <div />
           )}
-          <span className="text-[10px] sm:text-xs text-slate-400 font-semibold">
-            Slot {slotIdx + 1}
+
+          {/* Brand Capsule on Right (WITHOUT logo inside) */}
+          <span
+            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs sm:text-[13px] font-black uppercase tracking-wider ${brandInfo.bg} ${brandInfo.text} ${brandInfo.border} border shrink-0 shadow-2xs`}
+          >
+            {brandInfo.label}
           </span>
         </div>
 
@@ -1236,7 +1233,7 @@ function CompareContent() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="font-poppins font-black text-lg sm:text-2xl text-[#0B1A33] tracking-tight">
-                    Select Aerator for Slot {selectorSlot + 1}
+                    Select Aerator
                   </h3>
                   <p className="text-xs sm:text-[13px] text-[#64748B] font-medium mt-0.5">
                     Pick an aerator model to compare all technical specifications
@@ -1330,27 +1327,35 @@ function CompareContent() {
                             : 'border-2 border-[#E2E8F0] hover:border-[#1D64EC]/60 bg-white hover:bg-slate-50/60 shadow-xs hover:shadow-md hover:-translate-y-0.5'
                         }`}
                       >
-                        {/* Brand Pill Badge */}
-                        <div className="w-full flex items-center justify-center">
-                          {isSeaBoss ? (
-                            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] text-xs font-black uppercase tracking-wider shadow-2xs">
+                        {/* Top Row: HUGE Logo on Left, Brand Capsule on Right (WITHOUT logo) */}
+                        <div className="w-full flex items-center justify-between gap-2">
+                          <div className="flex items-center">
+                            {isSeaBoss ? (
                               <img
                                 src="/images/logos/seaboss-logo.svg"
                                 alt="Sea Boss"
-                                className="h-6 sm:h-7 w-auto object-contain shrink-0"
+                                className="h-8 sm:h-9 md:h-10 w-auto max-w-[105px] sm:max-w-[135px] object-contain shrink-0"
                               />
-                              <span>SEA BOSS</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] text-xs font-black uppercase tracking-wider shadow-2xs">
+                            ) : (
                               <img
                                 src="/images/logos/aqualion-logo.svg"
                                 alt="Aqualion"
-                                className="h-6 sm:h-7 w-auto object-contain shrink-0"
+                                className="h-8 sm:h-9 md:h-10 w-auto max-w-[105px] sm:max-w-[135px] object-contain shrink-0"
                               />
-                              <span>AQUALION</span>
-                            </span>
-                          )}
+                            )}
+                          </div>
+
+                          <div>
+                            {isSeaBoss ? (
+                              <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
+                                SEA BOSS
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-2xs">
+                                AQUALION
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* PROMINENT MODEL NUMBER */}
@@ -1378,12 +1383,12 @@ function CompareContent() {
                         {/* Status Badges */}
                         {isSelected && (
                           <span className="mt-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-[#1D64EC] text-white shadow-2xs">
-                            ✓ In Slot {selectorSlot + 1}
+                            ✓ Selected
                           </span>
                         )}
                         {!isSelected && isOtherSelected && (
                           <span className="mt-2.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-amber-100 text-amber-800">
-                            In Slot {otherSlotIdx + 1}
+                            Compared
                           </span>
                         )}
                       </button>

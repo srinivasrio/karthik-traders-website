@@ -10,7 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# Design archives
+New UI for karthiktraders/
+*.zip
 /coverage
 
 # next.js
