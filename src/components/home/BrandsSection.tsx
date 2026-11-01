@@ -83,12 +83,14 @@ export default function BrandsSection() {
 
           <div className="relative flex items-start justify-between gap-3">
             <div className="flex flex-col items-start gap-3 min-w-0">
-              <img
-                src="/images/logos/aqualion-logo.svg"
-                alt="Aqualion"
-                className="w-32 sm:w-44 h-12 sm:h-14 object-contain object-left"
-              />
-              <span className="px-3 py-1 rounded-full bg-white text-[#8A4B00] text-xs font-extrabold shadow-xs tracking-wider">
+              <div className="h-20 sm:h-24 md:h-28 flex items-center">
+                <img
+                  src="/images/logos/aqualion-logo.svg"
+                  alt="Aqualion"
+                  className="h-full w-auto max-w-[220px] object-contain object-left"
+                />
+              </div>
+              <span className="px-3.5 py-1 rounded-full bg-white text-[#8A4B00] text-xs font-black shadow-xs tracking-wider border border-[#FFDFB0]">
                 PREMIUM
               </span>
             </div>
@@ -138,12 +140,14 @@ export default function BrandsSection() {
 
           <div className="relative flex items-start justify-between gap-3">
             <div className="flex flex-col items-start gap-3 min-w-0">
-              <img
-                src="/images/logos/seaboss-logo.svg"
-                alt="Sea Boss"
-                className="w-32 sm:w-44 h-12 sm:h-14 object-contain object-left"
-              />
-              <span className="px-3 py-1 rounded-full bg-white text-[#0B5C86] text-xs font-extrabold shadow-xs tracking-wider">
+              <div className="h-20 sm:h-24 md:h-28 flex items-center">
+                <img
+                  src="/images/logos/seaboss-logo.svg"
+                  alt="Sea Boss"
+                  className="h-full w-auto max-w-[220px] object-contain object-left"
+                />
+              </div>
+              <span className="px-3.5 py-1 rounded-full bg-white text-[#0B5C86] text-xs font-black shadow-xs tracking-wider border border-[#C4D9FF]">
                 HIGH PERFORMANCE
               </span>
             </div>
@@ -205,8 +209,8 @@ export default function BrandsSection() {
               className="p-6 sm:p-7 flex justify-between items-start gap-4 rounded-t-[28px]"
               style={{ backgroundColor: bm.bg }}
             >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/90 shadow-xs border border-white flex items-center justify-center p-1.5 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/95 shadow-sm border border-white flex items-center justify-center p-2 shrink-0">
                   <img
                     src={activeBrand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
                     alt={bm.title}

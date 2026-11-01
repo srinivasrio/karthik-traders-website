@@ -220,15 +220,44 @@ export default function Footer() {
               </span>
             </Link>
 
-            <div className="flex gap-2 flex-wrap pt-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF1D6] text-[#8A4B00] text-xs font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#E8A317]" />
-                Aqualion · Premium
+            {/* Authorized Brands Card */}
+            <div className="flex flex-col gap-2 pt-1">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#64748B]">
+                Official Authorized Brands
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DDF3FF] text-[#0B5C86] text-xs font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1BA3D9]" />
-                Sea Boss · Budget + High Performance
-              </span>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <Link
+                  href="/aerator-sets?brand=aqualion"
+                  title="Shop Aqualion Aerators"
+                  className="h-12 px-3 py-1.5 rounded-2xl bg-white border border-[#FFDFB0] shadow-xs hover:shadow-md hover:border-[#E8A317] transition-all flex items-center gap-2.5 group cursor-pointer"
+                >
+                  <img
+                    src="/images/logos/aqualion-logo.svg"
+                    alt="Aqualion"
+                    className="h-8 w-auto object-contain"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-[#8A4B00] leading-none">Aqualion</span>
+                    <span className="text-[9px] font-bold text-[#B87000] uppercase tracking-wide mt-0.5">Premium</span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/aerator-sets?brand=seaboss"
+                  title="Shop Sea Boss Aerators"
+                  className="h-12 px-3 py-1.5 rounded-2xl bg-white border border-[#C4D9FF] shadow-xs hover:shadow-md hover:border-[#1450C8] transition-all flex items-center gap-2.5 group cursor-pointer"
+                >
+                  <img
+                    src="/images/logos/seaboss-logo.svg"
+                    alt="Sea Boss"
+                    className="h-8 w-auto object-contain"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-[#0B5C86] leading-none">Sea Boss</span>
+                    <span className="text-[9px] font-bold text-[#1450C8] uppercase tracking-wide mt-0.5">High Power</span>
+                  </div>
+                </Link>
+              </div>
             </div>
 
             {/* Original Social Media Icons */}

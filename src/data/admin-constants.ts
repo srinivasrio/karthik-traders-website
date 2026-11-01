@@ -121,5 +121,57 @@ export const SPEC_TEMPLATES: Record<string, string[]> = {
   ],
 };
 
+// Feature templates — pre-fill common marketing / key highlight bullet points
+export const FEATURE_TEMPLATES: Record<string, string[]> = {
+  'aerator-set': [
+    'Heavy-Duty Copper Wound Energy Efficient Motor (ISO Certified)',
+    'Precision Bevel / Worm Gearbox with High Torque Output (105 RPM)',
+    'UV-Stabilized Virgin HDPE Floats & High Impact Impeller Paddles',
+    'Corrosion-Resistant SS 304 / SS 202 Frame & Drive Shafts',
+    'High Oxygen Transfer Rate & Long-Distance Water Circulation',
+    'Comprehensive Warranty with Local Genuine Spares Support in Nellore'
+  ],
+  'motor': [
+    '100% Pure Copper Winding for Maximum Electrical Efficiency',
+    'ISO 9001 Certified Industrial Continuous Duty Motor',
+    'High Starting Torque & Thermal Overload Protection',
+    'Cast Iron Rigid Body with Anti-Corrosion Protective Coating',
+    'IP55 Ingress Protection against Water Splash and Dust'
+  ],
+  'worm-gearbox': [
+    'Heavy-Duty Cast Iron Housing for Maximum Durability',
+    'Precision Phosphorus Bronze Worm Wheel & Hardened Steel Shaft',
+    'Smooth Low-Noise Power Transmission with 105 RPM Output',
+    'Factory Tested Leak-Proof Seals with EP 140 Synthetic Oil Capacity',
+    'Designed for 24/7 Continuous Pond Aeration Operations'
+  ],
+  'bevel-gearbox': [
+    'High-Efficiency Bevel Gear Drive with Reduced Power Loss',
+    'Rugged Cast Iron / Nylon Composite Housing with Powder Coating',
+    'Precision Machined Bevel Gears for Heavy Duty 2HP & 3HP Aerators',
+    'Stainless Steel Drive Shafts & High-Precision Bearings'
+  ],
+  'long-arm-gearbox': [
+    'Specially Engineered for Deep Pond Long-Arm Aeration Systems',
+    'Heavy Torque Multiplication with Vibration-Dampened Gears',
+    'Extended Operating Life in High Salinity Aquaculture Environments'
+  ],
+  'float': [
+    'Manufactured from 100% Virgin HDPE with UV Stabilizers',
+    'Seamless One-Piece Blow Molded Construction Prevents Water Ingress',
+    'High Buoyancy & Pond Stability in Heavy Wind and Wave Conditions'
+  ],
+  'fan': [
+    'Engineered 8-Spline Impeller Fan Blades for Maximum Aeration Spray',
+    'Virgin PP Material with Heavy Brass Bush Insert',
+    'High Water Displacement with Low Power Drag on Motor'
+  ],
+  'spares': [
+    'Genuine OEM Replacement Component from Karthik Traders',
+    'Direct Factory Fitment for Standard Indian & Imported Aerator Sets',
+    'Corrosion Resistant Finish for Prolonged Pond Immersion'
+  ]
+};
+
 export type CategoryValue = typeof CATEGORIES[number]['value'];
 export type BrandValue = typeof BRANDS[number]['value'];

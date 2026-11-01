@@ -204,13 +204,13 @@ export default function ComparePromo() {
             <div className="col-span-4 bg-white rounded-2xl p-4 border border-[#E8EEF5] shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFF1D6] text-[#8A4B00] text-[11px] font-extrabold uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFF1D6] text-[#8A4B00] text-xs font-black uppercase tracking-wider border border-[#FFDFB0]">
                     {productA?.brand === 'aqualion' ? (
                       <>
                         <img
                           src="/images/logos/aqualion-logo.svg"
                           alt="Aqualion"
-                          className="h-3.5 w-auto object-contain shrink-0"
+                          className="h-6 sm:h-7 w-auto object-contain shrink-0"
                         />
                         <span>Aqualion</span>
                       </>
@@ -263,13 +263,13 @@ export default function ComparePromo() {
             <div className="col-span-4 bg-white rounded-2xl p-4 border border-[#E8EEF5] shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#DDF3FF] text-[#0B5C86] text-[11px] font-extrabold uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DDF3FF] text-[#0B5C86] text-xs font-black uppercase tracking-wider border border-[#C4D9FF]">
                     {productB?.brand === 'seaboss' ? (
                       <>
                         <img
                           src="/images/logos/seaboss-logo.svg"
                           alt="Sea Boss"
-                          className="h-3.5 w-auto object-contain shrink-0"
+                          className="h-6 sm:h-7 w-auto object-contain shrink-0"
                         />
                         <span>Sea Boss</span>
                       </>
@@ -365,13 +365,13 @@ export default function ComparePromo() {
             <div className="bg-white rounded-2xl p-3 border border-[#E3E8F0] shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFF1D6] text-[#8A4B00] text-[9.5px] font-black uppercase">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF1D6] text-[#8A4B00] text-[10.5px] font-black uppercase">
                     {productA?.brand === 'aqualion' ? (
                       <>
                         <img
                           src="/images/logos/aqualion-logo.svg"
                           alt="Aqualion"
-                          className="h-3 w-auto object-contain shrink-0"
+                          className="h-5 w-auto object-contain shrink-0"
                         />
                         <span>Aqualion</span>
                       </>
@@ -409,13 +409,13 @@ export default function ComparePromo() {
             <div className="bg-white rounded-2xl p-3 border border-[#E3E8F0] shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#DDF3FF] text-[#0B5C86] text-[9.5px] font-black uppercase">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#DDF3FF] text-[#0B5C86] text-[10.5px] font-black uppercase">
                     {productB?.brand === 'seaboss' ? (
                       <>
                         <img
                           src="/images/logos/seaboss-logo.svg"
                           alt="Sea Boss"
-                          className="h-3 w-auto object-contain shrink-0"
+                          className="h-5 w-auto object-contain shrink-0"
                         />
                         <span>Sea Boss</span>
                       </>

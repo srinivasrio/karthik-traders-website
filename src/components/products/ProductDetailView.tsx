@@ -226,7 +226,7 @@ export default function ProductDetailView({
           <div className="lg:col-span-6 flex flex-col gap-5 lg:sticky lg:top-24">
             {/* Meta Tags: Brand, Model & Stock */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full uppercase tracking-wider ${
+              <span className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full uppercase tracking-wider text-xs sm:text-[13px] font-black shadow-2xs ${
                 product.brand === 'aqualion'
                   ? 'bg-[#FFF1D6] text-[#8A4B00] border border-[#FFDFB0]'
                   : product.brand === 'seaboss'
@@ -238,7 +238,7 @@ export default function ProductDetailView({
                     <img
                       src="/images/logos/aqualion-logo.svg"
                       alt="Aqualion"
-                      className="h-3.5 w-auto object-contain shrink-0"
+                      className="h-6 sm:h-7 w-auto object-contain shrink-0"
                     />
                     <span>Aqualion</span>
                   </>
@@ -247,7 +247,7 @@ export default function ProductDetailView({
                     <img
                       src="/images/logos/seaboss-logo.svg"
                       alt="Sea Boss"
-                      className="h-3.5 w-auto object-contain shrink-0"
+                      className="h-6 sm:h-7 w-auto object-contain shrink-0"
                     />
                     <span>Sea Boss</span>
                   </>

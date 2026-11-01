@@ -30,21 +30,29 @@ export async function getLiveProductsAction(staticProducts: Product[]): Promise<
                     (p.model && (dbProduct.specifications?.['Model number'] === p.model || dbProduct.specifications?.model === p.model))
                 );
 
+                const dbSpecs = dbProduct.specifications || {};
+                const dbFeatures = Array.isArray(dbSpecs.features) && dbSpecs.features.length > 0
+                    ? dbSpecs.features
+                    : (Array.isArray(dbProduct.features) && dbProduct.features.length > 0 ? dbProduct.features : null);
+
                 return {
                     ...(staticMatch || {}), // Fallback properties like badge
                     id: dbProduct.id,
                     slug: dbProduct.slug,
                     name: dbProduct.name,
-                    brand: staticMatch?.brand || dbProduct.specifications?.brand || dbProduct.specifications?.Brand || 'generic',
-                    category: dbProduct.specifications?.category || staticMatch?.category || dbProduct.category,
+                    brand: dbProduct.brand || dbSpecs.brand || dbSpecs.Brand || staticMatch?.brand || 'generic',
+                    category: dbSpecs.category || staticMatch?.category || dbProduct.category,
                     mrp: dbProduct.mrp || dbProduct.price,
                     salePrice: dbProduct.price,
-                    model: dbProduct.specifications?.model || dbProduct.specifications?.['Model number'] || staticMatch?.model,
-                    features: staticMatch?.features || dbProduct.specifications?.features || [],
-                    components: dbProduct.specifications?.components || staticMatch?.components || [],
-                    specifications: dbProduct.specifications || staticMatch?.specifications || {},
+                    model: dbSpecs.model || dbSpecs['Model number'] || dbSpecs.Model || staticMatch?.model,
+                    features: dbFeatures !== null ? dbFeatures : (staticMatch?.features || []),
+                    components: dbSpecs.components || staticMatch?.components || [],
+                    specifications: {
+                        ...(staticMatch?.specifications || {}),
+                        ...dbSpecs,
+                    },
                     description: dbProduct.description || staticMatch?.description,
-                    warranty: dbProduct.specifications?.warranty || dbProduct.specifications?.['Warranty'] || staticMatch?.warranty,
+                    warranty: dbSpecs.warranty || dbSpecs['Warranty'] || dbProduct.warranty || staticMatch?.warranty,
                     inStock: dbProduct.stock > 0,
                     stock: dbProduct.stock,
                     stockStatus: (dbProduct.stock > 0 ? 'in-stock' : 'out-of-stock') as any,

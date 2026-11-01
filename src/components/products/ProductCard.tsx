@@ -250,17 +250,18 @@ export default function ProductCard({
         <div className="flex items-center justify-between gap-1.5 flex-wrap">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span
-              className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full font-extrabold text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full font-black text-xs sm:text-[13px] px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-2xs border"
               style={{
                 backgroundColor: brandMeta.bg,
                 color: brandMeta.fg,
+                borderColor: brandKey === 'aqualion' ? '#FFDFB0' : brandKey === 'seaboss' ? '#C4D9FF' : '#E3E8F0',
               }}
             >
               {brandMeta.logo ? (
                 <img
                   src={brandMeta.logo}
                   alt={brandMeta.label}
-                  className="h-3 sm:h-3.5 w-auto object-contain shrink-0"
+                  className="h-5 sm:h-6 w-auto object-contain shrink-0"
                 />
               ) : (
                 <span
@@ -268,12 +269,12 @@ export default function ProductCard({
                   style={{ backgroundColor: brandMeta.dot }}
                 />
               )}
-              {brandMeta.label}
+              <span>{brandMeta.label}</span>
             </span>
 
             {modelNumber && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] sm:text-[10.5px] font-black bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF]">
-                <span className="text-[7.5px] sm:text-[8.5px] uppercase font-bold text-[#64748B]">Model</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF]">
+                <span className="text-[8px] sm:text-[9px] uppercase font-bold text-[#64748B]">Model</span>
                 <span className="text-[#0B1A33] font-black">{modelNumber}</span>
               </span>
             )}
@@ -288,15 +289,6 @@ export default function ProductCard({
             </span>
           )}
         </div>
-
-        {/* Model Number Hero Highlight for aerator cards */}
-        {modelNumber && isAerator && (
-          <div className="flex items-center gap-1.5 pt-0.5">
-            <span className="font-poppins font-black text-xs sm:text-[13px] text-[#1D64EC] tracking-tight uppercase px-2 py-0.5 rounded-md bg-[#EBF3FC] border border-[#D0E3FA]">
-              Model: {modelNumber}
-            </span>
-          </div>
-        )}
 
         {/* Product Title */}
         <Link

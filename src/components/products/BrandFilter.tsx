@@ -84,7 +84,7 @@ export default function BrandFilter({
                   }`}
                 >
                   {t.logo ? (
-                    <span className="w-5 h-5 rounded-full bg-white/90 shadow-2xs flex items-center justify-center p-0.5 shrink-0">
+                    <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white shadow-2xs flex items-center justify-center p-0.5 shrink-0">
                       <img
                         src={t.logo}
                         alt={t.label}

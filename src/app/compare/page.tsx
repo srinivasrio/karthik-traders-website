@@ -208,19 +208,19 @@ function FormattedValueView({ raw }: { raw: string }) {
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <div className="inline-flex items-center gap-1.5 justify-center">
+      <div className="inline-flex items-center gap-2 justify-center">
         {isAqualion && (
           <img
             src="/images/logos/aqualion-logo.svg"
             alt="Aqualion"
-            className="h-4 w-auto object-contain shrink-0"
+            className="h-6 sm:h-7 w-auto object-contain shrink-0"
           />
         )}
         {isSeaBoss && (
           <img
             src="/images/logos/seaboss-logo.svg"
             alt="Sea Boss"
-            className="h-4 w-auto object-contain shrink-0"
+            className="h-6 sm:h-7 w-auto object-contain shrink-0"
           />
         )}
         <span className="font-normal text-[#1E293B] text-[11.5px] sm:text-[13px] md:text-sm tracking-tight leading-snug">
@@ -864,11 +864,11 @@ function SlotCard({
       <div className="flex flex-col gap-0.5 px-1 pt-0.5">
         <div className="flex items-center justify-between gap-1 flex-wrap">
           {brandInfo.logo ? (
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wide ${brandInfo.bg} ${brandInfo.text} ${brandInfo.border} border shrink-0`}>
+            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-[13px] font-black uppercase tracking-wide ${brandInfo.bg} ${brandInfo.text} ${brandInfo.border} border shrink-0 shadow-2xs`}>
               <img
                 src={brandInfo.logo}
                 alt={brandInfo.label}
-                className="h-3.5 sm:h-4 w-auto object-contain shrink-0"
+                className="h-6 sm:h-7 w-auto object-contain shrink-0"
               />
               <span>{brandInfo.label}</span>
             </span>
@@ -1101,15 +1101,15 @@ function CompareContent() {
                     <span className="font-poppins font-black text-base lg:text-lg text-[#0A2540] tracking-tight">
                       {getAeratorModelNumber(p1)}
                     </span>
-                    <div className="inline-flex items-center gap-1.5">
+                    <div className="inline-flex items-center gap-2">
                       {getBrandInfo(p1.brand).logo && (
                         <img
                           src={getBrandInfo(p1.brand).logo!}
                           alt={brandName1}
-                          className="h-3.5 w-auto object-contain shrink-0"
+                          className="h-6 sm:h-7 w-auto object-contain shrink-0"
                         />
                       )}
-                      <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
+                      <span className="text-xs text-[#64748B] font-bold uppercase tracking-wider">
                         {brandName1}
                       </span>
                     </div>
@@ -1130,15 +1130,15 @@ function CompareContent() {
                     <span className="font-poppins font-black text-base lg:text-lg text-[#0A2540] tracking-tight">
                       {getAeratorModelNumber(p2)}
                     </span>
-                    <div className="inline-flex items-center gap-1.5">
+                    <div className="inline-flex items-center gap-2">
                       {getBrandInfo(p2.brand).logo && (
                         <img
                           src={getBrandInfo(p2.brand).logo!}
                           alt={brandName2}
-                          className="h-3.5 w-auto object-contain shrink-0"
+                          className="h-6 sm:h-7 w-auto object-contain shrink-0"
                         />
                       )}
-                      <span className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider">
+                      <span className="text-xs text-[#64748B] font-bold uppercase tracking-wider">
                         {brandName2}
                       </span>
                     </div>
@@ -1268,7 +1268,7 @@ function CompareContent() {
                 <button
                   type="button"
                   onClick={() => setSelectorBrand('seaboss')}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                     selectorBrand === 'seaboss'
                       ? 'bg-[#1450C8] text-white shadow-xs'
                       : 'bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] hover:bg-[#D9EAFE]'
@@ -1277,14 +1277,14 @@ function CompareContent() {
                   <img
                     src="/images/logos/seaboss-logo.svg"
                     alt="Sea Boss"
-                    className="h-3.5 w-auto object-contain shrink-0"
+                    className="h-5 sm:h-6 w-auto object-contain shrink-0"
                   />
                   <span>Sea Boss</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectorBrand('aqualion')}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                     selectorBrand === 'aqualion'
                       ? 'bg-[#B87000] text-white shadow-xs'
                       : 'bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] hover:bg-[#FEEDBE]'
@@ -1293,7 +1293,7 @@ function CompareContent() {
                   <img
                     src="/images/logos/aqualion-logo.svg"
                     alt="Aqualion"
-                    className="h-3.5 w-auto object-contain shrink-0"
+                    className="h-5 sm:h-6 w-auto object-contain shrink-0"
                   />
                   <span>Aqualion</span>
                 </button>
@@ -1333,20 +1333,20 @@ function CompareContent() {
                         {/* Brand Pill Badge */}
                         <div className="w-full flex items-center justify-center">
                           {isSeaBoss ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F1FF] text-[#1450C8] border border-[#CDE0FF] text-xs font-black uppercase tracking-wider shadow-2xs">
                               <img
                                 src="/images/logos/seaboss-logo.svg"
                                 alt="Sea Boss"
-                                className="h-3.5 w-auto object-contain shrink-0"
+                                className="h-6 sm:h-7 w-auto object-contain shrink-0"
                               />
                               <span>SEA BOSS</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF4D2] text-[#B87000] border border-[#FFE799] text-xs font-black uppercase tracking-wider shadow-2xs">
                               <img
                                 src="/images/logos/aqualion-logo.svg"
                                 alt="Aqualion"
-                                className="h-3.5 w-auto object-contain shrink-0"
+                                className="h-6 sm:h-7 w-auto object-contain shrink-0"
                               />
                               <span>AQUALION</span>
                             </span>

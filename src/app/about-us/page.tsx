@@ -111,11 +111,11 @@ export default function AboutUsPage() {
         {/* Two Brand Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="rounded-[28px] bg-[#FFF1D6] border border-[#FFDFB0] p-7 flex flex-col gap-3">
-            <div className="h-12 flex items-center">
+            <div className="h-16 sm:h-20 flex items-center">
               <img
                 src="/images/logos/aqualion-logo.svg"
                 alt="Aqualion"
-                className="h-12 w-auto object-contain object-left mb-1"
+                className="h-full w-auto object-contain object-left mb-1"
               />
             </div>
             <h3 className="text-2xl font-extrabold text-[#8A4B00] font-poppins">
@@ -133,11 +133,11 @@ export default function AboutUsPage() {
           </div>
 
           <div className="rounded-[28px] bg-[#DDF3FF] border border-[#C4D9FF] p-7 flex flex-col gap-3">
-            <div className="h-12 flex items-center">
+            <div className="h-16 sm:h-20 flex items-center">
               <img
                 src="/images/logos/seaboss-logo.svg"
                 alt="Sea Boss"
-                className="h-12 w-auto object-contain object-left mb-1"
+                className="h-full w-auto object-contain object-left mb-1"
               />
             </div>
             <h3 className="text-2xl font-extrabold text-[#0B5C86] font-poppins">

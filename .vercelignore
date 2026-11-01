@@ -1,0 +1,13 @@
+.git
+.github
+New UI for karthiktraders/
+*.zip
+*.log
+/admin-dashboard*.png
+tests/
+playwright-report/
+test-results/
+playwright.config.ts
+maintenance.html
+seed.sql
+scripts/

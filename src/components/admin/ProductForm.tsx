@@ -11,7 +11,7 @@ import {
     ChevronUpIcon,
     SparklesIcon,
 } from '@heroicons/react/24/outline';
-import { CATEGORIES, BRANDS, SPEC_TEMPLATES, CATEGORY_GROUPS } from '@/data/admin-constants';
+import { CATEGORIES, BRANDS, SPEC_TEMPLATES, CATEGORY_GROUPS, FEATURE_TEMPLATES } from '@/data/admin-constants';
 import ImageUploader from './ImageUploader';
 import ProductPreviewCard from './ProductPreviewCard';
 
@@ -213,7 +213,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
     const [specs, setSpecs] = useState<SpecRow[]>([
         { id: Math.random().toString(36).substring(2, 9), key: '', value: '' }
     ]);
-    const [existingFeatures, setExistingFeatures] = useState<string[]>([]);
+    const [features, setFeatures] = useState<string[]>(['']);
     const [components, setComponents] = useState<ComponentRow[]>([
         { item: '', spec: '', quantity: '' },
     ]);
@@ -302,10 +302,13 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                     setSpecs([{ id: Math.random().toString(36).substring(2, 9), key: '', value: '' }]);
                 }
 
-                // Extract features (preserved for backward compatibility, not managed in UI)
+                // Extract features
                 const feats = parseFeatures(specsData.features || data.features);
                 if (feats.length > 0) {
-                    setExistingFeatures(feats);
+                    setFeatures(feats);
+                    setSections(prev => ({ ...prev, features: true }));
+                } else {
+                    setFeatures(['']);
                 }
 
                 // Extract components
@@ -407,7 +410,24 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
         });
     };
 
-    // Feature handlers removed. Existing features preserved on load.
+    // Feature handlers
+    const updateFeature = (index: number, val: string) => {
+        setFeatures(prev => prev.map((f, i) => i === index ? val : f));
+    };
+    const addFeature = () => setFeatures(prev => [...prev, '']);
+    const removeFeature = (index: number) => {
+        setFeatures(prev => {
+            const filtered = prev.filter((_, i) => i !== index);
+            return filtered.length > 0 ? filtered : [''];
+        });
+    };
+    const loadFeatureTemplate = () => {
+        const template = FEATURE_TEMPLATES[category] || FEATURE_TEMPLATES['spares'] || [];
+        if (template.length > 0) {
+            setFeatures([...template]);
+            setSections(prev => ({ ...prev, features: true }));
+        }
+    };
 
     // Component handlers
     const updateComponent = (index: number, field: keyof ComponentRow, val: string) => {
@@ -435,9 +455,10 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
         result.brand = brandValue;
         if (model) result.model = model;
 
-        // Add existing features array for backward compatibility
-        if (existingFeatures && existingFeatures.length > 0) {
-            result.features = existingFeatures;
+        // Add features array
+        const cleanFeatures = features.map(f => f.trim()).filter(Boolean);
+        if (cleanFeatures.length > 0) {
+            result.features = cleanFeatures;
         }
 
         // Add components array
@@ -864,6 +885,57 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                             </div>
                         </SectionCard>
 
+                        {/* === KEY FEATURES (All products) === */}
+                        <SectionCard
+                            title="Product Key Features"
+                            open={sections.features}
+                            onToggle={() => toggleSection('features')}
+                            badge={features.filter(f => f.trim()).length > 0 ? `${features.filter(f => f.trim()).length} features` : undefined}
+                            action={
+                                <button
+                                    type="button"
+                                    onClick={loadFeatureTemplate}
+                                    className="flex items-center gap-1 text-[10px] text-aqua-600 hover:text-aqua-700 font-medium bg-aqua-50 px-2 py-0.5 rounded border border-aqua-200"
+                                >
+                                    <SparklesIcon className="h-3 w-3" />
+                                    Load Suggestions
+                                </button>
+                            }
+                        >
+                            <div className="space-y-2">
+                                <p className="text-xs text-slate-500 mb-2">
+                                    Key bullet points displayed on product detail pages, comparison tables, and product cards across all categories.
+                                </p>
+                                {features.map((feat, i) => (
+                                    <div key={i} className="flex gap-2 items-center">
+                                        <span className="text-[10px] font-bold text-slate-400 w-5 text-right">{i + 1}.</span>
+                                        <input
+                                            type="text"
+                                            value={feat}
+                                            onChange={e => updateFeature(i, e.target.value)}
+                                            placeholder="e.g., Heavy-Duty 100% Pure Copper Winding Motor"
+                                            className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-aqua-500 focus:border-aqua-500"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeFeature(i)}
+                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                            title="Delete feature"
+                                        >
+                                            <TrashIcon className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={addFeature}
+                                    className="flex items-center gap-1 text-xs text-aqua-600 hover:text-aqua-700 font-medium py-1"
+                                >
+                                    <PlusIcon className="h-3.5 w-3.5" /> Add Feature
+                                </button>
+                            </div>
+                        </SectionCard>
+
                         {/* === SET COMPONENTS (Aerator sets only) === */}
                         {isAeratorSet && (
                             <SectionCard
@@ -958,7 +1030,7 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                                     warranty={warranty}
                                     stockStatus={stockStatus}
                                     images={images}
-                                    features={existingFeatures}
+                                    features={features.filter(f => f.trim())}
                                     isBestSelling={isBestSelling}
                                 />
                             </div>

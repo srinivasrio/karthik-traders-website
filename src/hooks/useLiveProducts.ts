@@ -50,21 +50,29 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                             (p.model && (dbProduct.specifications?.['Model number'] === p.model || dbProduct.specifications?.model === p.model))
                         );
 
+                        const dbSpecs = dbProduct.specifications || {};
+                        const dbFeatures = Array.isArray(dbSpecs.features) && dbSpecs.features.length > 0
+                            ? dbSpecs.features
+                            : (Array.isArray(dbProduct.features) && dbProduct.features.length > 0 ? dbProduct.features : null);
+
                         return {
                             ...(staticMatch || {}), // Fallback properties like badge
                             id: dbProduct.id,
                             slug: dbProduct.slug,
                             name: dbProduct.name,
-                            model: dbProduct.specifications?.model || dbProduct.specifications?.['Model number'] || staticMatch?.model,
-                            brand: staticMatch?.brand || dbProduct.specifications?.brand || 'generic',
-                            category: dbProduct.specifications?.category || staticMatch?.category || dbProduct.category,
+                            model: dbSpecs.model || dbSpecs['Model number'] || dbSpecs.Model || staticMatch?.model,
+                            brand: dbProduct.brand || dbSpecs.brand || dbSpecs.Brand || staticMatch?.brand || 'generic',
+                            category: dbSpecs.category || staticMatch?.category || dbProduct.category,
                             mrp: dbProduct.mrp || dbProduct.price,
                             salePrice: dbProduct.price,
-                            features: staticMatch?.features || dbProduct.specifications?.features || [],
-                            components: dbProduct.specifications?.components || staticMatch?.components || [],
-                            specifications: dbProduct.specifications || staticMatch?.specifications || {},
+                            features: dbFeatures !== null ? dbFeatures : (staticMatch?.features || []),
+                            components: dbSpecs.components || staticMatch?.components || [],
+                            specifications: {
+                                ...(staticMatch?.specifications || {}),
+                                ...dbSpecs,
+                            },
                             description: dbProduct.description || staticMatch?.description,
-                            warranty: dbProduct.specifications?.warranty || dbProduct.specifications?.['Warranty'] || staticMatch?.warranty,
+                            warranty: dbSpecs.warranty || dbSpecs['Warranty'] || dbProduct.warranty || staticMatch?.warranty,
                             inStock: dbProduct.stock > 0,
                             stock: dbProduct.stock,
                             stockStatus: (dbProduct.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
@@ -133,21 +141,29 @@ export function useLiveProduct(staticProduct: Product | null | undefined, slugFa
                 }
 
                 if (data && isMounted) {
+                    const dbSpecs = data.specifications || {};
+                    const dbFeatures = Array.isArray(dbSpecs.features) && dbSpecs.features.length > 0
+                        ? dbSpecs.features
+                        : (Array.isArray(data.features) && data.features.length > 0 ? data.features : null);
+
                     setProduct({
                         ...(staticProduct || {}), // Fallback
                         id: data.id,
                         slug: data.slug,
                         name: data.name || staticProduct?.name,
-                        model: data.specifications?.model || data.specifications?.['Model number'] || staticProduct?.model,
-                        brand: staticProduct?.brand || data.specifications?.brand || 'generic',
-                        category: data.specifications?.category || staticProduct?.category || data.category,
+                        model: dbSpecs.model || dbSpecs['Model number'] || dbSpecs.Model || staticProduct?.model,
+                        brand: data.brand || dbSpecs.brand || dbSpecs.Brand || staticProduct?.brand || 'generic',
+                        category: dbSpecs.category || staticProduct?.category || data.category,
                         mrp: data.mrp || staticProduct?.mrp || data.price,
                         salePrice: data.price || staticProduct?.salePrice,
-                        features: staticProduct?.features || data.specifications?.features || [],
-                        components: data.specifications?.components || staticProduct?.components || [],
-                        specifications: data.specifications || staticProduct?.specifications || {},
+                        features: dbFeatures !== null ? dbFeatures : (staticProduct?.features || []),
+                        components: dbSpecs.components || staticProduct?.components || [],
+                        specifications: {
+                            ...(staticProduct?.specifications || {}),
+                            ...dbSpecs,
+                        },
                         description: data.description || staticProduct?.description,
-                        warranty: data.specifications?.warranty || data.specifications?.['Warranty'] || staticProduct?.warranty,
+                        warranty: dbSpecs.warranty || dbSpecs['Warranty'] || data.warranty || staticProduct?.warranty,
                         stock: data.stock,
                         inStock: data.stock > 0,
                         stockStatus: (data.stock > 0 ? 'in-stock' : 'out-of-stock') as any,
