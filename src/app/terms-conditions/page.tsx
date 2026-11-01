@@ -46,7 +46,7 @@ export default function TermsConditionsPage() {
       h: 'Warranty Terms & Conditions',
       ps: [
         'Standard Aerator Sets & Sea Boss: 1 Year Replacement Warranty covering manufacturing defects on motor and gearbox.',
-        'Aqualion PR 20 B: Double Warranty — 1 Year Comprehensive Warranty + 1 Year Extended Service Warranty.',
+        'Aqualion Aerator Sets: 1 Year Comprehensive Warranty covering manufacturing defects on motor and gearbox.',
         'Warranty does not cover dry runs without water, electrical phase drop without relay starter, unauthorized motor opening, or transport physical breakage.',
       ],
     },

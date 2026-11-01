@@ -139,7 +139,7 @@ export default function ProductDetailView({
                 )}
                 {product.brand === 'aqualion' && (
                   <span className="px-3 py-1 rounded-full bg-white/95 text-[#8A4B00] text-xs font-extrabold shadow-xs">
-                    Double Warranty
+                    1 Year Warranty
                   </span>
                 )}
               </div>

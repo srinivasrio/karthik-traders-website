@@ -72,7 +72,7 @@ export const aeratorSets: Product[] = [
       'A3 Bevel Gearbox (106 RPM)',
       'SS 304 Frame (3mm Thickness)',
       'Virgin HDPE Floats (7kg)',
-      'Double Warranty'
+      '1 Year Warranty'
     ],
     components: [
       { item: 'MOTOR', spec: '2HP Heavy Duty Motor ( iso certified ) - 3 Phase', quantity: 1 },
@@ -86,7 +86,7 @@ export const aeratorSets: Product[] = [
       { item: 'STARTER', spec: 'no', quantity: 0 },
       { item: 'WIRE', spec: 'no', quantity: 0 },
       { item: 'GEAR OIL', spec: 'EP 140 Synthetic oil (2LT)', quantity: 1 },
-      { item: 'WARRANTY', spec: '1 year warranty + 1 year Service warranty', quantity: '' },
+      { item: 'WARRANTY', spec: '1 Year Warranty', quantity: '' },
     ],
     specifications: {
       'Product Name': 'AQUA LION 2HP 4 PADDLE WHEEL AERATOR SET',
@@ -126,10 +126,10 @@ export const aeratorSets: Product[] = [
       'Starter': 'no',
       'Wire': 'no',
       'Gear Oil': 'EP 140 Synthetic oil (2LT)',
-      'Warranty': '1 year warranty + 1 year Service warranty',
+      'Warranty': '1 Year Warranty',
       'Country of Origin': 'MADE IN INDIA'
     },
-    warranty: '1 Year Warranty + 1 Year Free Service',
+    warranty: '1 Year Warranty',
     images: [
       '/images/products/Aerator sets/Aqualion/AQUA LION 2HP 4 Paddle Wheel Aerator Set.png',
       '/images/products/Aerator sets/Aqualion/AQUA LION 2HP 4 Paddle Wheel Aerator Set copy.png'
@@ -152,7 +152,7 @@ export const aeratorSets: Product[] = [
       'A3 Nylon Bevel Gearbox (106 RPM)',
       'SS 304 Frame',
       'Virgin HDPE Floats (7kg)',
-      'Double Warranty'
+      '1 Year Warranty'
     ],
     components: [
       { item: 'MOTOR', spec: '2HP Heavy Duty Motor ( iso certified ) - 3 Phase', quantity: 1 },
@@ -166,7 +166,7 @@ export const aeratorSets: Product[] = [
       { item: 'STARTER', spec: 'no', quantity: 0 },
       { item: 'WIRE', spec: 'no', quantity: 0 },
       { item: 'GEAR OIL', spec: 'EP 140 Synthetic oil (2LT)', quantity: 1 },
-      { item: 'WARRANTY', spec: '1 year warranty + 1 year Service warranty', quantity: '' },
+      { item: 'WARRANTY', spec: '1 Year Warranty', quantity: '' },
     ],
     specifications: {
       'Product Name': 'AQUA LION 2HP 4 PADDLE WHEEL AERATOR SET',
@@ -206,10 +206,10 @@ export const aeratorSets: Product[] = [
       'Starter': 'no',
       'Wire': 'no',
       'Gear Oil': 'EP 140 Synthetic oil (2LT)',
-      'Warranty': '1 year warranty + 1 year Service warranty',
+      'Warranty': '1 Year Warranty',
       'Country of Origin': 'MADE IN INDIA'
     },
-    warranty: '1 Year Warranty + 1 Year Free Service',
+    warranty: '1 Year Warranty',
     images: ['/images/products/Aerator sets/Aqualion/AQUA LION 2HP 4 Paddle Wheel Aerator Set.png'],
     inStock: true,
     stockStatus: 'in-stock'
@@ -229,7 +229,7 @@ export const aeratorSets: Product[] = [
       'Aqualion 2HP Heavy Duty Motor',
       'A3 Bevel Gearbox',
       '110kg Total Set Weight',
-      'Double Warranty'
+      '1 Year Warranty'
     ],
     components: [
       { item: 'MOTOR', spec: '2HP Heavy Duty Motor ( iso certified ) - 3 Phase', quantity: 1 },
@@ -243,7 +243,7 @@ export const aeratorSets: Product[] = [
       { item: 'STARTER', spec: 'Aqua Lion D-Starter', quantity: 1 },
       { item: 'WIRE', spec: '1.5 Heavy cable wire', quantity: 1 },
       { item: 'GEAR OIL', spec: 'EP 140 Synthetic oil (2LT)', quantity: 1 },
-      { item: 'WARRANTY', spec: '1 year warranty + 1 year Service warranty', quantity: '' },
+      { item: 'WARRANTY', spec: '1 Year Warranty', quantity: '' },
     ],
     specifications: {
       'Product Name': 'AQUA LION 2HP 4 PADDLE WHEEL AERATOR SET',
@@ -283,10 +283,10 @@ export const aeratorSets: Product[] = [
       'Starter': 'Aqua Lion D-Starter',
       'Wire': '1.5 Heavy cable wire',
       'Gear Oil': 'EP 140 Synthetic oil (2LT)',
-      'Warranty': '1 year warranty + 1 year Service warranty',
+      'Warranty': '1 Year Warranty',
       'Country of Origin': 'MADE IN INDIA'
     },
-    warranty: '1 Year Warranty + 1 Year Free Service',
+    warranty: '1 Year Warranty',
     images: ['/images/products/Aerator sets/Aqualion/AQUA LION 2HP 4 Paddle Wheel Aerator Set.png'],
     inStock: true,
     stockStatus: 'in-stock'

@@ -122,7 +122,7 @@ export default function AboutUsPage() {
               Aqualion · Premium Aeration
             </h3>
             <p className="text-sm text-[#5C3A00] leading-relaxed font-medium">
-              High-efficiency copper-wound motors, precision Bevel A3 gearboxes, and SS 304 CR frames. Flagship model Aqualion PR 20 B carries our industry-exclusive Double Warranty.
+              High-efficiency copper-wound motors, precision Bevel A3 gearboxes, and SS 304 CR frames. All Aqualion models come backed by a comprehensive 1 Year Warranty.
             </p>
             <Link
               href="/aerator-sets?brand=aqualion"

@@ -110,12 +110,9 @@ export default function ComparePromo() {
     {
       label: 'Warranty Coverage',
       icon: '🛡️',
-      valA: pA?.warranty || '1 Year Warranty + 1 Year Free Service',
+      valA: pA?.warranty || '1 Year Warranty',
       valB: pB?.warranty || '1 Year Replacement Warranty',
-      highlightA:
-        pA?.warranty?.toLowerCase().includes('double') || pA?.warranty?.includes('1+1')
-          ? 'Double Warranty'
-          : 'Full Coverage',
+      highlightA: '1 Year Full',
       highlightB: '1 Year Full',
     },
   ];

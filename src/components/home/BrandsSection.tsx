@@ -25,8 +25,8 @@ const BRAND_DATA: Record<'aqualion' | 'seaboss', BrandInfo> = {
         v: 'Equipped with 100% copper-wound ISO certified motors, precision Bevel A3 gearboxes, SS 304 CR frames, and Virgin HDPE UV-stabilized floats for extreme pond longevity.',
       },
       {
-        k: 'DOUBLE WARRANTY',
-        v: 'Aqualion PR 20 B carries our industry-exclusive Double Warranty: 1 Year Comprehensive Warranty + 1 Year Extended Service Warranty coverage.',
+        k: '1 YEAR WARRANTY',
+        v: 'All Aqualion aerators carry a comprehensive 1 Year Warranty covering manufacturing defects on motor and gearbox.',
       },
       {
         k: 'COMPLETE PACKAGING',
@@ -112,8 +112,8 @@ export default function BrandsSection() {
             <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#E3E8F0] shadow-2xs">
               SS 304 CR frame
             </span>
-            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#E3E8F0] shadow-2xs text-[#4338CA]">
-              ★ Double Warranty
+            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#E3E8F0] shadow-2xs text-emerald-700 font-semibold">
+              ★ 1 Year Warranty
             </span>
           </div>
 
