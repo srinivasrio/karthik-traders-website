@@ -989,32 +989,32 @@ h6 {
     opacity: 1;
   }
   84% {
-    transform: translate3d(var(--jump-dist, 230px), 0, 0);
+    transform: translate3d(var(--jump-dist, 180px), 0, 0);
     opacity: 0;
   }
   100% {
-    transform: translate3d(var(--jump-dist, 230px), 0, 0);
+    transform: translate3d(var(--jump-dist, 180px), 0, 0);
     opacity: 0;
   }
 }
 
 @keyframes ktJY {
   0% {
-    transform: translate3d(0, 36px, 0);
+    transform: translate3d(0, 26px, 0);
   }
   3% {
-    transform: translate3d(0, 24px, 0);
+    transform: translate3d(0, 16px, 0);
     animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
   40% {
-    transform: translate3d(0, var(--jump-height, -105px), 0);
+    transform: translate3d(0, var(--jump-height, -72px), 0);
     animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
   }
   78% {
-    transform: translate3d(0, 24px, 0);
+    transform: translate3d(0, 16px, 0);
   }
   84%, 100% {
-    transform: translate3d(0, 36px, 0);
+    transform: translate3d(0, 26px, 0);
   }
 }
 
@@ -1031,32 +1031,32 @@ h6 {
       opacity: 1;
     }
     84% {
-      transform: translate3d(var(--jump-dist-mob, 135px), 0, 0);
+      transform: translate3d(var(--jump-dist-mob, 115px), 0, 0);
       opacity: 0;
     }
     100% {
-      transform: translate3d(var(--jump-dist-mob, 135px), 0, 0);
+      transform: translate3d(var(--jump-dist-mob, 115px), 0, 0);
       opacity: 0;
     }
   }
 
   @keyframes ktJY {
     0% {
-      transform: translate3d(0, 24px, 0);
+      transform: translate3d(0, 18px, 0);
     }
     3% {
-      transform: translate3d(0, 16px, 0);
+      transform: translate3d(0, 12px, 0);
       animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
     }
     40% {
-      transform: translate3d(0, var(--jump-height-mob, -72px), 0);
+      transform: translate3d(0, var(--jump-height-mob, -52px), 0);
       animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
     }
     78% {
-      transform: translate3d(0, 16px, 0);
+      transform: translate3d(0, 12px, 0);
     }
     84%, 100% {
-      transform: translate3d(0, 24px, 0);
+      transform: translate3d(0, 18px, 0);
     }
   }
 }

@@ -10,66 +10,66 @@ export default function Footer() {
   const fishes = [
     {
       src: '/images/fishes/fish-1.svg',
-      w: 130,
-      h: 78,
-      mobW: 84,
-      mobH: 51,
+      w: 72,
+      h: 44,
+      mobW: 48,
+      mobH: 29,
       left: '8%',
       mobLeft: '6%',
       delay: '0s',
-      dur: '3.9s',
-      land: '230px',
-      mobLand: '135px',
-      height: '-100px',
-      mobHeight: '-70px',
+      dur: '3.8s',
+      land: '180px',
+      mobLand: '110px',
+      height: '-70px',
+      mobHeight: '-50px',
       desktopOnly: false,
     },
     {
       src: '/images/fishes/fish-2.svg',
-      w: 155,
-      h: 62,
-      mobW: 102,
-      mobH: 41,
+      w: 88,
+      h: 35,
+      mobW: 58,
+      mobH: 23,
       left: '32%',
       mobLeft: '38%',
       delay: '-1.8s',
-      dur: '4.5s',
-      land: '260px',
-      mobLand: '145px',
-      height: '-115px',
-      mobHeight: '-80px',
+      dur: '4.3s',
+      land: '200px',
+      mobLand: '120px',
+      height: '-78px',
+      mobHeight: '-55px',
       desktopOnly: false,
     },
     {
       src: '/images/fishes/fish-1.svg',
-      w: 120,
-      h: 72,
-      mobW: 78,
-      mobH: 47,
+      w: 64,
+      h: 39,
+      mobW: 44,
+      mobH: 27,
       left: '58%',
       mobLeft: '70%',
       delay: '-0.9s',
-      dur: '3.7s',
-      land: '210px',
-      mobLand: '125px',
-      height: '-92px',
-      mobHeight: '-65px',
+      dur: '3.6s',
+      land: '165px',
+      mobLand: '105px',
+      height: '-65px',
+      mobHeight: '-46px',
       desktopOnly: false,
     },
     {
       src: '/images/fishes/fish-2.svg',
-      w: 145,
-      h: 58,
-      mobW: 96,
-      mobH: 38,
+      w: 80,
+      h: 32,
+      mobW: 52,
+      mobH: 21,
       left: '80%',
       mobLeft: '80%',
       delay: '-2.7s',
-      dur: '4.3s',
-      land: '240px',
-      mobLand: '130px',
-      height: '-105px',
-      mobHeight: '-75px',
+      dur: '4.1s',
+      land: '190px',
+      mobLand: '115px',
+      height: '-74px',
+      mobHeight: '-52px',
       desktopOnly: true,
     },
   ];
@@ -187,14 +187,14 @@ export default function Footer() {
             >
               {/* Splash Ring A (Breach Point) */}
               <span
-                className="absolute -left-[24px] sm:-left-[32px] -top-2 w-[48px] sm:w-[64px] h-3.5 sm:h-4 rounded-full border-2 border-white/95 bg-white/40 shadow-[0_0_12px_rgba(255,255,255,0.8)] backdrop-blur-xs opacity-0 z-30"
+                className="absolute -left-[18px] sm:-left-[24px] -top-1.5 w-[36px] sm:w-[48px] h-3 sm:h-3.5 rounded-full border-2 border-white/95 bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.8)] backdrop-blur-xs opacity-0 z-30"
                 style={{
                   animation: `ktSplashA ${f.dur} ease-out ${f.delay} infinite`,
                 }}
               />
               {/* Water Spray Droplet A */}
               <span
-                className="absolute -left-1.5 -top-3 w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 rounded-full bg-white shadow-xs opacity-0 z-30"
+                className="absolute -left-1 -top-2 w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-white shadow-xs opacity-0 z-30"
                 style={{
                   animation: `ktSplashDropA ${f.dur} ease-out ${f.delay} infinite`,
                 }}
@@ -202,15 +202,15 @@ export default function Footer() {
 
               {/* Splash Ring B (Landing Re-entry Point) */}
               <span
-                className="absolute -top-2 w-[52px] sm:w-[68px] h-3.5 sm:h-4 rounded-full border-2 border-white/95 bg-white/40 shadow-[0_0_12px_rgba(255,255,255,0.8)] backdrop-blur-xs opacity-0 z-30"
+                className="absolute -top-1.5 w-[40px] sm:w-[52px] h-3 sm:h-3.5 rounded-full border-2 border-white/95 bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.8)] backdrop-blur-xs opacity-0 z-30"
                 style={{
-                  left: `calc(var(--jump-dist, ${f.land}) - 26px)`,
+                  left: `calc(var(--jump-dist, ${f.land}) - 20px)`,
                   animation: `ktSplashB ${f.dur} ease-out ${f.delay} infinite`,
                 }}
               />
               {/* Water Spray Droplet B */}
               <span
-                className="absolute -top-3 w-3 sm:w-4 h-3 sm:h-4 rounded-full bg-white shadow-xs opacity-0 z-30"
+                className="absolute -top-2 w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full bg-white shadow-xs opacity-0 z-30"
                 style={{
                   left: `var(--jump-dist, ${f.land})`,
                   animation: `ktSplashDropB ${f.dur} ease-out ${f.delay} infinite`,
@@ -252,7 +252,7 @@ export default function Footer() {
                         left: `-${f.w / 2}px`,
                         top: `-${f.h / 2}px`,
                         transform: 'scaleX(-1)', // flips SVG so nose points in jump direction (right)
-                        filter: 'drop-shadow(0 14px 18px rgba(2, 44, 84, 0.35))',
+                        filter: 'drop-shadow(0 8px 10px rgba(2, 44, 84, 0.28))',
                       }}
                     />
                   </div>
