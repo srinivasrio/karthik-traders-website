@@ -8,10 +8,70 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const fishes = [
-    { src: '/images/fishes/fish-1.svg', w: 78, h: 60, left: '12%', delay: '0s', dur: '4.2s', land: '240px', height: '-88px' },
-    { src: '/images/fishes/fish-2.svg', w: 108, h: 46, left: '35%', delay: '-1.6s', dur: '4.8s', land: '270px', height: '-102px' },
-    { src: '/images/fishes/fish-1.svg', w: 68, h: 52, left: '60%', delay: '-2.8s', dur: '3.9s', land: '210px', height: '-78px' },
-    { src: '/images/fishes/fish-2.svg', w: 98, h: 42, left: '80%', delay: '-0.7s', dur: '5.2s', land: '260px', height: '-94px' },
+    {
+      src: '/images/fishes/fish-1.svg',
+      w: 130,
+      h: 78,
+      mobW: 84,
+      mobH: 51,
+      left: '8%',
+      mobLeft: '6%',
+      delay: '0s',
+      dur: '3.9s',
+      land: '230px',
+      mobLand: '135px',
+      height: '-100px',
+      mobHeight: '-70px',
+      desktopOnly: false,
+    },
+    {
+      src: '/images/fishes/fish-2.svg',
+      w: 155,
+      h: 62,
+      mobW: 102,
+      mobH: 41,
+      left: '32%',
+      mobLeft: '38%',
+      delay: '-1.8s',
+      dur: '4.5s',
+      land: '260px',
+      mobLand: '145px',
+      height: '-115px',
+      mobHeight: '-80px',
+      desktopOnly: false,
+    },
+    {
+      src: '/images/fishes/fish-1.svg',
+      w: 120,
+      h: 72,
+      mobW: 78,
+      mobH: 47,
+      left: '58%',
+      mobLeft: '70%',
+      delay: '-0.9s',
+      dur: '3.7s',
+      land: '210px',
+      mobLand: '125px',
+      height: '-92px',
+      mobHeight: '-65px',
+      desktopOnly: false,
+    },
+    {
+      src: '/images/fishes/fish-2.svg',
+      w: 145,
+      h: 58,
+      mobW: 96,
+      mobH: 38,
+      left: '80%',
+      mobLeft: '80%',
+      delay: '-2.7s',
+      dur: '4.3s',
+      land: '240px',
+      mobLand: '130px',
+      height: '-105px',
+      mobHeight: '-75px',
+      desktopOnly: true,
+    },
   ];
 
   const columns = [
@@ -61,166 +121,166 @@ export default function Footer() {
     <footer className="relative mt-16 md:mt-28 bg-[#E8F9FF] text-[#0B1A33] font-manrope overflow-hidden">
       {/* Top Transition Curve */}
       <svg
-        viewBox="0 0 1440 80"
+        viewBox="0 0 1440 60"
         preserveAspectRatio="none"
-        className="absolute -top-[1px] left-0 w-full h-14 block z-10 pointer-events-none"
+        className="absolute -top-[1px] left-0 w-full h-10 sm:h-12 block z-[1] pointer-events-none"
         aria-hidden="true"
       >
         <path
-          d="M0 0h1440v28c-120 26-240 34-360 22S840 10 720 20 480 66 360 60 120 22 0 34z"
+          d="M0 0h1440v16c-120 18-240 26-360 16S840 8 720 14 480 40 360 36 120 14 0 22z"
           fill="#FBFBFB"
         />
         <path
-          d="M0 44c120-14 240-14 360 4s240 30 360 14 240-38 360-34 240 22 360 18"
+          d="M0 32c120-10 240-10 360 4s240 22 360 10 240-28 360-24 240 16 360 12"
           fill="none"
-          stroke="#C4D9FF"
+          stroke="#BAE6FD"
           strokeWidth="1.5"
-        />
-        <path
-          d="M0 58c140-10 260-4 380 8s250 14 360 0 230-30 360-26 220 18 340 14"
-          fill="none"
-          stroke="#C5BAFF"
-          strokeWidth="1"
-          opacity="0.8"
         />
       </svg>
 
-      {/* Interactive Water Surface & Jumping Fish Stage */}
+      {/* Interactive Water Surface & Jumping Dolphin Fish Stage */}
       <div
-        className="absolute left-0 right-0 top-[90px] h-28 pointer-events-none overflow-visible"
+        className="absolute left-0 right-0 top-0 h-52 sm:h-60 pointer-events-none overflow-hidden"
         aria-hidden="true"
       >
-        {/* Wave Layer 1 */}
+        {/* Deep Water Layer (Back Wave) */}
         <svg
-          viewBox="0 0 2880 80"
+          viewBox="0 0 2880 120"
           preserveAspectRatio="none"
-          className="absolute left-0 top-5 w-[200%] h-[70px] pointer-events-none"
-          style={{ animation: 'ktFlow 22s linear 0s infinite' }}
+          className="absolute left-0 bottom-0 w-[200%] h-24 sm:h-28 pointer-events-none z-0"
+          style={{ animation: 'ktFlow 24s linear 0s infinite' }}
         >
           <path
-            d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
-            fill="#B8DBFF"
-            opacity="0.65"
+            d="M0 60C240 20 480 20 720 60S1200 100 1440 60C1680 20 1920 20 2160 60S2640 100 2880 60V120H0Z"
+            fill="#0284C7"
+            opacity="0.45"
           />
         </svg>
 
-        {/* Animated Jumping Fish with Splashes */}
-        {fishes.map((f, i) => (
-          <div
-            key={i}
-            className="absolute top-10 w-0 h-0 pointer-events-none"
-            style={{
-              left: f.left,
-              ['--jump-dist' as any]: f.land,
-              ['--jump-height' as any]: f.height,
-            }}
-          >
-            {/* Splash Ring A (Breach Point) */}
-            <span
-              className="absolute -left-[24px] -top-1 w-[48px] h-3.5 rounded-full border-2 border-white/90 bg-white/30 backdrop-blur-xs opacity-0"
-              style={{
-                animation: `ktSplashA ${f.dur} ease-out ${f.delay} infinite`,
-              }}
-            />
-            {/* Splash Droplet at Breach */}
-            <span
-              className="absolute -left-1 -top-2 w-2 h-2 rounded-full bg-white opacity-0"
-              style={{
-                animation: `ktSplashDropA ${f.dur} ease-out ${f.delay} infinite`,
-              }}
-            />
+        {/* Mid Water Layer (Flowing Wave) */}
+        <svg
+          viewBox="0 0 2880 120"
+          preserveAspectRatio="none"
+          className="absolute left-0 bottom-0 w-[200%] h-20 sm:h-24 pointer-events-none z-[5]"
+          style={{ animation: 'ktFlowR 18s linear -4s infinite' }}
+        >
+          <path
+            d="M0 60C240 20 480 20 720 60S1200 100 1440 60C1680 20 1920 20 2160 60S2640 100 2880 60V120H0Z"
+            fill="#0EA5E9"
+            opacity="0.55"
+          />
+        </svg>
 
-            {/* Splash Ring B (Landing Re-entry Point) */}
-            <span
-              className="absolute -top-1 w-[52px] h-4 rounded-full border-2 border-white/90 bg-white/30 backdrop-blur-xs opacity-0"
-              style={{
-                left: `calc(${f.land} - 26px)`,
-                animation: `ktSplashB ${f.dur} ease-out ${f.delay} infinite`,
-              }}
-            />
-            {/* Splash Droplet at Landing */}
-            <span
-              className="absolute -top-2 w-2.5 h-2.5 rounded-full bg-white opacity-0"
-              style={{
-                left: f.land,
-                animation: `ktSplashDropB ${f.dur} ease-out ${f.delay} infinite`,
-              }}
-            />
-
-            {/* Dolphin Trajectory: X (Forward) -> Y (Parabolic height) -> R (Rotation arch) */}
+        {/* PROMINENT JUMPING DOLPHIN FISH LAYER (z-20: IN FRONT OF WAVES) */}
+        <div className="absolute left-0 right-0 bottom-10 h-0 pointer-events-none z-20">
+          {fishes.map((f, i) => (
             <div
-              className="absolute left-0 top-0 w-0 h-0 opacity-0"
+              key={i}
+              className={`absolute top-0 w-0 h-0 pointer-events-none ${f.desktopOnly ? 'hidden md:block' : ''}`}
               style={{
-                animation: `ktJX ${f.dur} linear ${f.delay} infinite`,
-                willChange: 'transform, opacity',
+                left: f.left,
+                ['--jump-dist' as any]: f.land,
+                ['--jump-height' as any]: f.height,
+                ['--jump-dist-mob' as any]: f.mobLand,
+                ['--jump-height-mob' as any]: f.mobHeight,
               }}
             >
-              <div
-                className="absolute left-0 top-0 w-0 h-0"
+              {/* Splash Ring A (Breach Point) */}
+              <span
+                className="absolute -left-[24px] sm:-left-[32px] -top-2 w-[48px] sm:w-[64px] h-3.5 sm:h-4 rounded-full border-2 border-white/95 bg-white/40 shadow-[0_0_12px_rgba(255,255,255,0.8)] backdrop-blur-xs opacity-0 z-30"
                 style={{
-                  animation: `ktJY ${f.dur} linear ${f.delay} infinite`,
-                  willChange: 'transform',
+                  animation: `ktSplashA ${f.dur} ease-out ${f.delay} infinite`,
+                }}
+              />
+              {/* Water Spray Droplet A */}
+              <span
+                className="absolute -left-1.5 -top-3 w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 rounded-full bg-white shadow-xs opacity-0 z-30"
+                style={{
+                  animation: `ktSplashDropA ${f.dur} ease-out ${f.delay} infinite`,
+                }}
+              />
+
+              {/* Splash Ring B (Landing Re-entry Point) */}
+              <span
+                className="absolute -top-2 w-[52px] sm:w-[68px] h-3.5 sm:h-4 rounded-full border-2 border-white/95 bg-white/40 shadow-[0_0_12px_rgba(255,255,255,0.8)] backdrop-blur-xs opacity-0 z-30"
+                style={{
+                  left: `calc(var(--jump-dist, ${f.land}) - 26px)`,
+                  animation: `ktSplashB ${f.dur} ease-out ${f.delay} infinite`,
+                }}
+              />
+              {/* Water Spray Droplet B */}
+              <span
+                className="absolute -top-3 w-3 sm:w-4 h-3 sm:h-4 rounded-full bg-white shadow-xs opacity-0 z-30"
+                style={{
+                  left: `var(--jump-dist, ${f.land})`,
+                  animation: `ktSplashDropB ${f.dur} ease-out ${f.delay} infinite`,
+                }}
+              />
+
+              {/* Dolphin Trajectory: X (Forward) -> Y (Parabolic height) -> R (Rotation arch) */}
+              <div
+                className="absolute left-0 top-0 w-0 h-0 opacity-0"
+                style={{
+                  animation: `ktJX ${f.dur} linear ${f.delay} infinite`,
+                  willChange: 'transform, opacity',
                 }}
               >
                 <div
                   className="absolute left-0 top-0 w-0 h-0"
                   style={{
-                    animation: `ktJR ${f.dur} linear ${f.delay} infinite`,
+                    animation: `ktJY ${f.dur} linear ${f.delay} infinite`,
                     willChange: 'transform',
                   }}
                 >
-                  <img
-                    src={f.src}
-                    alt="Fish"
+                  <div
+                    className="absolute left-0 top-0 w-0 h-0"
                     style={{
-                      position: 'absolute',
-                      width: `${f.w}px`,
-                      height: `${f.h}px`,
-                      left: `-${f.w / 2}px`,
-                      top: `-${f.h / 2}px`,
-                      transform: 'scaleX(-1)', // flips SVG so nose points in jump direction (right)
-                      filter: 'drop-shadow(0 8px 10px rgba(11,26,51,0.22))',
+                      animation: `ktJR ${f.dur} linear ${f.delay} infinite`,
+                      willChange: 'transform',
                     }}
-                  />
+                  >
+                    <img
+                      src={f.src}
+                      alt="Jumping Fish"
+                      className="select-none pointer-events-none max-w-none"
+                      style={{
+                        position: 'absolute',
+                        width: `${f.w}px`,
+                        height: `${f.h}px`,
+                        maxWidth: 'none',
+                        minWidth: `${f.mobW}px`,
+                        left: `-${f.w / 2}px`,
+                        top: `-${f.h / 2}px`,
+                        transform: 'scaleX(-1)', // flips SVG so nose points in jump direction (right)
+                        filter: 'drop-shadow(0 14px 18px rgba(2, 44, 84, 0.35))',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
-        {/* Wave Layer 2 */}
+        {/* Foreground Water Lip (Surf Edge) */}
         <svg
-          viewBox="0 0 2880 80"
+          viewBox="0 0 2880 60"
           preserveAspectRatio="none"
-          className="absolute left-0 top-8 w-[200%] h-[70px] pointer-events-none"
-          style={{ animation: 'ktFlowR 16s linear -4s infinite' }}
+          className="absolute left-0 bottom-0 w-[200%] h-12 sm:h-14 pointer-events-none z-25"
+          style={{ animation: 'ktFlow 12s linear -2s infinite' }}
         >
           <path
-            d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
-            fill="#A3D4FF"
-            opacity="0.6"
+            d="M0 30C240 10 480 10 720 30S1200 50 1440 30C1680 10 1920 10 2160 30S2640 50 2880 30V60H0Z"
+            fill="#38BDF8"
+            opacity="0.7"
           />
         </svg>
 
-        {/* Wave Layer 3 */}
-        <svg
-          viewBox="0 0 2880 80"
-          preserveAspectRatio="none"
-          className="absolute left-0 top-11 w-[200%] h-[70px] pointer-events-none"
-          style={{ animation: 'ktFlow 11s linear -2s infinite' }}
-        >
-          <path
-            d="M0 40C240 8 480 8 720 40S1200 72 1440 40C1680 8 1920 8 2160 40S2640 72 2880 40V80H0Z"
-            fill="#8AC3FF"
-            opacity="0.75"
-          />
-        </svg>
-
-        <div className="absolute left-0 right-0 top-24 h-4 bg-gradient-to-b from-[#8AC3FF]/60 to-[#E8F9FF]" />
+        <div className="absolute left-0 right-0 bottom-0 h-4 bg-gradient-to-b from-[#38BDF8]/40 to-[#E8F9FF] z-25" />
       </div>
 
       {/* Main Footer Container */}
-      <div className="relative max-w-[1320px] mx-auto pt-52 px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-[1320px] mx-auto pt-52 sm:pt-60 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-9 lg:gap-8">
           {/* Brand Info (2 columns wide) */}
           <div className="lg:col-span-2 flex flex-col gap-4 max-w-sm">
