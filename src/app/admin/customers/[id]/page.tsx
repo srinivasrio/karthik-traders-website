@@ -9,7 +9,9 @@ import {
     PhoneIcon,
     CalendarIcon,
     ShoppingBagIcon,
-    UserIcon
+    UserIcon,
+    TrashIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 interface Profile {
@@ -22,12 +24,12 @@ interface Profile {
 
 interface Order {
     id: string;
-    order_number: string; // Add order_number
+    order_number: string;
     status: string;
     total_amount: number;
     payment_status: string;
     created_at: string;
-    order_items: any[]; // Add items
+    order_items: any[];
 }
 
 export default function CustomerDetailPage() {
@@ -39,6 +41,11 @@ export default function CustomerDetailPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+    // Delete Modal State
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     useEffect(() => {
         if (customerId) {
@@ -68,7 +75,7 @@ export default function CustomerDetailPage() {
             if (profileError) throw profileError;
             setCustomer(profileData);
 
-            // Fetch customer orders separately first to ensure we get them
+            // Fetch customer orders separately
             const { data: ordersData, error: ordersError } = await supabase
                 .from('orders')
                 .select('*')
@@ -82,7 +89,6 @@ export default function CustomerDetailPage() {
 
             if (ordersData && ordersData.length > 0) {
                 const orderIds = ordersData.map(o => o.id);
-                // Fetch all products first for mapping in-memory to bypass relationship constraints
                 const { data: productsData } = await supabase
                     .from('products')
                     .select('id, name, slug, images');
@@ -95,45 +101,70 @@ export default function CustomerDetailPage() {
                     });
                 }
 
-                const { data: itemsData, error: itemsError } = await supabase
+                const { data: itemsData } = await supabase
                     .from('order_items')
                     .select('*')
                     .in('order_id', orderIds);
 
-                if (itemsError) {
-                    console.error("Items Fetch Error:", itemsError);
-                    // Don't fail the whole page, just show orders without items
-                    setOrders(ordersData);
-                } else {
-                    // Merge items into orders and map product info
-                    const mappedItems = (itemsData || []).map(item => {
-                        const dbProd = productMap.get(item.product_id);
-                        return {
+                const itemsByOrder: { [key: string]: any[] } = {};
+                if (itemsData) {
+                    itemsData.forEach((item: any) => {
+                        if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+                        const prod = productMap.get(item.product_id);
+                        itemsByOrder[item.order_id].push({
                             ...item,
-                            product: dbProd ? {
-                                name: dbProd.name,
-                                images: dbProd.images
-                            } : {
-                                name: item.product_id,
-                                images: []
-                            }
-                        };
+                            product: prod || { name: item.product_name || 'Product', images: [] }
+                        });
                     });
-                    const ordersWithItems = ordersData.map(order => ({
-                        ...order,
-                        order_items: mappedItems.filter(item => item.order_id === order.id)
-                    }));
-                    setOrders(ordersWithItems);
                 }
+
+                const ordersWithItems = ordersData.map(order => ({
+                    ...order,
+                    order_items: itemsByOrder[order.id] || []
+                }));
+
+                setOrders(ordersWithItems);
             } else {
                 setOrders([]);
             }
 
-        } catch (error: any) {
-            console.error('Error fetching customer:', error);
-            // alert(`Error: ${error.message}`);
+        } catch (error) {
+            console.error('Error fetching customer details:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Handle Permanent Deletion
+    const handleDeleteCustomer = async () => {
+        setDeleteLoading(true);
+        setDeleteError('');
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                throw new Error('Admin session expired. Please log in again.');
+            }
+
+            const response = await fetch(`/api/admin/customers/${customerId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to delete customer');
+            }
+
+            // Redirect back to customers list
+            router.push('/admin/customers');
+        } catch (err: any) {
+            setDeleteError(err.message || 'Error deleting customer');
+            setDeleteLoading(false);
         }
     };
 
@@ -144,8 +175,6 @@ export default function CustomerDetailPage() {
             year: 'numeric'
         });
     };
-    // ...
-
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -176,16 +205,31 @@ export default function CustomerDetailPage() {
         );
     }
 
+    const isCustomerAdmin = customer.role === 'admin';
+
     return (
         <div className="px-2 sm:px-4">
-            {/* Back Button */}
-            <Link
-                href="/admin/customers"
-                className="inline-flex items-center text-xs text-slate-600 hover:text-slate-900 mb-4"
-            >
-                <ArrowLeftIcon className="h-3 w-3 mr-1" />
-                Back to Customers
-            </Link>
+            {/* Top Bar with Back Button & Delete Trigger */}
+            <div className="flex items-center justify-between mb-4">
+                <Link
+                    href="/admin/customers"
+                    className="inline-flex items-center text-xs text-slate-600 hover:text-slate-900"
+                >
+                    <ArrowLeftIcon className="h-3 w-3 mr-1" />
+                    Back to Customers
+                </Link>
+
+                {!isCustomerAdmin && (
+                    <button
+                        type="button"
+                        onClick={() => setShowDeleteModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 rounded-lg transition-colors cursor-pointer"
+                    >
+                        <TrashIcon className="h-4 w-4" />
+                        Delete Customer Account
+                    </button>
+                )}
+            </div>
 
             {/* Customer Info Card */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-6">
@@ -194,9 +238,16 @@ export default function CustomerDetailPage() {
                         {customer.full_name ? customer.full_name.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div className="flex-1">
-                        <h1 className="text-lg font-semibold text-slate-900">
-                            {customer.full_name || 'Unnamed User'}
-                        </h1>
+                        <div className="flex items-center justify-between">
+                            <h1 className="text-lg font-semibold text-slate-900">
+                                {customer.full_name || 'Unnamed User'}
+                            </h1>
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                customer.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700'
+                            }`}>
+                                {customer.role === 'admin' ? 'Admin' : 'Customer'}
+                            </span>
+                        </div>
                         <div className="mt-2 space-y-1">
                             <p className="text-xs text-slate-600 flex items-center gap-2">
                                 <PhoneIcon className="h-3 w-3" />
@@ -208,8 +259,7 @@ export default function CustomerDetailPage() {
                             </p>
                             <p className="text-xs text-slate-600 flex items-center gap-2">
                                 <UserIcon className="h-3 w-3" />
-                                Role: <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${customer.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
-                                    }`}>{customer.role}</span>
+                                User ID: <span className="font-mono text-[11px] text-slate-500">{customer.id}</span>
                             </p>
                         </div>
                     </div>
@@ -310,6 +360,65 @@ export default function CustomerDetailPage() {
                     </div>
                 )}
             </div>
+
+            {/* Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+                        <div className="flex items-center gap-3 text-red-600 mb-4">
+                            <div className="p-2 rounded-full bg-red-100">
+                                <ExclamationTriangleIcon className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">
+                                Delete Customer Account?
+                            </h3>
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Are you sure you want to permanently delete{' '}
+                            <strong className="text-slate-900">{customer.full_name || 'this customer'}</strong> ({customer.mobile})?
+                        </p>
+
+                        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-[11px] space-y-1">
+                            <p className="font-bold">What will happen:</p>
+                            <ul className="list-disc list-inside space-y-0.5">
+                                <li>The customer&apos;s login credentials and account will be removed immediately.</li>
+                                <li>Their profile record in the database will be permanently deleted.</li>
+                                <li>Past orders will be preserved for invoicing & record-keeping.</li>
+                            </ul>
+                        </div>
+
+                        {deleteError && (
+                            <div className="mt-3 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+                                {deleteError}
+                            </div>
+                        )}
+
+                        <div className="mt-6 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                disabled={deleteLoading}
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setDeleteError('');
+                                }}
+                                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={deleteLoading}
+                                onClick={handleDeleteCustomer}
+                                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                            >
+                                {deleteLoading ? 'Deleting Account...' : 'Yes, Permanently Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
