@@ -14,6 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://karthiktraders.in'),
   title: "Karthik Traders | Premium Aquaculture Equipment - Aqualion & Sea Boss",
   description: "India's trusted supplier of paddle wheel aerators, motors, gearboxes, and spares for shrimp & fish farms. Shop Aqualion premium and Sea Boss budget-friendly aquaculture equipment.",
   keywords: "paddle wheel aerator, aquaculture equipment, shrimp farming, fish farming, aerator motor, gearbox, HDPE float, India",
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Karthik Traders | Premium Aquaculture Equipment",
     description: "Shop paddle wheel aerators, motors, gearboxes, and spares for shrimp & fish farms.",
-    url: "https://karthiktraders.com",
+    url: "https://karthiktraders.in",
     siteName: "Karthik Traders",
     locale: "en_IN",
     type: "website",

@@ -2,11 +2,22 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ['72.61.250.231', 'karthiktraders.in', 'localhost'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '72.61.250.231',
+      },
+      {
+        protocol: 'http',
+        hostname: 'karthiktraders.in',
       },
     ],
   },
