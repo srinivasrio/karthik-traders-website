@@ -27,23 +27,24 @@ if [ -z "$SWAP_TOTAL" ] || [ "$SWAP_TOTAL" -lt 512 ]; then
     fi
 fi
 
+# Force Node.js and network tools to prefer IPv4 to avoid broken VPS IPv6 socket hangs
+export NODE_OPTIONS="--dns-result-order=ipv4first --max-old-space-size=2048"
+
 echo "1. Stashing any local changes on the VPS..."
 git stash || true
 
 echo "2. Pulling the latest changes from GitHub..."
 git pull origin main
 
-echo "3. Installing npm packages..."
-npm install --omit=optional --prefer-offline || npm install
-
-# Guarantee Linux SWC binary exists so Next.js doesn't freeze attempting background downloads
-if [ "$(uname)" = "Linux" ]; then
-    echo "Ensuring Linux SWC binary exists..."
-    npm install --no-save @next/swc-linux-x64-gnu@16.1.4 2>/dev/null || true
+echo "3. Checking npm dependencies..."
+if [ ! -d "node_modules/next" ]; then
+    echo "Installing npm packages (node_modules missing)..."
+    npm install --no-audit --no-fund --prefer-offline
+else
+    echo "✅ Dependencies already installed in node_modules. Skipping slow re-install."
 fi
 
 echo "4. Compiling production Next.js build..."
-export NODE_OPTIONS="--max-old-space-size=2048"
 npm run build
 
 echo "5. Restarting the PM2 application..."
