@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase';
 interface ConfirmationResult {
   confirm: (verificationCode: string) => Promise<any>;
 }
@@ -178,8 +179,6 @@ export default function ForgotPasswordPage() {
         throw new Error('Passwords do not match');
       }
 
-      const { getAuth } = await import('firebase/auth');
-      const auth = getAuth();
       const user = auth.currentUser;
 
       if (!user) throw new Error('Authentication failed. Please verify OTP again.');
