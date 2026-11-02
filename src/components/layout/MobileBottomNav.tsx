@@ -24,7 +24,7 @@ const navTabs = [
     href: '/products',
     id: 'products',
     normalIcon: '/icons/menu/products.png',
-    colorIcon: '/icons/menu/products-color.png',
+    colorIcon: '/icons/menu/products.png',
   },
   {
     name: 'Spares',
