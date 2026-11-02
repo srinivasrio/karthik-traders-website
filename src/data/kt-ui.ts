@@ -25,10 +25,44 @@ export const BRAND_CONFIG: Record<string, BrandMeta> = {
     dot: '#1BA3D9',
     logo: '/images/logos/seaboss-logo.svg',
   },
+  'sea boss': {
+    label: 'Sea Boss',
+    tier: 'Budget + High Performance',
+    bg: '#DDF3FF',
+    fg: '#0B5C86',
+    dot: '#1BA3D9',
+    logo: '/images/logos/seaboss-logo.svg',
+  },
   pn: { label: 'PN', tier: '', bg: '#EEF0F5', fg: '#3D4A63', dot: '#7C879C' },
   generic: { label: 'Generic', tier: '', bg: '#EEF0F5', fg: '#3D4A63', dot: '#7C879C' },
   other: { label: 'Custom/Other', tier: '', bg: '#EFE9FF', fg: '#5A3FB8', dot: '#8B6CF0' }
 };
+
+export function resolveBrandMeta(brand?: string, name?: string): BrandMeta {
+  const b = (brand || '').toLowerCase().trim();
+  const n = (name || '').toLowerCase();
+
+  if (b.includes('aqualion') || b.includes('aqua lion') || n.includes('aqualion') || n.includes('aqua lion')) {
+    return BRAND_CONFIG.aqualion;
+  }
+  if (b.includes('seaboss') || b.includes('sea boss') || n.includes('seaboss') || n.includes('sea boss')) {
+    return BRAND_CONFIG.seaboss;
+  }
+  if (b.includes('pn') || n.includes('pn ')) {
+    return BRAND_CONFIG.pn;
+  }
+  if (b && BRAND_CONFIG[b]) {
+    return BRAND_CONFIG[b];
+  }
+  return {
+    label: brand || 'Generic',
+    tier: '',
+    bg: '#EEF0F5',
+    fg: '#3D4A63',
+    dot: '#7C879C',
+    logo: undefined,
+  };
+}
 
 export const CONTACT_INFO = {
   sales: {

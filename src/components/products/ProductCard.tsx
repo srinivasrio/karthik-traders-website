@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
-import { BRAND_CONFIG, formatPrice, getStockStatus } from '@/data/kt-ui';
+import { BRAND_CONFIG, resolveBrandMeta, formatPrice, getStockStatus } from '@/data/kt-ui';
 
 interface ProductCardProps {
   product: Product;
@@ -89,8 +89,8 @@ export default function ProductCard({
   const salePrice = Number(product.salePrice || product.mrp);
   const savings = Math.max(0, mrp - salePrice);
 
-  const brandKey = (product.brand || 'generic').toLowerCase();
-  const brandMeta = BRAND_CONFIG[brandKey] || BRAND_CONFIG.other;
+  const brandMeta = resolveBrandMeta(product.brand, product.name);
+  const brandKey = brandMeta.label.toLowerCase();
 
   // Images handling
   const rawImages = product.images && product.images.length > 0 ? product.images : [];
@@ -199,13 +199,13 @@ export default function ProductCard({
           />
         </Link>
 
-        {/* Brand Logo (Top Left) */}
+        {/* Brand Logo (Top Left) - Clean logo without borders/layouts */}
         {brandMeta.logo && (
-          <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 px-2 py-1 rounded-xl bg-white/95 backdrop-blur-xs shadow-xs border border-slate-100 flex items-center justify-center pointer-events-none">
+          <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 pointer-events-none flex items-center">
             <img
               src={brandMeta.logo}
               alt={brandMeta.label}
-              className="h-6 sm:h-8 w-auto max-w-[85px] sm:max-w-[110px] object-contain shrink-0"
+              className="h-8 sm:h-11 w-auto max-w-[95px] sm:max-w-[130px] object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)] shrink-0"
             />
           </div>
         )}
@@ -237,25 +237,27 @@ export default function ProductCard({
 
       {/* Card Content */}
       <div className={`flex-1 flex flex-col ${compact ? 'p-2.5 gap-1.5' : 'p-2.5 sm:p-5 gap-1.5 sm:gap-3'}`}>
-        {/* Brand Capsule & Model Capsule Side by Side (Equal Size) */}
-        <div className="grid grid-cols-2 gap-2 w-full">
-          {/* Brand Capsule (without logo inside) */}
-          <div
-            className="flex items-center justify-center text-center rounded-xl font-black text-[11px] sm:text-xs py-1.5 px-2 border truncate shadow-2xs"
-            style={{
-              backgroundColor: brandMeta.bg,
-              color: brandMeta.fg,
-              borderColor: brandKey === 'aqualion' ? '#FFDFB0' : brandKey === 'seaboss' ? '#C4D9FF' : '#E3E8F0',
-            }}
-          >
-            <span className="tracking-wider uppercase truncate">{brandMeta.label}</span>
-          </div>
+        {/* Brand Capsule & Model Capsule Side by Side (ONLY for Aerator Sets) */}
+        {isAerator && (
+          <div className="grid grid-cols-2 gap-2 w-full">
+            {/* Brand Capsule (without logo inside) */}
+            <div
+              className="flex items-center justify-center text-center rounded-xl font-black text-[11px] sm:text-xs py-1.5 px-2 border truncate shadow-2xs"
+              style={{
+                backgroundColor: brandMeta.bg,
+                color: brandMeta.fg,
+                borderColor: brandKey === 'aqualion' ? '#FFDFB0' : brandKey.includes('sea') ? '#C4D9FF' : '#E3E8F0',
+              }}
+            >
+              <span className="tracking-wider uppercase truncate">{brandMeta.label}</span>
+            </div>
 
-          {/* Model Capsule */}
-          <div className="flex items-center justify-center text-center rounded-xl text-[11px] sm:text-xs font-black bg-[#E8F1FF] text-[#0B1A33] border border-[#CDE0FF] py-1.5 px-2 truncate shadow-2xs">
-            <span className="truncate">{modelNumber || 'Standard'}</span>
+            {/* Model Capsule */}
+            <div className="flex items-center justify-center text-center rounded-xl text-[11px] sm:text-xs font-black bg-[#E8F1FF] text-[#0B1A33] border border-[#CDE0FF] py-1.5 px-2 truncate shadow-2xs">
+              <span className="truncate">{modelNumber || 'Standard'}</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Product Title */}
         <Link

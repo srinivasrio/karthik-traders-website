@@ -120,7 +120,13 @@ export default function Header() {
     }
   };
 
-  const isAdmin = profile?.role === 'admin' || user?.email?.includes('admin');
+  const isAdmin =
+    profile?.role === 'admin' ||
+    user?.user_metadata?.role === 'admin' ||
+    user?.email?.includes('admin') ||
+    ['+918688566023', '+916301183738', '+919515816084', '8688566023', '6301183738', '9515816084'].includes(
+      (profile?.mobile || user?.phone || '').replace(/\s+/g, '')
+    );
   const userInitials = profile?.full_name
     ? profile.full_name
         .split(' ')
@@ -279,6 +285,20 @@ export default function Header() {
               </Link>
             )}
 
+            {/* Admin Panel Button (ONLY for verified admins) */}
+            {isAdmin && pathname !== '/compare' && (
+              <Link
+                href="/admin"
+                aria-label="Navigate to Admin Panel"
+                className="hidden sm:inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-linear-to-r from-purple-700 via-indigo-600 to-indigo-700 text-white font-extrabold text-xs md:text-sm hover:from-purple-800 hover:to-indigo-800 shadow-md shadow-indigo-500/25 transition-all cursor-pointer"
+              >
+                <svg className="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <span>Admin Panel</span>
+              </Link>
+            )}
+
             {/* User Account / Login State & Menu (hidden on /compare to match reference) */}
             {pathname !== '/compare' && (
               <>
@@ -409,8 +429,20 @@ export default function Header() {
               </span>
             </div>
 
-            {/* Login Button at Top Right inside Menu Section (Mobile & Desktop) */}
-            <div className="flex items-center gap-2.5 flex-none ml-auto">
+            {/* Login / Admin Button at Top Right inside Menu Section (Mobile & Desktop) */}
+            <div className="flex items-center gap-2 flex-none ml-auto">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="h-9 px-3 rounded-full bg-linear-to-r from-purple-700 to-indigo-700 text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm hover:opacity-95"
+                >
+                  <svg className="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  <span>Admin</span>
+                </Link>
+              )}
               {user ? (
                 <Link
                   href="/dashboard"

@@ -133,6 +133,14 @@ export default function DashboardPage() {
     .slice(0, 2)
     .toUpperCase();
 
+  const isAdmin =
+    profile?.role === 'admin' ||
+    user?.user_metadata?.role === 'admin' ||
+    user?.email?.includes('admin') ||
+    ['+918688566023', '+916301183738', '+919515816084', '8688566023', '6301183738', '9515816084'].includes(
+      (profile?.mobile || user?.phone || '').replace(/\s+/g, '')
+    );
+
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
       const s = (o.status || 'Pending').toLowerCase();
@@ -219,20 +227,36 @@ export default function DashboardPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-1">
-                <Link
-                  href="/complete-profile"
-                  className="flex-1 h-10 rounded-full bg-[#E8F9FF] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-white transition-colors"
-                >
-                  Edit profile
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="flex-1 h-10 rounded-full border border-black/15 bg-transparent text-[#B4123A] font-bold text-xs flex items-center justify-center hover:bg-white/40 transition-colors cursor-pointer"
-                >
-                  Logout
-                </button>
+              <div className="flex flex-col gap-2 pt-1">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="w-full h-11 rounded-2xl bg-linear-to-r from-purple-700 via-indigo-600 to-indigo-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-indigo-500/25 hover:from-purple-800 hover:to-indigo-800 transition-all cursor-pointer"
+                  >
+                    <svg className="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    <span>Admin Panel</span>
+                    <span className="text-[10px] font-mono uppercase bg-white/20 px-2 py-0.5 rounded-full">
+                      Admin Access
+                    </span>
+                  </Link>
+                )}
+                <div className="flex gap-2">
+                  <Link
+                    href="/complete-profile"
+                    className="flex-1 h-10 rounded-full bg-[#E8F9FF] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-white transition-colors"
+                  >
+                    Edit profile
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setShowLogoutConfirm(true)}
+                    className="flex-1 h-10 rounded-full border border-black/15 bg-transparent text-[#B4123A] font-bold text-xs flex items-center justify-center hover:bg-white/40 transition-colors cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
             </div>
 

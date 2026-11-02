@@ -24,6 +24,7 @@ New UI for karthiktraders/
 
 # misc
 .DS_Store
+**/.DS_Store
 *.pem
 
 # debug
@@ -53,8 +54,9 @@ scripts/update_vps_env.sh
 scripts/reset_db_orders.js
 scripts/watch_orders.js
 
-# Custom debug scripts and mock screenshots
-*.png
+# Custom debug scripts and mock screenshots in root
+/*.png
+!public/**
 /scripts/check_admin.mjs
 /scripts/check_admin_profile.mjs
 /scripts/check_tables.js
