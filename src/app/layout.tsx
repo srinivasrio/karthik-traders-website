@@ -74,6 +74,11 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Preconnect to Google Maps domains for instant map rendering */}
+        <link rel="preconnect" href="https://maps.google.com" />
+        <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://maps.google.com" />
+        <link rel="dns-prefetch" href="https://maps.gstatic.com" />
         {/* Smart Prioritized Preloading: Instant Header Logo & Hero Card */}
         <link rel="preload" as="image" href="/assets/logo-emblem.png" fetchPriority="high" />
         <link rel="preload" as="image" href="/assets/hero-aerator-card-t.png" fetchPriority="high" />

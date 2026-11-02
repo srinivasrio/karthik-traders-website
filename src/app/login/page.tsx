@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -19,7 +19,7 @@ type SignupStep = 'phone' | 'otp' | 'details';
 
 const AUTH_DOMAIN = 'karthiktraders.com';
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/dashboard';
@@ -788,5 +788,17 @@ export default function LoginPage() {
         content={activeLegalDoc ? LegalContent[activeLegalDoc] : null}
       />
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#FBFBFB] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-slate-300 border-t-[#0B1A33] animate-spin" />
+      </div>
+    }>
+      <LoginFormContent />
+    </Suspense>
   );
 }
