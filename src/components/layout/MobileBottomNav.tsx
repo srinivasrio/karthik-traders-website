@@ -9,31 +9,36 @@ const navTabs = [
     name: 'Home',
     href: '/',
     id: 'home',
-    iconSrc: '/icons/menu/home.png',
+    normalIcon: '/icons/menu/home.png',
+    colorIcon: '/icons/menu/home-color.png',
   },
   {
     name: 'Aerators',
     href: '/aerator-sets',
     id: 'aerators',
-    iconSrc: '/icons/menu/aerators.png',
+    normalIcon: '/icons/menu/aerators.png',
+    colorIcon: '/icons/menu/aerators-color.png',
   },
   {
     name: 'Products',
     href: '/products',
     id: 'products',
-    iconSrc: '/icons/menu/products.png',
+    normalIcon: '/icons/menu/products.png',
+    colorIcon: '/icons/menu/products-color.png',
   },
   {
     name: 'Spares',
     href: '/spares',
     id: 'spares',
-    iconSrc: '/icons/menu/spares.png',
+    normalIcon: '/icons/menu/spares.png',
+    colorIcon: '/icons/menu/spares-color.png',
   },
   {
     name: 'Long Arm',
     href: '/long-arm',
     id: 'long-arm',
-    iconSrc: '/icons/menu/long-arm.png',
+    normalIcon: '/icons/menu/long-arm.png',
+    colorIcon: '/icons/menu/long-arm-color.png',
   },
 ];
 
@@ -134,36 +139,48 @@ export default function MobileBottomNav() {
             prefetch={true}
             aria-current={isActive ? 'page' : undefined}
             className={`relative flex items-center justify-center rounded-full z-10 transition-colors duration-200 ${
-              isActive ? 'text-white' : 'text-[#5B6880] hover:text-[#0B1A33]'
+              isActive ? 'text-white' : 'text-[#3D4A63] hover:text-[#0B1A33]'
             }`}
           >
-            {/* Nav Icon from /public/icons/menu using CSS mask for crisp dynamic tinting */}
+            {/* Nav Icon Container */}
             <span
               aria-hidden="true"
               className="flex items-center justify-center flex-none"
               style={{
-                width: '22px',
-                height: '22px',
+                width: '24px',
+                height: '24px',
                 transform: navSmall ? 'translate3d(0, 0, 0) scale(1.05)' : 'translate3d(0, -6px, 0) scale(0.96)',
                 transition: 'transform 0.44s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: 'currentColor',
-                  maskImage: `url("${tab.iconSrc}")`,
-                  WebkitMaskImage: `url("${tab.iconSrc}")`,
-                  maskSize: 'contain',
-                  WebkitMaskSize: 'contain',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskPosition: 'center',
-                  WebkitMaskPosition: 'center',
-                }}
-              />
+              {isActive ? (
+                /* When ACTIVATED (clicked): Show normal icon masked in clean white on top of active blue pill */
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '20px',
+                    height: '20px',
+                    backgroundColor: '#ffffff',
+                    maskImage: `url("${tab.normalIcon}")`,
+                    WebkitMaskImage: `url("${tab.normalIcon}")`,
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    WebkitMaskPosition: 'center',
+                  }}
+                />
+              ) : (
+                /* When NOT ACTIVATED: Show colored icon */
+                <img
+                  src={tab.colorIcon}
+                  alt={tab.name}
+                  width={20}
+                  height={20}
+                  className="w-5 h-5 object-contain select-none pointer-events-none"
+                />
+              )}
             </span>
 
             {/* Nav Label */}
@@ -175,7 +192,9 @@ export default function MobileBottomNav() {
                 transition:
                   'opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.44s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
-              className="absolute bottom-1 left-0 right-0 text-center text-[10px] leading-tight font-bold tracking-tight overflow-hidden whitespace-nowrap block"
+              className={`absolute bottom-1 left-0 right-0 text-center text-[10px] leading-tight font-extrabold tracking-tight overflow-hidden whitespace-nowrap block ${
+                isActive ? 'text-white' : 'text-[#475569]'
+              }`}
             >
               {tab.name}
             </span>
