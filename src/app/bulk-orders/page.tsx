@@ -203,7 +203,7 @@ export default function CheckoutPage() {
                       Signed in as {userName}
                     </span>
                     <span className="text-xs font-mono text-[#3D4A63]">
-                      {userPhone || session.user.email}
+                      {userPhone || (session.user.email && !session.user.email.endsWith('@karthiktraders.com') ? session.user.email : '')}
                     </span>
                   </div>
                   <span className="ml-auto text-xs font-extrabold text-[#0B7A4B] bg-white px-2.5 py-1 rounded-full shadow-2xs">

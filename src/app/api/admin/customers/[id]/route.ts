@@ -96,3 +96,4 @@ export async function DELETE(
         return NextResponse.json({ error: err.message || 'Failed to delete customer' }, { status: 500 });
     }
 }
+

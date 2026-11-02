@@ -328,7 +328,7 @@ export default function Header() {
                             {profile?.full_name || 'Customer'}
                           </div>
                           <div className="text-[11px] text-gray-500 truncate font-mono">
-                            {user.phone || user.email}
+                            {profile?.mobile || user.phone || (user.email && !user.email.endsWith('@karthiktraders.com') ? user.email : '')}
                           </div>
                         </div>
                         <Link
