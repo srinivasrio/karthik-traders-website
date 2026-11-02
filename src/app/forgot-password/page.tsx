@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { ConfirmationResult } from 'firebase/auth';
+interface ConfirmationResult {
+  confirm: (verificationCode: string) => Promise<any>;
+}
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
