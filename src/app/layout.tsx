@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 
 import ScrollToTop from "@/components/ui/ScrollToTop";
+import SmartImagePreloader from "@/components/ui/SmartImagePreloader";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -73,6 +74,9 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Smart Prioritized Preloading: Instant Header Logo & Hero Card */}
+        <link rel="preload" as="image" href="/assets/logo-emblem.png" fetchPriority="high" />
+        <link rel="preload" as="image" href="/assets/hero-aerator-card-t.png" fetchPriority="high" />
         <link
           href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
@@ -82,6 +86,7 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
             <ScrollToTop />
+            <SmartImagePreloader />
             <LayoutWrapper>
               {children}
             </LayoutWrapper>
