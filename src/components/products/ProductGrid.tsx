@@ -50,11 +50,11 @@ export default function ProductGrid({
 
     return (
         <div className={`product-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 ${className}`}>
-            {products.map((product, index) => (
+            {products.map((product) => (
                 <ProductCard
-                    key={product.id}
+                    key={product.id || product.slug}
                     product={product}
-                    priority={index < 4}
+                    priority={true}
                     onAddToCart={onAddToCart}
                     variant={cardVariant}
                     backContext={backContext}

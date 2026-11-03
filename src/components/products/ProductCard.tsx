@@ -186,7 +186,7 @@ export default function ProductCard({
     >
       {/* Product Image Area */}
       <div
-        className={`relative w-full ${compact ? 'aspect-square' : 'aspect-square sm:aspect-[4/3]'} bg-transparent overflow-hidden`}
+        className={`relative w-full ${compact ? 'aspect-square' : 'aspect-square sm:aspect-[4/3]'} bg-[#f8fafc] overflow-hidden`}
       >
         <Link href={href} className="block w-full h-full relative p-3 sm:p-4">
           <Image
@@ -195,7 +195,8 @@ export default function ProductCard({
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
             className="object-contain p-2 sm:p-3 transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
+            loading="eager"
+            priority={priority}
           />
         </Link>
 
