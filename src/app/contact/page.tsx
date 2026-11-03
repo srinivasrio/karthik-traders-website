@@ -164,10 +164,10 @@ export default function ContactPage() {
             </div>
             <div className="flex gap-2 pt-2">
               <a
-                href="https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg=="
+                href="https://www.instagram.com/karthik_traders_01/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 h-11 rounded-full border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-[#E8F9FF] transition-colors"
+                className="flex-1 h-11 rounded-full border border-[#D5DCE8] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-[#E8F9FF] transition-colors cursor-pointer"
               >
                 Instagram ↗
               </a>

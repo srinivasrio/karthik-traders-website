@@ -32,6 +32,7 @@ type CartContextType = {
 };
 
 export type Coupon = {
+    id?: string;
     code: string;
     discount_type: 'percentage' | 'flat';
     discount_value: number;

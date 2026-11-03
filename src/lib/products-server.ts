@@ -36,7 +36,6 @@ export async function getLiveProductsAction(staticProducts: Product[]): Promise<
                     : (Array.isArray(dbProduct.features) && dbProduct.features.length > 0 ? dbProduct.features : null);
 
                 return {
-                    ...(staticMatch || {}), // Fallback properties like badge
                     id: dbProduct.id,
                     slug: dbProduct.slug,
                     name: dbProduct.name,
@@ -46,11 +45,8 @@ export async function getLiveProductsAction(staticProducts: Product[]): Promise<
                     salePrice: dbProduct.price,
                     model: dbSpecs.model || dbSpecs['Model number'] || dbSpecs.Model || staticMatch?.model,
                     features: dbFeatures !== null ? dbFeatures : (staticMatch?.features || []),
-                    components: dbSpecs.components || staticMatch?.components || [],
-                    specifications: {
-                        ...(staticMatch?.specifications || {}),
-                        ...dbSpecs,
-                    },
+                    components: Array.isArray(dbSpecs.components) ? dbSpecs.components : (staticMatch?.components || []),
+                    specifications: dbSpecs,
                     description: dbProduct.description || staticMatch?.description,
                     warranty: dbSpecs.warranty || dbSpecs['Warranty'] || dbProduct.warranty || staticMatch?.warranty,
                     inStock: dbProduct.stock > 0,

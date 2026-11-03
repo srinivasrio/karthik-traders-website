@@ -49,10 +49,63 @@ export default function ImageUploader({
         return null;
     };
 
+    const compressImage = async (file: File): Promise<File> => {
+        if (!file.type.startsWith('image/')) return file;
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const maxWidth = 1200;
+                    const maxHeight = 1200;
+                    let { width, height } = img;
+                    if (width > maxWidth || height > maxHeight) {
+                        if (width / height > maxWidth / maxHeight) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        } else {
+                            width = Math.round((width * maxHeight) / height);
+                            height = maxHeight;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob(
+                            (blob) => {
+                                if (blob && blob.size < file.size) {
+                                    const compressedFile = new File([blob], file.name, {
+                                        type: file.type === 'image/png' ? 'image/png' : 'image/jpeg',
+                                        lastModified: Date.now(),
+                                    });
+                                    resolve(compressedFile);
+                                } else {
+                                    resolve(file);
+                                }
+                            },
+                            file.type === 'image/png' ? 'image/png' : 'image/jpeg',
+                            0.82
+                        );
+                    } else {
+                        resolve(file);
+                    }
+                };
+                img.onerror = () => resolve(file);
+                img.src = e.target?.result as string;
+            };
+            reader.onerror = () => resolve(file);
+            reader.readAsDataURL(file);
+        });
+    };
+
     const uploadFile = async (file: File): Promise<{ url: string | null; error?: string }> => {
         try {
+            const compressedFile = await compressImage(file);
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', compressedFile);
             formData.append('category', category);
 
             const result = await uploadProductImageAction(formData);

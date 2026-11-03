@@ -56,7 +56,6 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                             : (Array.isArray(dbProduct.features) && dbProduct.features.length > 0 ? dbProduct.features : null);
 
                         return {
-                            ...(staticMatch || {}), // Fallback properties like badge
                             id: dbProduct.id,
                             slug: dbProduct.slug,
                             name: dbProduct.name,
@@ -66,11 +65,8 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                             mrp: dbProduct.mrp || dbProduct.price,
                             salePrice: dbProduct.price,
                             features: dbFeatures !== null ? dbFeatures : (staticMatch?.features || []),
-                            components: dbSpecs.components || staticMatch?.components || [],
-                            specifications: {
-                                ...(staticMatch?.specifications || {}),
-                                ...dbSpecs,
-                            },
+                            components: Array.isArray(dbSpecs.components) ? dbSpecs.components : (staticMatch?.components || []),
+                            specifications: dbSpecs,
                             description: dbProduct.description || staticMatch?.description,
                             warranty: dbSpecs.warranty || dbSpecs['Warranty'] || dbProduct.warranty || staticMatch?.warranty,
                             inStock: dbProduct.stock > 0,
@@ -147,7 +143,6 @@ export function useLiveProduct(staticProduct: Product | null | undefined, slugFa
                         : (Array.isArray(data.features) && data.features.length > 0 ? data.features : null);
 
                     setProduct({
-                        ...(staticProduct || {}), // Fallback
                         id: data.id,
                         slug: data.slug,
                         name: data.name || staticProduct?.name,
@@ -157,11 +152,8 @@ export function useLiveProduct(staticProduct: Product | null | undefined, slugFa
                         mrp: data.mrp || staticProduct?.mrp || data.price,
                         salePrice: data.price || staticProduct?.salePrice,
                         features: dbFeatures !== null ? dbFeatures : (staticProduct?.features || []),
-                        components: dbSpecs.components || staticProduct?.components || [],
-                        specifications: {
-                            ...(staticProduct?.specifications || {}),
-                            ...dbSpecs,
-                        },
+                        components: Array.isArray(dbSpecs.components) ? dbSpecs.components : (staticProduct?.components || []),
+                        specifications: dbSpecs,
                         description: data.description || staticProduct?.description,
                         warranty: dbSpecs.warranty || dbSpecs['Warranty'] || data.warranty || staticProduct?.warranty,
                         stock: data.stock,

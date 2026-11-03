@@ -343,16 +343,16 @@ export default function Footer() {
             </div>
 
             {/* Original Social Media Icons */}
-            <div className="flex items-center gap-3.5 pt-2">
+            <div className="flex items-center gap-3.5 pt-2 relative z-30">
               {/* Instagram */}
               <a
-                href="https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg=="
+                href="https://www.instagram.com/karthik_traders_01/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group transition-transform hover:scale-110 duration-200"
+                className="group transition-transform hover:scale-110 duration-200 cursor-pointer inline-block"
                 aria-label="Instagram"
               >
-                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 pointer-events-none" fill="none">
                   <defs>
                     <linearGradient id="instagram-gradient-kt" x1="0%" y1="100%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#FFDC80" />
@@ -373,10 +373,10 @@ export default function Footer() {
                 href="https://www.facebook.com/share/1E2YvYdWZZ/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group transition-transform hover:scale-110 duration-200"
+                className="group transition-transform hover:scale-110 duration-200 cursor-pointer inline-block"
                 aria-label="Facebook"
               >
-                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#1877F2">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 pointer-events-none" fill="#1877F2">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
               </a>
@@ -386,10 +386,10 @@ export default function Footer() {
                 href="https://wa.me/918688566023"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group transition-transform hover:scale-110 duration-200"
+                className="group transition-transform hover:scale-110 duration-200 cursor-pointer inline-block"
                 aria-label="WhatsApp"
               >
-                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#25D366">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 pointer-events-none" fill="#25D366">
                   <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.41a8.183 8.183 0 012.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24h.02zm-3.56 3.84c-.2-.01-.43.08-.58.26-.23.27-.86.84-.86 2.05s.88 2.38 1 2.55c.13.16 1.71 2.67 4.18 3.7.59.25 1.05.39 1.41.51.59.19 1.13.16 1.56.1.47-.07 1.45-.59 1.66-1.16.2-.57.2-1.06.14-1.16-.06-.1-.23-.17-.48-.29-.26-.13-1.45-.71-1.68-.79-.22-.09-.39-.13-.55.13-.16.25-.63.79-.77.95-.14.16-.28.18-.53.06-.25-.13-1.07-.39-2.03-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.26-.02-.4.11-.53.11-.11.26-.29.39-.44.13-.14.17-.24.26-.4.09-.16.04-.3-.02-.43-.07-.12-.55-1.33-.76-1.82-.2-.48-.42-.41-.58-.42l-.49-.01z" />
                 </svg>
               </a>

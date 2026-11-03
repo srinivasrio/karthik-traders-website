@@ -510,13 +510,31 @@ export default function ProductDetailView({
                       {/* General Technical Parameters */}
                       <div className="rounded-2xl border border-[#E3E8F0] overflow-hidden bg-white text-xs sm:text-sm shadow-xs">
                         <div className="divide-y divide-[#EEF2F8]">
-                          {Object.entries(product.specifications)
-                            .filter(([key]) => {
-                              const k = key.toLowerCase();
-                              // Filter out internal keys and components (which are rendered in dedicated structured component table below)
-                              return !['features', 'images', 'brand', 'category', 'model', 'components'].includes(k);
-                            })
-                            .map(([key, val]) => {
+                          {(() => {
+                            const seenCanonical = new Map<string, string>();
+                            const filteredEntries: [string, any][] = [];
+
+                            for (const [key, val] of Object.entries(product.specifications)) {
+                              const k = key.trim();
+                              const lk = k.toLowerCase();
+                              // Filter out internal metadata keys and components
+                              if (['features', 'images', 'brand', 'category', 'model', 'components'].includes(lk)) continue;
+
+                              // Canonical key identifier to remove duplicates like 'speed' vs 'speed ( rpm )'
+                              const canonical = lk
+                                .replace(/[\(\)\[\]]/g, '')
+                                .replace(/\b(rpm|amps|kw|hp|volts|hz)\b/gi, '')
+                                .replace(/\s+/g, ' ')
+                                .trim();
+
+                              if (seenCanonical.has(canonical)) {
+                                continue;
+                              }
+                              seenCanonical.set(canonical, k);
+                              filteredEntries.push([k, val]);
+                            }
+
+                            return filteredEntries.map(([key, val]) => {
                               const displayVal = Array.isArray(val)
                                 ? val.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join(', ')
                                 : typeof val === 'object' && val !== null
@@ -533,17 +551,18 @@ export default function ProductDetailView({
                                   </span>
                                 </div>
                               );
-                            })}
+                            });
+                          })()}
                         </div>
                       </div>
 
-                      {/* Original Components & Parts Breakdown inside Technical Specifications */}
-                      {componentsList.length > 0 && (
+                      {/* Components & Parts Breakdown inside Technical Specifications */}
+                      {isAerator && componentsList.length > 0 && (
                         <div className="rounded-2xl border border-[#D5E3F5] overflow-hidden bg-white shadow-xs">
                           <div className="p-3 bg-[#EEF5FF] border-b border-[#D5E3F5] flex items-center justify-between">
                             <span className="text-xs sm:text-sm font-extrabold text-[#0B3A99] uppercase tracking-wider flex items-center gap-2">
                               <span className="w-2.5 h-2.5 rounded-full bg-[#1450C8]" />
-                              Original Aerator Components & Assemblies ({componentsList.length} Items)
+                              Included Components & Parts ({componentsList.length} Items)
                             </span>
                           </div>
                           <div className="grid grid-cols-12 p-2.5 font-extrabold bg-[#F8FAFC] border-b border-[#EEF2F8] text-[11px] sm:text-xs text-[#5B6880]">

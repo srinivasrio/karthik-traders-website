@@ -41,7 +41,7 @@ export default function LocationSection() {
                 <div>
                   <span className="font-extrabold block mb-0.5">Operating Hours</span>
                   <p className="text-xs sm:text-sm text-[#3D4A63]">
-                    {CONTACT_INFO.hours} (Always Open for Farmers)
+                    {CONTACT_INFO.hours}
                   </p>
                 </div>
               </div>
@@ -84,7 +84,7 @@ export default function LocationSection() {
           <div className="lg:col-span-7 h-[320px] sm:h-[400px] rounded-[28px] overflow-hidden border border-[#C4D9FF] shadow-sm relative bg-white">
             <iframe
               title="Karthik Traders Store Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3863.027005479426!2d79.98202027589998!3d14.444391280521633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a4cf3b5a1bbefef%3A0xe54d9c7bb7d530f6!2sKarthik%20Traders!5e0!3m2!1sen!2sin!4v1711200000000!5m2!1sen!2sin"
+              src={CONTACT_INFO.mapEmbed}
               width="100%"
               height="100%"
               style={{ border: 0 }}

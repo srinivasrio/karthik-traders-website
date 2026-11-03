@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatPrice } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import { COUPONS_STORE } from '@/data/kt-ui';
+import { validateCoupon } from '@/app/actions/validateCoupon';
 
 export default function CartPage() {
   const {
@@ -20,6 +21,7 @@ export default function CartPage() {
 
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Subtotal and MRP total
@@ -34,7 +36,7 @@ export default function CartPage() {
   const totalSavings = mrpTotal - subtotal;
   const totalPayable = finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount);
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = couponInput.trim().toUpperCase();
     if (!code) {
@@ -42,22 +44,57 @@ export default function CartPage() {
       return;
     }
 
-    const matched = COUPONS_STORE[code];
-    if (matched) {
-      if (subtotal < matched.min) {
-        setCouponError(`Add ${formatPrice(matched.min - subtotal)} more to use ${code}`);
+    setCouponLoading(true);
+    setCouponError('');
+
+    try {
+      // 1. First validate against database coupons (dynamic coupons from admin panel)
+      const cartIdentifiers = cartItems.map((item) => ({
+        uuid: item.id,
+        slug: item.slug || '',
+        shortId: item.slug || item.id,
+      }));
+
+      const dbResult = await validateCoupon(code, cartIdentifiers);
+      if (dbResult.isValid && dbResult.coupon) {
+        applyCoupon({
+          id: dbResult.coupon.id,
+          code: dbResult.coupon.code,
+          discount_type: dbResult.coupon.discount_type,
+          discount_value: dbResult.coupon.discount_value,
+          applicable_products: dbResult.coupon.applicable_products || [],
+        });
+        setCouponInput('');
+        setCouponError('');
+        setCouponLoading(false);
         return;
       }
-      applyCoupon({
-        code: code,
-        discount_type: matched.type === 'percent' ? 'percentage' : 'flat',
-        discount_value: matched.value,
-        applicable_products: [],
-      });
-      setCouponError('');
-      setCouponInput('');
-    } else {
-      setCouponError('This code is not active. Check spelling or call sales.');
+
+      // 2. Fallback to hardcoded store coupons (BULK5, NELLORE1000)
+      const matched = COUPONS_STORE[code];
+      if (matched) {
+        if (subtotal < matched.min) {
+          setCouponError(`Add ${formatPrice(matched.min - subtotal)} more to use ${code}`);
+          setCouponLoading(false);
+          return;
+        }
+        applyCoupon({
+          code: code,
+          discount_type: matched.type === 'percent' ? 'percentage' : 'flat',
+          discount_value: matched.value,
+          applicable_products: [],
+        });
+        setCouponError('');
+        setCouponInput('');
+        setCouponLoading(false);
+        return;
+      }
+
+      setCouponError(dbResult.error || 'This code is not active. Check spelling or call sales.');
+    } catch (err: any) {
+      setCouponError(err?.message || 'Failed to apply coupon');
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -239,9 +276,10 @@ export default function CartPage() {
                   />
                   <button
                     type="submit"
-                    className="h-11 px-4 rounded-xl bg-[#0B1A33] text-white font-extrabold text-xs hover:bg-[#24365A] transition-colors cursor-pointer"
+                    disabled={couponLoading}
+                    className="h-11 px-4 rounded-xl bg-[#0B1A33] disabled:opacity-60 text-white font-extrabold text-xs hover:bg-[#24365A] transition-colors cursor-pointer"
                   >
-                    Apply
+                    {couponLoading ? 'Checking...' : 'Apply'}
                   </button>
                 </form>
               ) : (

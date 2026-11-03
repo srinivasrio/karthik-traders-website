@@ -92,6 +92,30 @@ export default function ProductCard({
   const brandMeta = resolveBrandMeta(product.brand, product.name);
   const brandKey = brandMeta.label.toLowerCase();
 
+  const rawWarranty =
+    product.warranty ||
+    product.specifications?.['warranty'] ||
+    product.specifications?.['Warranty'] ||
+    '';
+
+  const formatWarranty = (val: string): string | null => {
+    if (!val) return null;
+    const s = String(val).trim();
+    const lower = s.toLowerCase();
+    if (['no', 'none', 'na', 'n/a', 'null', '0', ''].includes(lower)) return null;
+    let cleaned = s.replace(/['’]s\b/gi, 's').replace(/\s+/g, ' ').trim();
+    if (/^\d+$/.test(cleaned)) {
+      return `${cleaned} Months Warranty`;
+    }
+    cleaned = cleaned.replace(/1\s+years/i, '1 Year');
+    if (lower.includes('warranty')) {
+      return cleaned;
+    }
+    return `${cleaned} Warranty`;
+  };
+
+  const warrantyText = formatWarranty(rawWarranty);
+
   // Images handling
   const rawImages = product.images && product.images.length > 0 ? product.images : [];
   let mainImg = rawImages[0] || '/images/hero-aerator.png';
@@ -243,14 +267,14 @@ export default function ProductCard({
           <div className="grid grid-cols-2 gap-2 w-full">
             {/* Brand Capsule (without logo inside) */}
             <div
-              className="flex items-center justify-center text-center rounded-xl font-black text-[11px] sm:text-xs py-1.5 px-2 border truncate shadow-2xs"
+              className="flex items-center justify-center text-center rounded-xl font-black text-[10px] sm:text-xs py-1.5 px-1.5 border shadow-2xs min-w-0"
               style={{
                 backgroundColor: brandMeta.bg,
                 color: brandMeta.fg,
                 borderColor: brandKey === 'aqualion' ? '#FFDFB0' : brandKey.includes('sea') ? '#C4D9FF' : '#E3E8F0',
               }}
             >
-              <span className="tracking-wider uppercase truncate">{brandMeta.label}</span>
+              <span className="tracking-wider uppercase whitespace-nowrap overflow-hidden text-ellipsis">{brandMeta.label}</span>
             </div>
 
             {/* Model Capsule */}
@@ -269,6 +293,19 @@ export default function ProductCard({
         >
           {product.name}
         </Link>
+
+        {/* Warranty Badge for Motors, Gearboxes, Spares & Long Arm */}
+        {!isAerator && warrantyText && (
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold bg-[#E6F9F0] text-[#0A6C3E] border border-[#BDEFD6]">
+              <svg className="w-3 h-3 text-[#0B7A4B] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              <span>{warrantyText}</span>
+            </span>
+          </div>
+        )}
 
         {/* Price & Savings */}
         <div className="mt-auto pt-1 sm:pt-2 flex flex-col gap-2">

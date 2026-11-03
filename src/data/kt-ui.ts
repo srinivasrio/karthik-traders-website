@@ -82,7 +82,7 @@ export const CONTACT_INFO = {
     wa: 'https://wa.me/919177657576'
   },
   email: 'karthiktrader111@gmail.com',
-  instagram: 'https://www.instagram.com/karthik_traders_01?igsh=MXIxOWh4MGIzNnhlZg==',
+  instagram: 'https://www.instagram.com/karthik_traders_01/',
   facebook: 'https://www.facebook.com/share/1E2YvYdWZZ/',
   address: 'Opp. Madhura Sweets Line, Near MRF Tyres Line, Subedar Pet, Nellore, Andhra Pradesh 524001, India.',
   hours: 'Mon – Sat: 8:00 AM – 8:00 PM | Sun: 8:00 AM – 2:00 PM',
