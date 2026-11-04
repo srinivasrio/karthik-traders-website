@@ -32,6 +32,15 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
     }
   }, [brandParam]);
 
+  const handleBrandSelect = (b: Brand | 'all') => {
+    setSelectedBrand(b);
+    const params = new URLSearchParams(window.location.search);
+    if (b === 'all') params.delete('brand');
+    else params.set('brand', b);
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.replaceState(null, '', newUrl);
+  };
+
   // Filter products
   const filteredProducts = products.filter((product) => {
     const isAerator =
@@ -84,7 +93,7 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
       {/* Sticky Filter Bar */}
       <BrandFilter
         selectedBrand={selectedBrand as any}
-        onSelectBrand={(b) => setSelectedBrand(b)}
+        onSelectBrand={handleBrandSelect}
         showCustom={products.some(
           (p) =>
             (p.category === 'aerator-set' || p.category === 'aerators') &&

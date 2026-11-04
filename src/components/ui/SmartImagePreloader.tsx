@@ -17,6 +17,20 @@ const CRITICAL_ICONS = [
   '/images/logos/seaboss-logo.png',
 ];
 
+// Top catalog product card images to warm cache in idle time without blocking UI
+const CATALOG_CARD_IMAGES = [
+  '/images/products/Aerator sets/Aqualion/AQUA LION 2HP 4 Paddle Wheel Aerator Set.png',
+  '/images/products/Aerator sets/Sea boss/Sea Boss Generic.png',
+  '/images/products/Products/Motors/Aqualion/Aqualion Motor .png',
+  '/images/products/Products/Motors/Sea boss/Sea Boss Motor .png',
+  '/images/products/Products/Gear boxes/Worm/Aqualion/Aqualion A2.png',
+  '/images/products/Products/Gear boxes/Bevel/Aqualion/Aqualion A3 .png',
+  '/images/products/seaboss-a3-bevel-gearbox.png',
+  '/images/products/Products/Long arm gearbox/Aqua Torque GBH 200.png',
+  '/images/products/Products/Aerator spares/Motor covers/Handle Motor Cover.png',
+  '/images/products/Products/Aerator spares/Floats/Standard Float 6.2KG /Standard Float 6.2KG .png',
+];
+
 export default function SmartImagePreloader() {
   useEffect(() => {
     const prefetchAssets = () => {
@@ -27,8 +41,14 @@ export default function SmartImagePreloader() {
         }
       }
 
-      // Prefetch tiny icons in idle time without blocking the network pipe
+      // 1. Prefetch tiny icons in idle time
       CRITICAL_ICONS.forEach((src) => {
+        const img = new Image();
+        img.src = src;
+      });
+
+      // 2. Prefetch primary card images in idle time
+      CATALOG_CARD_IMAGES.forEach((src) => {
         const img = new Image();
         img.src = src;
       });

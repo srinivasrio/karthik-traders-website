@@ -44,6 +44,7 @@ const navTabs = [
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const [navSmall, setNavSmall] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -58,6 +59,34 @@ export default function MobileBottomNav() {
       window.removeEventListener('kt-menu-state', handleMenu);
       window.removeEventListener('kt:menu-toggle', handleMenu);
     };
+  }, []);
+
+  useEffect(() => {
+    let lastY = 0;
+    let ticking = false;
+
+    const handleScroll = () => {
+      const y = window.scrollY;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (y < 40) {
+            setNavSmall(false);
+          } else if (y > lastY + 8) {
+            setNavSmall(true);
+          } else if (y < lastY - 14) {
+            setNavSmall(false);
+          }
+
+          lastY = y;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const getActiveIndex = () => {
@@ -77,10 +106,16 @@ export default function MobileBottomNav() {
     <nav
       aria-label="Mobile Navigation"
       style={{
+        width: navSmall ? 'calc(100% - 130px)' : 'calc(100% - 24px)',
+        maxWidth: navSmall ? '248px' : '440px',
+        height: navSmall ? '46px' : '62px',
         transform: 'translate3d(-50%, 0, 0)',
-        touchAction: 'manipulation',
+        boxShadow: 'none',
+        willChange: 'width, max-width, height, transform',
+        transition:
+          'width 0.44s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.44s cubic-bezier(0.16, 1, 0.3, 1), height 0.44s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.44s ease',
       }}
-      className="lg:hidden fixed bottom-3 left-1/2 z-[56] w-[calc(100%-24px)] max-w-[440px] h-[58px] rounded-full bg-white/95 backdrop-blur-xl border border-[#D5E3F5] shadow-[0_10px_30px_rgba(11,26,51,0.12)] grid grid-cols-5 font-poppins p-1 overflow-hidden"
+      className="lg:hidden fixed bottom-3 left-1/2 z-[56] rounded-full bg-white/95 backdrop-blur-2xl border border-[#D5E3F5] shadow-none grid grid-cols-5 font-poppins p-1 overflow-hidden"
     >
       {/* Sliding Active Pill Indicator */}
       {activeIndex >= 0 && (
@@ -90,8 +125,9 @@ export default function MobileBottomNav() {
             style={{
               width: '20%',
               left: 0,
+              boxShadow: 'none',
               transform: `translate3d(${activeIndex * 100}%, 0, 0)`,
-              transition: 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+              transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           />
         </div>
@@ -106,14 +142,20 @@ export default function MobileBottomNav() {
             href={tab.href}
             prefetch={true}
             aria-current={isActive ? 'page' : undefined}
-            className={`relative flex flex-col items-center justify-center rounded-full z-10 transition-colors duration-200 select-none cursor-pointer py-1 ${
+            className={`relative flex items-center justify-center rounded-full z-10 transition-colors duration-200 ${
               isActive ? 'text-white' : 'text-[#3D4A63] hover:text-[#0B1A33]'
             }`}
           >
             {/* Nav Icon Container */}
             <span
               aria-hidden="true"
-              className="flex items-center justify-center flex-none w-5 h-5 -mt-0.5"
+              className="flex items-center justify-center flex-none"
+              style={{
+                width: '24px',
+                height: '24px',
+                transform: navSmall ? 'translate3d(0, 0, 0) scale(1.05)' : 'translate3d(0, -6px, 0) scale(0.96)',
+                transition: 'transform 0.44s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
             >
               {isActive ? (
                 /* When ACTIVATED (clicked): Show normal icon masked in clean white on top of active blue pill */
@@ -147,8 +189,15 @@ export default function MobileBottomNav() {
 
             {/* Nav Label */}
             <span
-              className={`text-center text-[10px] leading-tight font-extrabold tracking-tight overflow-hidden whitespace-nowrap block mt-0.5 pointer-events-none ${
-                isActive ? 'text-white font-black' : 'text-[#475569]'
+              style={{
+                opacity: navSmall ? 0 : 1,
+                transform: navSmall ? 'translate3d(0, 6px, 0) scale(0.7)' : 'translate3d(0, 0, 0) scale(1)',
+                pointerEvents: 'none',
+                transition:
+                  'opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.44s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+              className={`absolute bottom-1 left-0 right-0 text-center text-[10px] leading-tight font-extrabold tracking-tight overflow-hidden whitespace-nowrap block ${
+                isActive ? 'text-white' : 'text-[#475569]'
               }`}
             >
               {tab.name}

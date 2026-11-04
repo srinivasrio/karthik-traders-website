@@ -41,6 +41,26 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                 }
 
                 if (data && Array.isArray(data) && data.length > 0 && isMounted) {
+                    const staticSlugs = new Set(initialProducts.map(p => p.slug));
+                    const staticIds = new Set(initialProducts.map(p => p.id));
+                    const allowedCategories = new Set(initialProducts.map(p => p.category as string));
+
+                    if (allowedCategories.has('motor') || allowedCategories.has('worm-gearbox') || allowedCategories.has('bevel-gearbox')) {
+                        allowedCategories.add('motors');
+                        allowedCategories.add('gearbox');
+                        allowedCategories.add('gearboxes');
+                    }
+                    if (allowedCategories.has('aerator-set')) {
+                        allowedCategories.add('aerators');
+                    }
+                    if (allowedCategories.has('long-arm-gearbox') || allowedCategories.has('long-arm-spare')) {
+                        allowedCategories.add('long-arm');
+                    }
+                    if (allowedCategories.has('kit-box') || allowedCategories.has('float') || allowedCategories.has('fan') || allowedCategories.has('frame') || allowedCategories.has('rod') || allowedCategories.has('motor-cover')) {
+                        allowedCategories.add('spares');
+                        allowedCategories.add('spare');
+                    }
+
                     // Database is the absolute source of truth
                     const combined = data.map(dbProduct => {
                         // Find matching static product for fallback badges, features, etc.
@@ -78,8 +98,14 @@ export function useLiveProducts(initialProducts: Product[], options?: { skipLoad
                         } as Product;
                     });
 
-                    // Filter out inactive products
-                    const activeProducts = combined.filter(p => p.isActive !== false);
+                    // Filter out inactive products and products not belonging to this section
+                    const activeProducts = combined.filter(p => {
+                        if (p.isActive === false) return false;
+                        if (initialProducts.length === 0) return true;
+                        const matchesSlugOrId = staticSlugs.has(p.slug) || staticIds.has(p.id);
+                        const matchesCategory = allowedCategories.has(p.category as string);
+                        return matchesSlugOrId || matchesCategory;
+                    });
                     setProducts(activeProducts);
                 }
             } catch (err: any) {

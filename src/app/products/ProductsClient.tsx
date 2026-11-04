@@ -44,10 +44,11 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
   const handleCategorySelect = (cat: CategoryFilter) => {
     setCategory(cat);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     if (cat === 'all') params.delete('category');
     else params.set('category', cat === 'motor' ? 'motors' : 'gearboxes');
-    router.replace(`/products?${params.toString()}`, { scroll: false });
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.replaceState(null, '', newUrl);
   };
 
   // Filter products

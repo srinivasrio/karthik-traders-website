@@ -45,7 +45,7 @@ export default function BrandFilter({
   }, [selectedBrand, showCustom]);
 
   return (
-    <div className="sticky top-[60px] sm:top-[72px] z-30 bg-[#FBFBFB]/90 backdrop-blur-md border-b border-[#E3E8F0] py-2.5 transition-all">
+    <div className="sticky top-[60px] sm:top-[72px] z-30 bg-[#FBFBFB]/90 backdrop-blur-md border-b border-[#E3E8F0] py-2.5">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3">
         {/* Left: Count / Title (Desktop) */}
         {children && <div className="hidden sm:block">{children}</div>}

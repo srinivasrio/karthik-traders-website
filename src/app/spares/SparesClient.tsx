@@ -62,32 +62,39 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
         width: activeBtn.offsetWidth,
         bg: activeTab.activeBg,
       });
-      activeBtn.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
-      });
+      if (containerRef.current) {
+        containerRef.current.scrollTo({
+          left: Math.max(0, activeBtn.offsetLeft - 32),
+          behavior: 'smooth',
+        });
+      }
     }
   }, [category]);
 
   const handleCategorySelect = (cat: CategoryFilter) => {
     setCategory(cat);
     const targetBtn = btnRefs.current[cat];
-    if (targetBtn) {
-      targetBtn.scrollIntoView({
+    if (targetBtn && containerRef.current) {
+      containerRef.current.scrollTo({
+        left: Math.max(0, targetBtn.offsetLeft - 32),
         behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
       });
     }
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     if (cat === 'all') params.delete('category');
     else params.set('category', cat);
-    router.replace(`/spares?${params.toString()}`, { scroll: false });
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.replaceState(null, '', newUrl);
   };
+
+  const isSpareCategory = (cat: string) =>
+    ['motor-cover', 'float', 'fan', 'frame', 'rod', 'kit-box', 'spares', 'spare'].includes(cat);
 
   // Filter products
   const filteredProducts = liveProducts.filter((product) => {
+    const isSpare = isSpareCategory(product.category as string) || initialProducts.some((p) => p.slug === product.slug);
+    if (!isSpare) return false;
+
     if (inStockOnly && product.stock !== undefined && product.stock <= 0) {
       return false;
     }

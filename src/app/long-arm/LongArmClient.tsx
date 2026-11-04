@@ -46,20 +46,26 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
     setCategory(cat);
     const activeBtn = btnRefs.current[cat];
     if (activeBtn && containerRef.current) {
-      activeBtn.scrollIntoView({
+      containerRef.current.scrollTo({
+        left: Math.max(0, activeBtn.offsetLeft - 32),
         behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
       });
     }
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     if (cat === 'all') params.delete('category');
     else params.set('category', cat);
-    router.replace(`/long-arm?${params.toString()}`, { scroll: false });
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.replaceState(null, '', newUrl);
   };
+
+  const isLongArmCategory = (cat: string) =>
+    ['long-arm', 'long-arm-gearbox', 'long-arm-spare'].includes(cat);
 
   // Filter products
   const filteredProducts = liveProducts.filter((product) => {
+    const isLongArm = isLongArmCategory(product.category as string) || initialProducts.some((p) => p.slug === product.slug);
+    if (!isLongArm) return false;
+
     if (inStockOnly && product.stock !== undefined && product.stock <= 0) {
       return false;
     }

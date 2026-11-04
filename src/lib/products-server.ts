@@ -21,6 +21,26 @@ export async function getLiveProductsAction(staticProducts: Product[]): Promise<
         }
 
         if (data) {
+            const staticSlugs = new Set(staticProducts.map(p => p.slug));
+            const staticIds = new Set(staticProducts.map(p => p.id));
+            const allowedCategories = new Set(staticProducts.map(p => p.category as string));
+
+            if (allowedCategories.has('motor') || allowedCategories.has('worm-gearbox') || allowedCategories.has('bevel-gearbox')) {
+                allowedCategories.add('motors');
+                allowedCategories.add('gearbox');
+                allowedCategories.add('gearboxes');
+            }
+            if (allowedCategories.has('aerator-set')) {
+                allowedCategories.add('aerators');
+            }
+            if (allowedCategories.has('long-arm-gearbox') || allowedCategories.has('long-arm-spare')) {
+                allowedCategories.add('long-arm');
+            }
+            if (allowedCategories.has('kit-box') || allowedCategories.has('float') || allowedCategories.has('fan') || allowedCategories.has('frame') || allowedCategories.has('rod') || allowedCategories.has('motor-cover')) {
+                allowedCategories.add('spares');
+                allowedCategories.add('spare');
+            }
+
             // Database is the absolute source of truth
             const combined = data.map(dbProduct => {
                 // Find matching static product for fallback badges, features, etc.
@@ -58,8 +78,14 @@ export async function getLiveProductsAction(staticProducts: Product[]): Promise<
                 } as Product;
             });
 
-            // Filter inactive
-            return combined.filter(p => p.isActive !== false);
+            // Filter inactive and non-section products
+            return combined.filter(p => {
+                if (p.isActive === false) return false;
+                if (staticProducts.length === 0) return true;
+                const matchesSlugOrId = staticSlugs.has(p.slug) || staticIds.has(p.id);
+                const matchesCategory = allowedCategories.has(p.category as string);
+                return matchesSlugOrId || matchesCategory;
+            });
         }
         return staticProducts;
 
