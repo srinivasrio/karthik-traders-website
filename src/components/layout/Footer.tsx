@@ -346,7 +346,7 @@ export default function Footer() {
             <div className="flex items-center gap-3.5 pt-2 relative z-30">
               {/* Instagram */}
               <a
-                href="https://www.instagram.com/karthik_traders_01/"
+                href={CONTACT_INFO.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group transition-transform hover:scale-110 duration-200 cursor-pointer inline-block"
