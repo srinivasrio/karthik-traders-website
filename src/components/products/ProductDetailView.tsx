@@ -383,7 +383,7 @@ export default function ProductDetailView({
                 </div>
 
                 {/* Buttons side-by-side: Add to Cart & Compare */}
-                <div className="grid grid-cols-2 md:flex md:items-center gap-2.5 w-full md:w-auto">
+                <div className={`${isAerator ? 'grid grid-cols-2' : 'flex'} md:flex md:items-center gap-2.5 w-full md:w-auto`}>
                   {/* Add to Cart button */}
                   <div className="w-full md:w-auto">
                     {cartQty > 0 ? (
@@ -458,33 +458,33 @@ export default function ProductDetailView({
               </div>
 
               {/* Direct Inquiries: WhatsApp & Call Sales */}
-              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full">
                 <a
                   href={waHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 h-11 sm:h-12 px-3 sm:px-4 rounded-full bg-[#E7F7EE] hover:bg-[#D5F1E1] text-[#0E6B39] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-[#BDE5CF] transition-all shadow-xs cursor-pointer"
+                  className="w-full h-11 sm:h-12 px-2 sm:px-4 rounded-full bg-[#E7F7EE] hover:bg-[#D5F1E1] text-[#0E6B39] font-extrabold text-[11px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 border border-[#BDE5CF] transition-all shadow-xs cursor-pointer select-none"
                 >
                   <svg className="w-4 h-4 fill-[#25D366] shrink-0" viewBox="0 0 24 24">
                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.54 1.771.815 2.786.815 3.181 0 5.767-2.587 5.768-5.766.001-3.18-2.585-5.766-5.763-5.766zm9.969 5.766c0 5.518-4.482 10-10 10-1.749 0-3.388-.452-4.819-1.242l-5.181 1.358 1.385-5.056c-.872-1.488-1.385-3.228-1.385-5.06 0-5.518 4.482-10 10-10 5.518 0 10 4.482 10 10z" />
                   </svg>
-                  <span className="whitespace-nowrap font-black">Enquire on WhatsApp</span>
+                  <span className="whitespace-nowrap font-black tracking-tight">Enquire on WhatsApp</span>
                 </a>
 
                 <a
                   href="tel:+918688566023"
-                  className="flex-1 sm:flex-none sm:w-44 h-11 sm:h-12 px-3 sm:px-4 rounded-full bg-white hover:bg-[#F8FAFD] text-[#0B1A33] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-[#CBD5E1] transition-all shadow-xs cursor-pointer"
+                  className="w-full h-11 sm:h-12 px-2 sm:px-4 rounded-full bg-white hover:bg-[#F8FAFD] text-[#0B1A33] font-extrabold text-[11px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 border border-[#CBD5E1] transition-all shadow-xs cursor-pointer select-none"
                 >
                   <svg className="w-4 h-4 shrink-0 text-[#1450C8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
-                  <span className="whitespace-nowrap font-black">Call Sales</span>
+                  <span className="whitespace-nowrap font-black tracking-tight">Call Sales</span>
                 </a>
               </div>
             </div>
 
             {/* Warranty Callout Banner */}
-            {warrantyText ? (
+            {warrantyText && (
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#E3F7EE] text-[#0A4D31]">
                 <svg
                   width="22"
@@ -499,24 +499,6 @@ export default function ProductDetailView({
                 </svg>
                 <div className="text-xs sm:text-sm leading-relaxed font-semibold">
                   {warrantyText} Comprehensive Factory Warranty with genuine spares support from Karthik Traders Nellore.
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8FAFD] text-[#334155] border border-[#E2E8F0]">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#1450C8"
-                  strokeWidth="2.2"
-                  className="shrink-0 mt-0.5"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-                <div className="text-xs sm:text-sm leading-relaxed font-semibold text-[#475569]">
-                  100% Genuine product backed by Karthik Traders customer service & prompt spares assistance.
                 </div>
               </div>
             )}
