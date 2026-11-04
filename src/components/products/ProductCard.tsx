@@ -245,7 +245,7 @@ export default function ProductCard({
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
             className="object-contain p-2 sm:p-3 transition-transform duration-500 group-hover:scale-105"
             style={{ mixBlendMode: 'multiply' }}
-            loading="eager"
+            loading={priority ? 'eager' : 'lazy'}
             priority={priority}
           />
         </Link>

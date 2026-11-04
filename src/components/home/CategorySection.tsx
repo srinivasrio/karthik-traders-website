@@ -80,10 +80,12 @@ export default function CategorySection() {
           >
             {/* Image Container */}
             <div className="relative flex-1 min-h-[110px] sm:min-h-[140px] m-2 sm:m-3 rounded-[18px] sm:rounded-[20px] overflow-hidden bg-transparent flex items-center justify-center p-3">
-              <img
+              <Image
                 src={c.img}
                 alt={c.title}
-                className={`w-full h-full object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105 ${
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                className={`object-contain p-2 drop-shadow-sm transition-transform duration-300 group-hover:scale-105 ${
                   c.title === 'Spares' ? 'rounded-2xl' : ''
                 }`}
                 loading="lazy"
