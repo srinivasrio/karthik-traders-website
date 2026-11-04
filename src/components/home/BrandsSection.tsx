@@ -3,30 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  XMarkIcon,
-  SparklesIcon,
-  ShieldCheckIcon,
-  CubeIcon,
-  SunIcon,
-  BoltIcon,
-  ClockIcon,
-  ArrowsPointingOutIcon,
-  Cog6ToothIcon,
-  ChartBarIcon,
-  StarIcon,
-  BanknotesIcon,
-  TagIcon,
-  ArrowUpTrayIcon,
-  CheckCircleIcon,
-  CheckBadgeIcon,
-} from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface BenefitItem {
   num: number;
   title: string;
   detail: string;
-  icon: React.ComponentType<{ className?: string }>;
 }
 
 interface BrandModalData {
@@ -38,8 +20,6 @@ interface BrandModalData {
   headerBg: string;
   headerBorder: string;
   accentColor: string;
-  iconBg: string;
-  iconColor: string;
   numBadgeBg: string;
   numBadgeText: string;
   href: string;
@@ -56,8 +36,6 @@ const BRAND_BENEFITS: Record<'aqualion' | 'seaboss', BrandModalData> = {
     headerBg: 'bg-gradient-to-br from-[#FFF7ED] via-[#FFEDD5] to-[#FFE4C4]',
     headerBorder: 'border-[#FFD7A8]',
     accentColor: '#8A4B00',
-    iconBg: 'bg-[#FFF2DE]',
-    iconColor: 'text-[#D97706]',
     numBadgeBg: 'bg-[#FEF3C7]',
     numBadgeText: 'text-[#92400E]',
     href: '/aerator-sets?brand=aqualion',
@@ -66,61 +44,51 @@ const BRAND_BENEFITS: Record<'aqualion' | 'seaboss', BrandModalData> = {
         num: 1,
         title: 'Higher Oxygen',
         detail: '3.5–4.0 kg O₂/hr.',
-        icon: SparklesIcon,
       },
       {
         num: 2,
         title: 'SS 304 Frame',
         detail: 'Superior corrosion resistance.',
-        icon: ShieldCheckIcon,
       },
       {
         num: 3,
         title: 'Thick Frame',
         detail: 'Heavy-duty 3 mm construction.',
-        icon: CubeIcon,
       },
       {
         num: 4,
         title: 'Heavy Floats',
         detail: '7 kg UV-stabilized HDPE.',
-        icon: SunIcon,
       },
       {
         num: 5,
         title: 'Low Amp Draw',
         detail: 'Energy-efficient 2HP motor.',
-        icon: BoltIcon,
       },
       {
         num: 6,
         title: '24/7 Duty',
         detail: 'Designed for continuous operation.',
-        icon: ClockIcon,
       },
       {
         num: 7,
         title: 'Wide Circulation',
         detail: '35–40 m effective range.',
-        icon: ArrowsPointingOutIcon,
       },
       {
         num: 8,
         title: 'Precision Gearbox',
         detail: 'Reduced operational wear.',
-        icon: Cog6ToothIcon,
       },
       {
         num: 9,
         title: 'High-Density Ready',
         detail: 'Ideal for intensive farming.',
-        icon: ChartBarIcon,
       },
       {
         num: 10,
         title: 'Long-Term Value',
         detail: 'Built for durability.',
-        icon: StarIcon,
       },
     ],
   },
@@ -133,8 +101,6 @@ const BRAND_BENEFITS: Record<'aqualion' | 'seaboss', BrandModalData> = {
     headerBg: 'bg-gradient-to-br from-[#F0F9FF] via-[#E0F2FE] to-[#BAE6FD]/70',
     headerBorder: 'border-[#BAE6FD]',
     accentColor: '#0369A1',
-    iconBg: 'bg-[#E0F2FE]',
-    iconColor: 'text-[#0284C7]',
     numBadgeBg: 'bg-[#E0F2FE]',
     numBadgeText: 'text-[#0369A1]',
     href: '/aerator-sets?brand=seaboss',
@@ -143,61 +109,51 @@ const BRAND_BENEFITS: Record<'aqualion' | 'seaboss', BrandModalData> = {
         num: 1,
         title: 'Budget-Friendly',
         detail: 'Starts at ₹23,999.',
-        icon: BanknotesIcon,
       },
       {
         num: 2,
         title: 'Reliable Aeration',
         detail: '2.3–3.0 kg O₂/hr.',
-        icon: SparklesIcon,
       },
       {
         num: 3,
         title: 'Lower Investment',
         detail: 'Affordable upfront cost.',
-        icon: TagIcon,
       },
       {
         num: 4,
         title: 'Easy Handling',
         detail: 'Lighter frame and floats.',
-        icon: ArrowUpTrayIcon,
       },
       {
         num: 5,
         title: 'SS 202 Frame',
         detail: 'Practical everyday performance.',
-        icon: ShieldCheckIcon,
       },
       {
         num: 6,
         title: '6.5 kg Floats',
         detail: 'Reliable pond buoyancy.',
-        icon: CheckCircleIcon,
       },
       {
         num: 7,
         title: 'Gearbox Options',
         detail: 'A2 Worm or A3 Bevel.',
-        icon: Cog6ToothIcon,
       },
       {
         num: 8,
         title: 'S1 Duty Motor',
         detail: 'Designed for continuous operation.',
-        icon: ClockIcon,
       },
       {
         num: 9,
         title: 'IP55 Protection',
         detail: 'Added motor protection.',
-        icon: ShieldCheckIcon,
       },
       {
         num: 10,
         title: 'Warranty Option',
         detail: '1-year extended replacement add-on.',
-        icon: CheckBadgeIcon,
       },
     ],
   },
@@ -206,22 +162,28 @@ const BRAND_BENEFITS: Record<'aqualion' | 'seaboss', BrandModalData> = {
 export default function BrandsSection() {
   const [activeBrand, setActiveBrand] = useState<'aqualion' | 'seaboss' | null>(null);
 
-  // Close modal on Escape key
+  // Manage body scroll and hide mobile bottom nav / cart while modal is open
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setActiveBrand(null);
       }
     };
+
     if (activeBrand) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
+      // Dispatch event to hide mobile bottom nav & floating cart
+      window.dispatchEvent(new CustomEvent('kt-menu-state', { detail: { open: true } }));
     } else {
       document.body.style.overflow = '';
+      window.dispatchEvent(new CustomEvent('kt-menu-state', { detail: { open: false } }));
     }
+
     return () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
+      window.dispatchEvent(new CustomEvent('kt-menu-state', { detail: { open: false } }));
     };
   }, [activeBrand]);
 
@@ -235,16 +197,17 @@ export default function BrandsSection() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         {/* Aqualion Card */}
-        <div className="relative rounded-[32px] bg-[#FFF4E3] border border-[#FFDFB0] p-6 sm:p-9 flex flex-col gap-6 overflow-hidden shadow-xs hover:shadow-md transition-shadow">
+        <div className="relative rounded-[28px] sm:rounded-[32px] bg-[#FFF4E3] border border-[#FFDFB0] p-5 sm:p-8 flex flex-col gap-4 sm:gap-5 overflow-hidden shadow-xs hover:shadow-md transition-shadow">
           <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#FFE3B8]/60 pointer-events-none" />
 
           <div className="relative flex items-start justify-between gap-3">
-            <div className="flex flex-col items-start gap-3 min-w-0">
-              <div className="h-20 sm:h-24 md:h-28 flex items-center">
+            <div className="flex flex-col items-start gap-2.5 min-w-0">
+              {/* Increased Logo Size */}
+              <div className="h-24 sm:h-28 md:h-32 flex items-center">
                 <img
                   src="/images/logos/aqualion-logo.svg"
                   alt="Aqualion"
-                  className="h-full w-auto max-w-[220px] object-contain object-left"
+                  className="h-full w-auto max-w-[240px] sm:max-w-[290px] object-contain object-left scale-105 origin-left"
                 />
               </div>
               <span className="px-3.5 py-1 rounded-full bg-white text-[#8A4B00] text-xs font-black shadow-2xs tracking-wider border border-[#FFDFB0]">
@@ -254,7 +217,7 @@ export default function BrandsSection() {
             <img
               src="/assets/hero-aerator-card-t.png"
               alt="Aqualion Aerator"
-              className="relative w-40 sm:w-48 h-auto object-contain shrink-0 -mr-2 -mt-2 drop-shadow-md"
+              className="relative w-36 sm:w-48 h-auto object-contain shrink-0 -mr-2 -mt-2 drop-shadow-md"
             />
           </div>
 
@@ -262,18 +225,18 @@ export default function BrandsSection() {
             Aqualion Premium
           </h3>
 
-          <div className="relative flex flex-wrap items-center gap-3 mt-auto pt-2">
+          {/* Action buttons: side by side with reduced mobile sizing */}
+          <div className="relative grid grid-cols-2 gap-2 sm:gap-3 w-full mt-auto pt-2">
             <button
               type="button"
               onClick={() => setActiveBrand('aqualion')}
-              className="h-11 px-5 rounded-full bg-white border border-[#FFDFB0] text-[#8A4B00] inline-flex items-center gap-2 font-extrabold text-sm hover:bg-[#FFE3B8] transition-colors cursor-pointer shadow-2xs"
+              className="h-10 sm:h-11 px-2.5 sm:px-4 rounded-full bg-white border border-[#FFDFB0] text-[#8A4B00] inline-flex items-center justify-center font-extrabold text-xs sm:text-sm hover:bg-[#FFE3B8] transition-colors cursor-pointer shadow-2xs text-center"
             >
-              <SparklesIcon className="w-4 h-4 text-[#D97706]" />
               Why Aqua Lion?
             </button>
             <Link
               href="/aerator-sets?brand=aqualion"
-              className="h-11 px-6 rounded-full bg-[#C4D9FF] text-[#0B1A33] inline-flex items-center font-extrabold text-sm hover:bg-[#24365A] hover:text-white transition-colors"
+              className="h-10 sm:h-11 px-2.5 sm:px-4 rounded-full bg-[#C4D9FF] text-[#0B1A33] inline-flex items-center justify-center font-extrabold text-xs sm:text-sm hover:bg-[#24365A] hover:text-white transition-colors text-center"
             >
               Shop Aqualion →
             </Link>
@@ -281,16 +244,17 @@ export default function BrandsSection() {
         </div>
 
         {/* Sea Boss Card */}
-        <div className="relative rounded-[32px] bg-[#E8F9FF] border border-[#C4D9FF] p-6 sm:p-9 flex flex-col gap-6 overflow-hidden shadow-xs hover:shadow-md transition-shadow">
+        <div className="relative rounded-[28px] sm:rounded-[32px] bg-[#E8F9FF] border border-[#C4D9FF] p-5 sm:p-8 flex flex-col gap-4 sm:gap-5 overflow-hidden shadow-xs hover:shadow-md transition-shadow">
           <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#C4D9FF]/50 pointer-events-none" />
 
           <div className="relative flex items-start justify-between gap-3">
-            <div className="flex flex-col items-start gap-3 min-w-0">
-              <div className="h-20 sm:h-24 md:h-28 flex items-center">
+            <div className="flex flex-col items-start gap-2.5 min-w-0">
+              {/* Increased Logo Size */}
+              <div className="h-24 sm:h-28 md:h-32 flex items-center">
                 <img
                   src="/images/logos/seaboss-logo.svg"
                   alt="Sea Boss"
-                  className="h-full w-auto max-w-[220px] object-contain object-left"
+                  className="h-full w-auto max-w-[240px] sm:max-w-[290px] object-contain object-left scale-105 origin-left"
                 />
               </div>
               <span className="px-3.5 py-1 rounded-full bg-white text-[#0B5C86] text-xs font-black shadow-2xs tracking-wider border border-[#C4D9FF]">
@@ -300,7 +264,7 @@ export default function BrandsSection() {
             <img
               src="/assets/hero-aerator-card-t.png"
               alt="Sea Boss Aerator"
-              className="relative w-40 sm:w-48 h-auto object-contain shrink-0 -mr-2 -mt-2 drop-shadow-md"
+              className="relative w-36 sm:w-48 h-auto object-contain shrink-0 -mr-2 -mt-2 drop-shadow-md"
             />
           </div>
 
@@ -308,18 +272,18 @@ export default function BrandsSection() {
             Sea Boss
           </h3>
 
-          <div className="relative flex flex-wrap items-center gap-3 mt-auto pt-2">
+          {/* Action buttons: side by side with reduced mobile sizing */}
+          <div className="relative grid grid-cols-2 gap-2 sm:gap-3 w-full mt-auto pt-2">
             <button
               type="button"
               onClick={() => setActiveBrand('seaboss')}
-              className="h-11 px-5 rounded-full bg-white border border-[#C4D9FF] text-[#0B5C86] inline-flex items-center gap-2 font-extrabold text-sm hover:bg-[#DDF3FF] transition-colors cursor-pointer shadow-2xs"
+              className="h-10 sm:h-11 px-2.5 sm:px-4 rounded-full bg-white border border-[#C4D9FF] text-[#0B5C86] inline-flex items-center justify-center font-extrabold text-xs sm:text-sm hover:bg-[#DDF3FF] transition-colors cursor-pointer shadow-2xs text-center"
             >
-              <SparklesIcon className="w-4 h-4 text-[#0B5C86]" />
               Why Sea Boss?
             </button>
             <Link
               href="/aerator-sets?brand=seaboss"
-              className="h-11 px-6 rounded-full bg-[#C4D9FF] text-[#0B1A33] inline-flex items-center font-extrabold text-sm hover:bg-[#24365A] hover:text-white transition-colors"
+              className="h-10 sm:h-11 px-2.5 sm:px-4 rounded-full bg-[#C4D9FF] text-[#0B1A33] inline-flex items-center justify-center font-extrabold text-xs sm:text-sm hover:bg-[#24365A] hover:text-white transition-colors text-center"
             >
               Shop Sea Boss →
             </Link>
@@ -327,17 +291,17 @@ export default function BrandsSection() {
         </div>
       </div>
 
-      {/* Brand Benefits Modal */}
+      {/* Brand Benefits Modal - z-[120] to guarantee it is above Header (z-[70]) and MobileBottomNav (z-[56]) */}
       <AnimatePresence>
         {activeData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-5">
             {/* Subtle Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-[#0B1A33]/60 backdrop-blur-sm"
+              className="fixed inset-0 bg-[#0B1A33]/70 backdrop-blur-md"
               onClick={() => setActiveBrand(null)}
             />
 
@@ -350,33 +314,34 @@ export default function BrandsSection() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 16 }}
               transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-              className="relative w-full max-w-2xl max-h-[92vh] overflow-hidden bg-white rounded-[28px] sm:rounded-[32px] shadow-2xl border border-slate-100 flex flex-col z-10"
+              className="relative w-full max-w-[94vw] sm:max-w-xl md:max-w-2xl max-h-[86vh] sm:max-h-[90vh] overflow-hidden bg-white rounded-[22px] sm:rounded-[30px] shadow-2xl border border-slate-100 flex flex-col z-10 my-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
-              <div className={`p-5 sm:p-6 sm:px-8 border-b ${activeData.headerBg} ${activeData.headerBorder} flex items-start justify-between gap-4 shrink-0`}>
-                <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white shadow-xs border border-white/80 flex items-center justify-center p-2 shrink-0">
+              {/* Header: Clean logo directly rendered with NO layout background box */}
+              <div className={`p-4 sm:p-5 sm:px-7 border-b ${activeData.headerBg} ${activeData.headerBorder} flex items-start justify-between gap-3 shrink-0`}>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
+                  {/* Logo without any box background */}
+                  <div className="h-9 sm:h-11 w-auto flex items-center shrink-0">
                     <img
                       src={activeData.logo}
                       alt={activeData.name}
-                      className="w-full h-full object-contain"
+                      className="h-full w-auto max-w-[130px] sm:max-w-[160px] object-contain object-left"
                     />
                   </div>
                   <div className="min-w-0">
                     <span
-                      className="text-[11px] sm:text-xs font-black tracking-widest uppercase block mb-0.5"
+                      className="text-[10px] sm:text-xs font-black tracking-widest uppercase block leading-none mb-1"
                       style={{ color: activeData.accentColor }}
                     >
                       {activeData.badge}
                     </span>
                     <h3
                       id="brand-modal-title"
-                      className="text-xl sm:text-2xl font-extrabold text-[#0B1A33] tracking-tight font-poppins leading-tight"
+                      className="text-lg sm:text-2xl font-extrabold text-[#0B1A33] tracking-tight font-poppins leading-tight"
                     >
                       {activeData.heading}
                     </h3>
-                    <p className="text-xs sm:text-sm text-[#475569] font-medium line-clamp-2 mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-[#475569] font-medium leading-normal mt-0.5">
                       {activeData.subtitle}
                     </p>
                   </div>
@@ -387,60 +352,54 @@ export default function BrandsSection() {
                   type="button"
                   onClick={() => setActiveBrand(null)}
                   aria-label="Close"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-[#0B1A33] flex items-center justify-center font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 hover:bg-white text-[#0B1A33] flex items-center justify-center font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0"
                 >
                   <XMarkIcon className="w-5 h-5 text-[#0B1A33]" />
                 </button>
               </div>
 
-              {/* 10 Key Benefits Grid */}
-              <div className="p-4 sm:p-6 sm:px-8 overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                  {activeData.benefits.map((b) => {
-                    const Icon = b.icon;
-                    return (
-                      <div
-                        key={b.num}
-                        className="flex items-center gap-3 p-3 rounded-2xl bg-[#F8FAFC] border border-slate-100 hover:border-slate-200 hover:bg-[#F1F5F9]/60 transition-colors"
+              {/* 10 Key Benefits Grid - Numbered points only, NO icons */}
+              <div className="p-3.5 sm:p-5 sm:px-7 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                  {activeData.benefits.map((b) => (
+                    <div
+                      key={b.num}
+                      className="flex items-start gap-2.5 p-2 sm:p-2.5 rounded-xl bg-[#F8FAFC] border border-slate-100 hover:border-slate-200 hover:bg-[#F1F5F9]/70 transition-colors"
+                    >
+                      {/* Number Badge */}
+                      <span
+                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg ${activeData.numBadgeBg} ${activeData.numBadgeText} text-[10px] sm:text-xs font-black flex items-center justify-center shrink-0 mt-0.5 border border-white/60 shadow-2xs`}
                       >
-                        {/* Number Badge & Icon */}
-                        <div className={`w-9 h-9 rounded-xl ${activeData.iconBg} ${activeData.iconColor} flex items-center justify-center shrink-0 relative shadow-2xs`}>
-                          <Icon className="w-5 h-5" />
-                          <span
-                            className={`absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full ${activeData.numBadgeBg} ${activeData.numBadgeText} text-[10px] font-black flex items-center justify-center border border-white`}
-                          >
-                            {b.num}
-                          </span>
-                        </div>
+                        {b.num}
+                      </span>
 
-                        {/* Title & Detail */}
-                        <div className="min-w-0 flex-1 text-xs sm:text-sm leading-snug">
-                          <span className="font-extrabold text-[#0B1A33]">
-                            {b.title}:
-                          </span>{' '}
-                          <span className="text-[#475569] font-medium">
-                            {b.detail}
-                          </span>
-                        </div>
+                      {/* Title & Detail */}
+                      <div className="min-w-0 flex-1 text-xs sm:text-sm leading-snug">
+                        <span className="font-extrabold text-[#0B1A33]">
+                          {b.title}:
+                        </span>{' '}
+                        <span className="text-[#475569] font-medium">
+                          {b.detail}
+                        </span>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="p-4 sm:p-5 sm:px-8 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+              <div className="p-3 sm:p-4 sm:px-7 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveBrand(null)}
-                  className="h-10 px-5 rounded-full text-xs sm:text-sm font-bold text-[#64748B] hover:text-[#0B1A33] hover:bg-slate-200/60 transition-colors cursor-pointer"
+                  className="h-9 sm:h-10 px-4 rounded-full text-xs sm:text-sm font-bold text-[#64748B] hover:text-[#0B1A33] hover:bg-slate-200/60 transition-colors cursor-pointer"
                 >
                   Close
                 </button>
                 <Link
                   href={activeData.href}
                   onClick={() => setActiveBrand(null)}
-                  className="h-10 sm:h-11 px-5 sm:px-6 rounded-full bg-[#C4D9FF] text-[#0B1A33] font-extrabold text-xs sm:text-sm hover:bg-[#24365A] hover:text-white transition-colors inline-flex items-center justify-center shadow-xs"
+                  className="h-9 sm:h-10 px-4 sm:px-5 rounded-full bg-[#C4D9FF] text-[#0B1A33] font-extrabold text-xs sm:text-sm hover:bg-[#24365A] hover:text-white transition-colors inline-flex items-center justify-center shadow-xs"
                 >
                   Shop {activeData.name} Sets →
                 </Link>
