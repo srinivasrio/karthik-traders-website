@@ -1,65 +1,203 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  XMarkIcon,
+  SparklesIcon,
+  ShieldCheckIcon,
+  CubeIcon,
+  SunIcon,
+  BoltIcon,
+  ClockIcon,
+  ArrowsPointingOutIcon,
+  Cog6ToothIcon,
+  ChartBarIcon,
+  StarIcon,
+  BanknotesIcon,
+  TagIcon,
+  ArrowUpTrayIcon,
+  CheckCircleIcon,
+  CheckBadgeIcon,
+} from '@heroicons/react/24/outline';
 
-interface BrandInfo {
+interface BenefitItem {
+  num: number;
   title: string;
-  tier: string;
-  bg: string;
-  fg: string;
-  href: string;
-  blocks: { k: string; v: string }[];
+  detail: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
-const BRAND_DATA: Record<'aqualion' | 'seaboss', BrandInfo> = {
+interface BrandModalData {
+  name: string;
+  badge: string;
+  heading: string;
+  subtitle: string;
+  logo: string;
+  headerBg: string;
+  headerBorder: string;
+  accentColor: string;
+  iconBg: string;
+  iconColor: string;
+  numBadgeBg: string;
+  numBadgeText: string;
+  href: string;
+  benefits: BenefitItem[];
+}
+
+const BRAND_BENEFITS: Record<'aqualion' | 'seaboss', BrandModalData> = {
   aqualion: {
-    title: 'Aqualion',
-    tier: 'PREMIUM QUALITY',
-    bg: '#FFF1D6',
-    fg: '#8A4B00',
+    name: 'Aqua Lion',
+    badge: 'PREMIUM QUALITY',
+    heading: 'Why Choose Aqua Lion?',
+    subtitle: 'Best for maximum performance, long life & commercial shrimp farming',
+    logo: '/images/logos/aqualion-logo.svg',
+    headerBg: 'bg-gradient-to-br from-[#FFF7ED] via-[#FFEDD5] to-[#FFE4C4]',
+    headerBorder: 'border-[#FFD7A8]',
+    accentColor: '#8A4B00',
+    iconBg: 'bg-[#FFF2DE]',
+    iconColor: 'text-[#D97706]',
+    numBadgeBg: 'bg-[#FEF3C7]',
+    numBadgeText: 'text-[#92400E]',
     href: '/aerator-sets?brand=aqualion',
-    blocks: [
+    benefits: [
       {
-        k: 'MANUFACTURING SPECS',
-        v: 'Equipped with 100% copper-wound ISO certified motors, precision Bevel A3 gearboxes, SS 304 CR frames, and Virgin HDPE UV-stabilized floats for extreme pond longevity.',
+        num: 1,
+        title: 'Higher Oxygen',
+        detail: '3.5–4.0 kg O₂/hr.',
+        icon: SparklesIcon,
       },
       {
-        k: '1 YEAR WARRANTY',
-        v: 'All Aqualion aerators carry a comprehensive 1 Year Warranty covering manufacturing defects on motor and gearbox.',
+        num: 2,
+        title: 'SS 304 Frame',
+        detail: 'Superior corrosion resistance.',
+        icon: ShieldCheckIcon,
       },
       {
-        k: 'COMPLETE PACKAGING',
-        v: 'Complete sets ship factory-inspected with waterproof dom motor cover, SS fan rods, installation kit box, and synthetic EP 140 gear oil.',
+        num: 3,
+        title: 'Thick Frame',
+        detail: 'Heavy-duty 3 mm construction.',
+        icon: CubeIcon,
       },
       {
-        k: 'TESTED FOR AP & TS PONDS',
-        v: 'Designed specifically for high-salinity aquaculture ponds across Andhra Pradesh, Tamil Nadu, and Gujarat shrimp belts.',
+        num: 4,
+        title: 'Heavy Floats',
+        detail: '7 kg UV-stabilized HDPE.',
+        icon: SunIcon,
+      },
+      {
+        num: 5,
+        title: 'Low Amp Draw',
+        detail: 'Energy-efficient 2HP motor.',
+        icon: BoltIcon,
+      },
+      {
+        num: 6,
+        title: '24/7 Duty',
+        detail: 'Designed for continuous operation.',
+        icon: ClockIcon,
+      },
+      {
+        num: 7,
+        title: 'Wide Circulation',
+        detail: '35–40 m effective range.',
+        icon: ArrowsPointingOutIcon,
+      },
+      {
+        num: 8,
+        title: 'Precision Gearbox',
+        detail: 'Reduced operational wear.',
+        icon: Cog6ToothIcon,
+      },
+      {
+        num: 9,
+        title: 'High-Density Ready',
+        detail: 'Ideal for intensive farming.',
+        icon: ChartBarIcon,
+      },
+      {
+        num: 10,
+        title: 'Long-Term Value',
+        detail: 'Built for durability.',
+        icon: StarIcon,
       },
     ],
   },
   seaboss: {
-    title: 'Sea Boss',
-    tier: 'BUDGET + HIGH PERFORMANCE',
-    bg: '#DDF3FF',
-    fg: '#0B5C86',
+    name: 'Sea Boss',
+    badge: 'BUDGET + HIGH PERFORMANCE',
+    heading: 'Why Choose Sea Boss?',
+    subtitle: 'Best for budget, ROI & standard aquaculture ponds',
+    logo: '/images/logos/seaboss-logo.svg',
+    headerBg: 'bg-gradient-to-br from-[#F0F9FF] via-[#E0F2FE] to-[#BAE6FD]/70',
+    headerBorder: 'border-[#BAE6FD]',
+    accentColor: '#0369A1',
+    iconBg: 'bg-[#E0F2FE]',
+    iconColor: 'text-[#0284C7]',
+    numBadgeBg: 'bg-[#E0F2FE]',
+    numBadgeText: 'text-[#0369A1]',
     href: '/aerator-sets?brand=seaboss',
-    blocks: [
+    benefits: [
       {
-        k: 'POWERFUL AERATION',
-        v: 'Delivers high DO (Dissolved Oxygen) transfer rates with high-torque motors engineered for 24/7 continuous duty cycles in high stocking density shrimp ponds.',
+        num: 1,
+        title: 'Budget-Friendly',
+        detail: 'Starts at ₹23,999.',
+        icon: BanknotesIcon,
       },
       {
-        k: 'MODELS & CAPACITIES',
-        v: 'Available in 2HP 4-Paddle and 3HP 6-Paddle configurations with heavy-duty cast iron or ductile gearboxes.',
+        num: 2,
+        title: 'Reliable Aeration',
+        detail: '2.3–3.0 kg O₂/hr.',
+        icon: SparklesIcon,
       },
       {
-        k: '1 YEAR REPLACEMENT WARRANTY',
-        v: 'Complete peace of mind with 1 full year replacement warranty on core mechanicals and electrical components.',
+        num: 3,
+        title: 'Lower Investment',
+        detail: 'Affordable upfront cost.',
+        icon: TagIcon,
       },
       {
-        k: 'GENUINE SPARES GUARANTEE',
-        v: 'Every spare part—floats, fans, rods, doms, bush stands—is stocked in our Nellore warehouse with same-day dispatch.',
+        num: 4,
+        title: 'Easy Handling',
+        detail: 'Lighter frame and floats.',
+        icon: ArrowUpTrayIcon,
+      },
+      {
+        num: 5,
+        title: 'SS 202 Frame',
+        detail: 'Practical everyday performance.',
+        icon: ShieldCheckIcon,
+      },
+      {
+        num: 6,
+        title: '6.5 kg Floats',
+        detail: 'Reliable pond buoyancy.',
+        icon: CheckCircleIcon,
+      },
+      {
+        num: 7,
+        title: 'Gearbox Options',
+        detail: 'A2 Worm or A3 Bevel.',
+        icon: Cog6ToothIcon,
+      },
+      {
+        num: 8,
+        title: 'S1 Duty Motor',
+        detail: 'Designed for continuous operation.',
+        icon: ClockIcon,
+      },
+      {
+        num: 9,
+        title: 'IP55 Protection',
+        detail: 'Added motor protection.',
+        icon: ShieldCheckIcon,
+      },
+      {
+        num: 10,
+        title: 'Warranty Option',
+        detail: '1-year extended replacement add-on.',
+        icon: CheckBadgeIcon,
       },
     ],
   },
@@ -68,7 +206,26 @@ const BRAND_DATA: Record<'aqualion' | 'seaboss', BrandInfo> = {
 export default function BrandsSection() {
   const [activeBrand, setActiveBrand] = useState<'aqualion' | 'seaboss' | null>(null);
 
-  const bm = activeBrand ? BRAND_DATA[activeBrand] : null;
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveBrand(null);
+      }
+    };
+    if (activeBrand) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeBrand]);
+
+  const activeData = activeBrand ? BRAND_BENEFITS[activeBrand] : null;
 
   return (
     <section id="brands" className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 pt-14 md:pt-24 scroll-mt-24">
@@ -78,7 +235,7 @@ export default function BrandsSection() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         {/* Aqualion Card */}
-        <div className="relative rounded-[32px] bg-[#FFF4E3] border border-[#FFDFB0] p-6 sm:p-9 flex flex-col gap-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className="relative rounded-[32px] bg-[#FFF4E3] border border-[#FFDFB0] p-6 sm:p-9 flex flex-col gap-6 overflow-hidden shadow-xs hover:shadow-md transition-shadow">
           <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#FFE3B8]/60 pointer-events-none" />
 
           <div className="relative flex items-start justify-between gap-3">
@@ -90,7 +247,7 @@ export default function BrandsSection() {
                   className="h-full w-auto max-w-[220px] object-contain object-left"
                 />
               </div>
-              <span className="px-3.5 py-1 rounded-full bg-white text-[#8A4B00] text-xs font-black shadow-xs tracking-wider border border-[#FFDFB0]">
+              <span className="px-3.5 py-1 rounded-full bg-white text-[#8A4B00] text-xs font-black shadow-2xs tracking-wider border border-[#FFDFB0]">
                 PREMIUM
               </span>
             </div>
@@ -105,19 +262,15 @@ export default function BrandsSection() {
             Aqualion Premium
           </h3>
 
-          <div className="relative flex flex-wrap gap-2 text-xs sm:text-sm font-bold text-[#0B1A33]">
-            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#E3E8F0] shadow-2xs">
-              ISO certified motor
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#E3E8F0] shadow-2xs">
-              SS 304 CR frame
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#E3E8F0] shadow-2xs text-emerald-700 font-semibold">
-              ★ 1 Year Warranty
-            </span>
-          </div>
-
-          <div className="relative flex flex-wrap gap-3 mt-auto pt-2">
+          <div className="relative flex flex-wrap items-center gap-3 mt-auto pt-2">
+            <button
+              type="button"
+              onClick={() => setActiveBrand('aqualion')}
+              className="h-11 px-5 rounded-full bg-white border border-[#FFDFB0] text-[#8A4B00] inline-flex items-center gap-2 font-extrabold text-sm hover:bg-[#FFE3B8] transition-colors cursor-pointer shadow-2xs"
+            >
+              <SparklesIcon className="w-4 h-4 text-[#D97706]" />
+              Why Aqua Lion?
+            </button>
             <Link
               href="/aerator-sets?brand=aqualion"
               className="h-11 px-6 rounded-full bg-[#C4D9FF] text-[#0B1A33] inline-flex items-center font-extrabold text-sm hover:bg-[#24365A] hover:text-white transition-colors"
@@ -128,7 +281,7 @@ export default function BrandsSection() {
         </div>
 
         {/* Sea Boss Card */}
-        <div className="relative rounded-[32px] bg-[#E8F9FF] border border-[#C4D9FF] p-6 sm:p-9 flex flex-col gap-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className="relative rounded-[32px] bg-[#E8F9FF] border border-[#C4D9FF] p-6 sm:p-9 flex flex-col gap-6 overflow-hidden shadow-xs hover:shadow-md transition-shadow">
           <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#C4D9FF]/50 pointer-events-none" />
 
           <div className="relative flex items-start justify-between gap-3">
@@ -140,7 +293,7 @@ export default function BrandsSection() {
                   className="h-full w-auto max-w-[220px] object-contain object-left"
                 />
               </div>
-              <span className="px-3.5 py-1 rounded-full bg-white text-[#0B5C86] text-xs font-black shadow-xs tracking-wider border border-[#C4D9FF]">
+              <span className="px-3.5 py-1 rounded-full bg-white text-[#0B5C86] text-xs font-black shadow-2xs tracking-wider border border-[#C4D9FF]">
                 HIGH PERFORMANCE
               </span>
             </div>
@@ -155,19 +308,15 @@ export default function BrandsSection() {
             Sea Boss
           </h3>
 
-          <div className="relative flex flex-wrap gap-2 text-xs sm:text-sm font-bold text-[#0B1A33]">
-            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#C4D9FF] shadow-2xs">
-              2HP 4-Paddle
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#C4D9FF] shadow-2xs">
-              3HP 6-Paddle
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-[#C4D9FF] shadow-2xs text-[#0B5C86]">
-              1 Year Replacement
-            </span>
-          </div>
-
-          <div className="relative flex flex-wrap gap-3 mt-auto pt-2">
+          <div className="relative flex flex-wrap items-center gap-3 mt-auto pt-2">
+            <button
+              type="button"
+              onClick={() => setActiveBrand('seaboss')}
+              className="h-11 px-5 rounded-full bg-white border border-[#C4D9FF] text-[#0B5C86] inline-flex items-center gap-2 font-extrabold text-sm hover:bg-[#DDF3FF] transition-colors cursor-pointer shadow-2xs"
+            >
+              <SparklesIcon className="w-4 h-4 text-[#0B5C86]" />
+              Why Sea Boss?
+            </button>
             <Link
               href="/aerator-sets?brand=seaboss"
               className="h-11 px-6 rounded-full bg-[#C4D9FF] text-[#0B1A33] inline-flex items-center font-extrabold text-sm hover:bg-[#24365A] hover:text-white transition-colors"
@@ -178,79 +327,128 @@ export default function BrandsSection() {
         </div>
       </div>
 
-      {/* Brand Info Modal */}
-      {bm && (
-        <div
-          className="fixed inset-0 z-50 bg-[#0B1A33]/50 backdrop-blur-sm grid place-items-center p-4"
-          onClick={() => setActiveBrand(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-[#FBFBFB] rounded-[28px] shadow-2xl border border-white animate-[ktUp_0.35s_both]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div
-              className="p-6 sm:p-7 flex justify-between items-start gap-4 rounded-t-[28px]"
-              style={{ backgroundColor: bm.bg }}
+      {/* Brand Benefits Modal */}
+      <AnimatePresence>
+        {activeData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
+            {/* Subtle Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-[#0B1A33]/60 backdrop-blur-sm"
+              onClick={() => setActiveBrand(null)}
+            />
+
+            {/* Modal Dialog Card */}
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="brand-modal-title"
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+              className="relative w-full max-w-2xl max-h-[92vh] overflow-hidden bg-white rounded-[28px] sm:rounded-[32px] shadow-2xl border border-slate-100 flex flex-col z-10"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/95 shadow-sm border border-white flex items-center justify-center p-2 shrink-0">
-                  <img
-                    src={activeBrand === 'aqualion' ? '/images/logos/aqualion-logo.svg' : '/images/logos/seaboss-logo.svg'}
-                    alt={bm.title}
-                    className="w-full h-full object-contain"
-                  />
+              {/* Header */}
+              <div className={`p-5 sm:p-6 sm:px-8 border-b ${activeData.headerBg} ${activeData.headerBorder} flex items-start justify-between gap-4 shrink-0`}>
+                <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white shadow-xs border border-white/80 flex items-center justify-center p-2 shrink-0">
+                    <img
+                      src={activeData.logo}
+                      alt={activeData.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <span
+                      className="text-[11px] sm:text-xs font-black tracking-widest uppercase block mb-0.5"
+                      style={{ color: activeData.accentColor }}
+                    >
+                      {activeData.badge}
+                    </span>
+                    <h3
+                      id="brand-modal-title"
+                      className="text-xl sm:text-2xl font-extrabold text-[#0B1A33] tracking-tight font-poppins leading-tight"
+                    >
+                      {activeData.heading}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#475569] font-medium line-clamp-2 mt-0.5">
+                      {activeData.subtitle}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <span
-                    className="text-xs font-extrabold tracking-widest uppercase block mb-1"
-                    style={{ color: bm.fg }}
-                  >
-                    {bm.tier}
-                  </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#0B1A33] tracking-tight font-poppins">
-                    {bm.title}
-                  </h3>
+
+                {/* Close Button (×) */}
+                <button
+                  type="button"
+                  onClick={() => setActiveBrand(null)}
+                  aria-label="Close"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-[#0B1A33] flex items-center justify-center font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0"
+                >
+                  <XMarkIcon className="w-5 h-5 text-[#0B1A33]" />
+                </button>
+              </div>
+
+              {/* 10 Key Benefits Grid */}
+              <div className="p-4 sm:p-6 sm:px-8 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                  {activeData.benefits.map((b) => {
+                    const Icon = b.icon;
+                    return (
+                      <div
+                        key={b.num}
+                        className="flex items-center gap-3 p-3 rounded-2xl bg-[#F8FAFC] border border-slate-100 hover:border-slate-200 hover:bg-[#F1F5F9]/60 transition-colors"
+                      >
+                        {/* Number Badge & Icon */}
+                        <div className={`w-9 h-9 rounded-xl ${activeData.iconBg} ${activeData.iconColor} flex items-center justify-center shrink-0 relative shadow-2xs`}>
+                          <Icon className="w-5 h-5" />
+                          <span
+                            className={`absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full ${activeData.numBadgeBg} ${activeData.numBadgeText} text-[10px] font-black flex items-center justify-center border border-white`}
+                          >
+                            {b.num}
+                          </span>
+                        </div>
+
+                        {/* Title & Detail */}
+                        <div className="min-w-0 flex-1 text-xs sm:text-sm leading-snug">
+                          <span className="font-extrabold text-[#0B1A33]">
+                            {b.title}:
+                          </span>{' '}
+                          <span className="text-[#475569] font-medium">
+                            {b.detail}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setActiveBrand(null)}
-                aria-label="Close"
-                className="w-10 h-10 rounded-full bg-white/80 hover:bg-white text-[#0B1A33] flex items-center justify-center font-bold text-lg shadow-xs transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-6 sm:p-8 flex flex-col gap-5">
-              {bm.blocks.map((b) => (
-                <div key={b.k} className="flex flex-col gap-1.5">
-                  <span className="text-xs font-extrabold tracking-wider text-[#5B6880] uppercase">
-                    {b.k}
-                  </span>
-                  <p className="text-sm sm:text-base leading-relaxed text-[#0B1A33] font-medium">
-                    {b.v}
-                  </p>
-                </div>
-              ))}
-
-              <div className="pt-2">
-                <Link
-                  href={bm.href}
+              {/* Footer */}
+              <div className="p-4 sm:p-5 sm:px-8 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+                <button
+                  type="button"
                   onClick={() => setActiveBrand(null)}
-                  className="inline-flex items-center justify-center h-12 px-6 rounded-full bg-[#C4D9FF] text-[#0B1A33] font-extrabold text-sm hover:bg-[#24365A] hover:text-white transition-colors"
+                  className="h-10 px-5 rounded-full text-xs sm:text-sm font-bold text-[#64748B] hover:text-[#0B1A33] hover:bg-slate-200/60 transition-colors cursor-pointer"
                 >
-                  Shop {bm.title} Sets →
+                  Close
+                </button>
+                <Link
+                  href={activeData.href}
+                  onClick={() => setActiveBrand(null)}
+                  className="h-10 sm:h-11 px-5 sm:px-6 rounded-full bg-[#C4D9FF] text-[#0B1A33] font-extrabold text-xs sm:text-sm hover:bg-[#24365A] hover:text-white transition-colors inline-flex items-center justify-center shadow-xs"
+                >
+                  Shop {activeData.name} Sets →
                 </Link>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </section>
   );
 }
