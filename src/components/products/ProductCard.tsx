@@ -92,11 +92,31 @@ export default function ProductCard({
   const brandMeta = resolveBrandMeta(product.brand, product.name);
   const brandKey = brandMeta.label.toLowerCase();
 
-  const rawWarranty =
-    product.warranty ||
-    product.specifications?.['warranty'] ||
-    product.specifications?.['Warranty'] ||
-    '';
+  const cat = (product.category || '').toLowerCase();
+  const isAerator = cat === 'aerators' || cat === 'aerator-set' || cat === 'aerator-sets';
+  const isGearOrMotor =
+    cat === 'gearboxes' ||
+    cat === 'bevel-gearbox' ||
+    cat === 'worm-gearbox' ||
+    cat === 'motors' ||
+    cat === 'flange-motor' ||
+    cat === 'products';
+
+  // Extract warranty from specifications case-insensitively
+  let specWarranty = '';
+  if (product.specifications) {
+    for (const [k, v] of Object.entries(product.specifications)) {
+      if (k.trim().toLowerCase() === 'warranty') {
+        specWarranty = String(v || '').trim();
+        break;
+      }
+    }
+  }
+
+  // For gearboxes & motors, ONLY use specification warranty from DB; do NOT use any static fallback!
+  const rawWarranty = isGearOrMotor
+    ? specWarranty
+    : (specWarranty || product.warranty || '');
 
   const formatWarranty = (val: string): string | null => {
     if (!val) return null;
@@ -106,6 +126,14 @@ export default function ProductCard({
     let cleaned = s.replace(/['’]s\b/gi, 's').replace(/\s+/g, ' ').trim();
     if (/^\d+$/.test(cleaned)) {
       return `${cleaned} Months Warranty`;
+    }
+    if (/^\d+\s*months?$/i.test(cleaned)) {
+      const num = cleaned.match(/\d+/)?.[0] || '';
+      return `${num} Months Warranty`;
+    }
+    if (/^\d+\s*years?$/i.test(cleaned)) {
+      const num = cleaned.match(/\d+/)?.[0] || '';
+      return `${num} Year Warranty`;
     }
     cleaned = cleaned.replace(/1\s+years/i, '1 Year');
     if (lower.includes('warranty')) {
@@ -123,7 +151,6 @@ export default function ProductCard({
   if (mainImg.startsWith('uploads/')) mainImg = '/' + mainImg;
 
   // URL determination
-  const cat = (product.category || '').toLowerCase();
   let href = `/products/${product.slug}`;
   if (cat === 'aerators' || cat === 'aerator-set' || cat === 'aerator-sets') {
     href = `/aerator-sets/${product.slug}`;
@@ -132,8 +159,6 @@ export default function ProductCard({
   } else if (cat === 'long-arm') {
     href = `/long-arm/${product.slug}`;
   }
-
-  const isAerator = cat === 'aerators' || cat === 'aerator-set' || cat === 'aerator-sets';
 
   // Model Number Identification
   const modelNumber =
@@ -210,15 +235,16 @@ export default function ProductCard({
     >
       {/* Product Image Area */}
       <div
-        className={`relative w-full ${compact ? 'aspect-square' : 'aspect-square sm:aspect-[4/3]'} bg-[#f8fafc] overflow-hidden`}
+        className={`relative w-full ${compact ? 'aspect-square' : 'aspect-square sm:aspect-[4/3]'} bg-white overflow-hidden`}
       >
-        <Link href={href} className="block w-full h-full relative p-3 sm:p-4">
+        <Link href={href} className="block w-full h-full relative p-3 sm:p-4 bg-white">
           <Image
             src={mainImg}
             alt={product.name}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
             className="object-contain p-2 sm:p-3 transition-transform duration-500 group-hover:scale-105"
+            style={{ mixBlendMode: 'multiply' }}
             loading="eager"
             priority={priority}
           />
@@ -309,17 +335,19 @@ export default function ProductCard({
 
         {/* Price & Savings */}
         <div className="mt-auto pt-1 sm:pt-2 flex flex-col gap-2">
-          <div className="flex items-baseline flex-wrap gap-1.5 sm:gap-2">
-            <span className={`font-extrabold text-[#0B1A33] leading-none ${compact ? 'text-base' : 'text-base sm:text-2xl'}`}>
-              {formatPrice(salePrice)}
-            </span>
-            {mrp > salePrice && (
-              <span className="text-[10px] sm:text-xs text-[#7C879C] line-through font-medium">
-                {formatPrice(mrp)}
+          <div className="flex items-start justify-between gap-1">
+            <div className="flex flex-col">
+              <span className={`font-extrabold text-[#0B1A33] leading-none tracking-tight ${compact ? 'text-base' : 'text-base sm:text-2xl'}`}>
+                {formatPrice(salePrice)}
               </span>
-            )}
+              {mrp > salePrice && (
+                <span className="text-[10px] sm:text-xs text-[#7C879C] line-through font-medium mt-1">
+                  {formatPrice(mrp)}
+                </span>
+              )}
+            </div>
             {savings > 0 && (
-              <span className="ml-auto text-[9.5px] sm:text-[11px] font-extrabold text-[#0B7A4B] bg-[#E3F7EE] px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              <span className="text-[9.5px] sm:text-[11px] font-extrabold text-[#0B7A4B] bg-[#E3F7EE] px-1.5 py-0.5 rounded-full whitespace-nowrap self-start">
                 Save {formatPrice(savings)}
               </span>
             )}

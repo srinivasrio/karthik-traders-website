@@ -915,7 +915,6 @@ export const wormGearboxes: Product[] = [
       'Colour': 'Blue',
       'Bearing Sizes': '6206, 30206, 6306'
     },
-    warranty: '1 Year',
     inStock: true,
     stockStatus: 'in-stock'
   }
@@ -948,7 +947,6 @@ export const bevelGearboxes: Product[] = [
       'Color': 'Black',
       'Bearings': '6206, 6305, 6008'
     },
-    warranty: '1 Year',
     inStock: true,
     stockStatus: 'in-stock'
   },
@@ -978,7 +976,6 @@ export const bevelGearboxes: Product[] = [
       'Color': 'Black',
       'Bearings Size': '6206, 6205, 6008'
     },
-    warranty: '1 Year',
     inStock: true,
     stockStatus: 'in-stock'
   },
@@ -1011,7 +1008,6 @@ export const bevelGearboxes: Product[] = [
       'Colour': 'Blue',
       'Bearing Sizes': '6206, 6205, 6008'
     },
-    warranty: '1 Year',
     inStock: true,
     stockStatus: 'in-stock'
   },
@@ -1044,7 +1040,6 @@ export const bevelGearboxes: Product[] = [
       'Colour': 'Blue',
       'Bearing Sizes': '6206, 6205, 6008'
     },
-    warranty: '1 Year',
     inStock: true,
     stockStatus: 'in-stock'
   },
@@ -1583,7 +1578,6 @@ export const longArmProducts: Product[] = [
       'Brand': 'Aqua Torque',
       'Application': 'Large-scale aerators, paddle wheels, intensive aquaculture'
     },
-    warranty: '1 Year',
     inStock: true,
     stockStatus: 'in-stock'
   },

@@ -572,16 +572,16 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                     <button
                         type="button"
                         onClick={() => setShowPreview(!showPreview)}
-                        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs"
                     >
-                        <SparklesIcon className="h-3.5 w-3.5" />
+                        <SparklesIcon className="h-3.5 w-3.5 text-[#1450C8]" />
                         {showPreview ? 'Hide Preview' : 'Show Preview'}
                     </button>
                 </div>
             </div>
 
             <form onSubmit={handleSubmit}>
-                <div className="flex gap-6">
+                <div className="flex flex-col lg:flex-row gap-6">
                     {/* Main Form */}
                     <div className="flex-1 space-y-4">
 
@@ -1018,8 +1018,8 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
 
                     {/* Preview Sidebar */}
                     {showPreview && (
-                        <div className="hidden sm:block w-72 flex-shrink-0">
-                            <div className="sticky top-20">
+                        <div className="w-full lg:w-80 lg:flex-shrink-0">
+                            <div className="lg:sticky lg:top-20">
                                 <ProductPreviewCard
                                     name={name}
                                     model={model}

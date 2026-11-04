@@ -105,6 +105,58 @@ export default function ProductDetailView({
     setOpenPanels((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Determine if aerator set or gearboxes/motors
+  const cat = (product.category || '').toLowerCase();
+  const isGearOrMotor =
+    cat === 'gearboxes' ||
+    cat === 'bevel-gearbox' ||
+    cat === 'worm-gearbox' ||
+    cat === 'motors' ||
+    cat === 'flange-motor' ||
+    cat === 'products';
+
+  // Extract warranty from specifications case-insensitively
+  let specWarranty = '';
+  if (product.specifications) {
+    for (const [k, v] of Object.entries(product.specifications)) {
+      if (k.trim().toLowerCase() === 'warranty') {
+        specWarranty = String(v || '').trim();
+        break;
+      }
+    }
+  }
+
+  // For gearboxes & motors, ONLY use specification warranty from DB; do NOT use any static fallback!
+  const rawWarranty = isGearOrMotor
+    ? specWarranty
+    : (specWarranty || product.warranty || (isAerator ? '1 Year' : ''));
+
+  const formatWarranty = (val: string): string | null => {
+    if (!val) return null;
+    const s = String(val).trim();
+    const lower = s.toLowerCase();
+    if (['no', 'none', 'na', 'n/a', 'null', '0', ''].includes(lower)) return null;
+    let cleaned = s.replace(/['’]s\b/gi, 's').replace(/\s+/g, ' ').trim();
+    if (/^\d+$/.test(cleaned)) {
+      return `${cleaned} Months Warranty`;
+    }
+    if (/^\d+\s*months?$/i.test(cleaned)) {
+      const num = cleaned.match(/\d+/)?.[0] || '';
+      return `${num} Months Warranty`;
+    }
+    if (/^\d+\s*years?$/i.test(cleaned)) {
+      const num = cleaned.match(/\d+/)?.[0] || '';
+      return `${num} Year Warranty`;
+    }
+    cleaned = cleaned.replace(/1\s+years/i, '1 Year');
+    if (lower.includes('warranty')) {
+      return cleaned;
+    }
+    return `${cleaned} Warranty`;
+  };
+
+  const warrantyText = formatWarranty(rawWarranty);
+
   const waHref = `https://wa.me/918688566023?text=${encodeURIComponent(
     `Hello Karthik Traders, I am interested in: ${product.name} (₹${product.salePrice}). Please share availability and delivery estimate to my location.`
   )}`;
@@ -137,9 +189,13 @@ export default function ProductDetailView({
                     ★ Best Selling
                   </span>
                 )}
-                {product.brand === 'aqualion' && (
-                  <span className="px-3 py-1 rounded-full bg-white/95 text-[#8A4B00] text-xs font-extrabold shadow-xs">
-                    1 Year Warranty
+                {warrantyText && (
+                  <span className="px-3 py-1 rounded-full bg-white/95 text-[#0A6C3E] text-xs font-extrabold shadow-xs flex items-center gap-1 border border-[#BDEFD6]">
+                    <svg className="w-3.5 h-3.5 text-[#0B7A4B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                    <span>{warrantyText}</span>
                   </span>
                 )}
               </div>
@@ -401,50 +457,69 @@ export default function ProductDetailView({
                 </div>
               </div>
 
-              {/* Direct Inquiries: WhatsApp & Call Sales side by side with EQUAL button sizes */}
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full">
+              {/* Direct Inquiries: WhatsApp & Call Sales */}
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full">
                 <a
                   href={waHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="h-11 sm:h-12 px-2 sm:px-4 rounded-full bg-[#E7F7EE] hover:bg-[#D5F1E1] text-[#0E6B39] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 border border-[#BDE5CF] transition-all shadow-xs"
+                  className="flex-1 h-11 sm:h-12 px-3 sm:px-4 rounded-full bg-[#E7F7EE] hover:bg-[#D5F1E1] text-[#0E6B39] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-[#BDE5CF] transition-all shadow-xs cursor-pointer"
                 >
                   <svg className="w-4 h-4 fill-[#25D366] shrink-0" viewBox="0 0 24 24">
                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.54 1.771.815 2.786.815 3.181 0 5.767-2.587 5.768-5.766.001-3.18-2.585-5.766-5.763-5.766zm9.969 5.766c0 5.518-4.482 10-10 10-1.749 0-3.388-.452-4.819-1.242l-5.181 1.358 1.385-5.056c-.872-1.488-1.385-3.228-1.385-5.06 0-5.518 4.482-10 10-10 5.518 0 10 4.482 10 10z" />
                   </svg>
-                  <span className="truncate">Enquire on WhatsApp</span>
+                  <span className="whitespace-nowrap font-black">Enquire on WhatsApp</span>
                 </a>
 
                 <a
                   href="tel:+918688566023"
-                  className="h-11 sm:h-12 px-2 sm:px-4 rounded-full bg-white hover:bg-[#F8FAFD] text-[#0B1A33] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 border border-[#CBD5E1] transition-all shadow-xs"
+                  className="flex-1 sm:flex-none sm:w-44 h-11 sm:h-12 px-3 sm:px-4 rounded-full bg-white hover:bg-[#F8FAFD] text-[#0B1A33] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-[#CBD5E1] transition-all shadow-xs cursor-pointer"
                 >
                   <svg className="w-4 h-4 shrink-0 text-[#1450C8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
-                  <span className="truncate">Call Sales</span>
+                  <span className="whitespace-nowrap font-black">Call Sales</span>
                 </a>
               </div>
             </div>
 
             {/* Warranty Callout Banner */}
-            <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#E3F7EE] text-[#0A4D31]">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#0B7A4B"
-                strokeWidth="2.2"
-                className="shrink-0 mt-0.5"
-              >
-                <path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6zM8.5 12l2.5 2.5 4.5-5" />
-              </svg>
-              <div className="text-xs sm:text-sm leading-relaxed font-semibold">
-                {product.warranty ||
-                  '1 Year Comprehensive Factory Warranty with genuine spares support from Karthik Traders Nellore.'}
+            {warrantyText ? (
+              <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#E3F7EE] text-[#0A4D31]">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#0B7A4B"
+                  strokeWidth="2.2"
+                  className="shrink-0 mt-0.5"
+                >
+                  <path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6zM8.5 12l2.5 2.5 4.5-5" />
+                </svg>
+                <div className="text-xs sm:text-sm leading-relaxed font-semibold">
+                  {warrantyText} Comprehensive Factory Warranty with genuine spares support from Karthik Traders Nellore.
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8FAFD] text-[#334155] border border-[#E2E8F0]">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#1450C8"
+                  strokeWidth="2.2"
+                  className="shrink-0 mt-0.5"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+                <div className="text-xs sm:text-sm leading-relaxed font-semibold text-[#475569]">
+                  100% Genuine product backed by Karthik Traders customer service & prompt spares assistance.
+                </div>
+              </div>
+            )}
 
             {/* Accordion Panels */}
             <div className="flex flex-col border-t border-[#E3E8F0]">
@@ -555,38 +630,6 @@ export default function ProductDetailView({
                           })()}
                         </div>
                       </div>
-
-                      {/* Components & Parts Breakdown inside Technical Specifications */}
-                      {isAerator && componentsList.length > 0 && (
-                        <div className="rounded-2xl border border-[#D5E3F5] overflow-hidden bg-white shadow-xs">
-                          <div className="p-3 bg-[#EEF5FF] border-b border-[#D5E3F5] flex items-center justify-between">
-                            <span className="text-xs sm:text-sm font-extrabold text-[#0B3A99] uppercase tracking-wider flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-[#1450C8]" />
-                              Included Components & Parts ({componentsList.length} Items)
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-12 p-2.5 font-extrabold bg-[#F8FAFC] border-b border-[#EEF2F8] text-[11px] sm:text-xs text-[#5B6880]">
-                            <span className="col-span-5 sm:col-span-4">Component Item</span>
-                            <span className="col-span-5 sm:col-span-6">Technical Specification</span>
-                            <span className="col-span-2 text-right">Quantity</span>
-                          </div>
-                          <div className="divide-y divide-[#EEF2F8] text-xs sm:text-sm">
-                            {componentsList.map((comp, idx) => (
-                              <div key={idx} className="grid grid-cols-12 p-2.5 sm:p-3 items-center hover:bg-[#F8FAFD]/60">
-                                <span className="col-span-5 sm:col-span-4 font-bold text-[#0B1A33] text-[11.5px] sm:text-xs">
-                                  {comp.item}
-                                </span>
-                                <span className="col-span-5 sm:col-span-6 text-[#5B6880] text-[11px] sm:text-xs leading-snug">
-                                  {comp.spec || 'Factory Standard'}
-                                </span>
-                                <span className="col-span-2 text-right font-mono font-bold text-[#0B1A33] text-xs sm:text-sm">
-                                  {comp.quantity}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
