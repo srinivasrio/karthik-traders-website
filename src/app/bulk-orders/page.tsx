@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import { COUPONS_STORE } from '@/data/kt-ui';
+import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionControl';
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, totalPrice, finalPrice, discountAmount, coupon, applyCoupon } = useCart();
@@ -29,6 +30,8 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState('');
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
 
   // Check Supabase session
   useEffect(() => {
@@ -63,7 +66,8 @@ export default function CheckoutPage() {
   );
   const totalSavings = mrpTotal - subtotal;
   const deliveryFee = subtotal >= 50000 || subtotal === 0 ? 0 : 1500;
-  const currentTotal = (finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount)) + deliveryFee;
+  const baseDiscountedSubtotal = finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount);
+  const currentTotal = Math.max(0, baseDiscountedSubtotal - loyaltyDiscount) + deliveryFee;
 
   const validate = () => {
     const err: Record<string, string> = {};
@@ -103,6 +107,8 @@ export default function CheckoutPage() {
           shippingAddress: formData,
           couponCode: coupon?.code,
           discountAmount: discountAmount,
+          pointsToRedeem: loyaltyPoints,
+          loyaltyDiscount: loyaltyDiscount,
           deliveryFee,
         }),
       });
@@ -113,6 +119,9 @@ export default function CheckoutPage() {
       }
 
       clearCart();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('loyalty:refresh'));
+      }
       setPlacedOrderId(data.orderId || `KT-${Date.now().toString().slice(-6)}`);
       setIsSuccessModalOpen(true);
     } catch (err: any) {
@@ -416,6 +425,18 @@ export default function CheckoutPage() {
               ))}
             </div>
 
+            {/* Loyalty Redemption Control */}
+            <LoyaltyRedemptionControl
+              items={cartItems}
+              session={session}
+              appliedPoints={loyaltyPoints}
+              appliedDiscount={loyaltyDiscount}
+              onApplyPoints={(pts, discount) => {
+                setLoyaltyPoints(pts);
+                setLoyaltyDiscount(discount);
+              }}
+            />
+
             <div className="h-px bg-[#EEF2F8]" />
 
             <div className="flex flex-col gap-2 text-xs sm:text-sm font-medium">
@@ -433,6 +454,12 @@ export default function CheckoutPage() {
                 <div className="flex justify-between">
                   <span className="text-[#5B6880]">Coupon Discount</span>
                   <span className="font-extrabold text-[#4338CA]">− {formatPrice(discountAmount)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[#5B6880]">Loyalty Rewards ({loyaltyPoints} pts)</span>
+                  <span className="font-extrabold text-[#0B7A4B]">− {formatPrice(loyaltyDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between">

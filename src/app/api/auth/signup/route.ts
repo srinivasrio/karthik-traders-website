@@ -102,6 +102,26 @@ export async function POST(request: Request) {
             }
             console.log('[Signup API] User Created:', newUser.user.id);
             userId = newUser.user.id;
+
+            // Ensure profile exists for the new user
+            try {
+                await supabaseAdmin.from('profiles').upsert({
+                    id: userId,
+                    mobile: phone,
+                    full_name: fullName,
+                    role: 'customer'
+                }, { onConflict: 'id' });
+            } catch (err) {
+                console.error('[Signup API] Profile upsert error:', err);
+            }
+
+            // Automatically initialize loyalty wallet and award signup bonus points
+            try {
+                await supabaseAdmin.rpc('loyalty_init_wallet', { p_user_id: userId });
+                console.log('[Signup API] Loyalty wallet initialized for user:', userId);
+            } catch (loyaltyError) {
+                console.warn('[Signup API] Loyalty wallet init warning (ignored if migration pending):', loyaltyError);
+            }
         }
 
         // 4. Create/Return Session

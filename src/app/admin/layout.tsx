@@ -16,15 +16,18 @@ import {
     UserIcon,
 
     TicketIcon,
-    ArrowLeftIcon
+    ArrowLeftIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import HeaderLoyaltyBadge from '@/components/loyalty/HeaderLoyaltyBadge';
 
 const navigation = [
     { name: 'Overview', href: '/admin', icon: HomeIcon },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingBagIcon },
     { name: 'Products', href: '/admin/products', icon: CubeIcon },
     { name: 'Coupons', href: '/admin/coupons', icon: TicketIcon },
+    { name: 'Loyalty & Rewards', href: '/admin/loyalty', icon: SparklesIcon },
     { name: 'Customers', href: '/admin/customers', icon: UsersIcon },
     { name: 'Settings', href: '/admin/settings', icon: CogIcon },
 ];
@@ -155,15 +158,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         >
                             <Bars3Icon className="h-5 w-5 text-slate-600" />
                         </button>
-                        <div className="flex items-center space-x-4 ml-auto">
+                        <div className="flex items-center space-x-3 sm:space-x-4 ml-auto">
+                            {/* Loyalty Points Badge right beside profile icon in Admin Header */}
+                            <HeaderLoyaltyBadge variant="admin" />
                             <Link
                                 href="/admin/settings"
-                                className="flex items-center gap-1 text-xs text-slate-600 hover:text-aqua-600 transition-colors mr-2"
+                                className="flex items-center gap-1 text-xs text-slate-600 hover:text-aqua-600 transition-colors"
                             >
                                 <UserIcon className="h-4 w-4" />
                                 <span>Profile</span>
                             </Link>
-                            <span className="text-xs text-slate-600 whitespace-nowrap">
+                            <span className="text-xs text-slate-600 whitespace-nowrap hidden sm:inline">
                                 Welcome, <span className="font-medium text-slate-800">{profile?.full_name || 'Admin'}</span>
                             </span>
                         </div>

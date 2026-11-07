@@ -4,6 +4,7 @@ import type { Viewport } from "next";
 import "./globals.css";
 import LayoutWrapper from "@/components/layout/LayoutWrapper";
 import { AuthProvider } from "@/context/AuthContext";
+import { LoyaltyProvider } from "@/context/LoyaltyContext";
 import { CartProvider } from "@/context/CartContext";
 
 import ScrollToTop from "@/components/ui/ScrollToTop";
@@ -89,13 +90,15 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen bg-[#FBFBFB] text-[#0B1A33]" style={{ fontFamily: 'Manrope, system-ui, sans-serif' }} suppressHydrationWarning>
         <AuthProvider>
-          <CartProvider>
-            <ScrollToTop />
-            <SmartImagePreloader />
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
-          </CartProvider>
+          <LoyaltyProvider>
+            <CartProvider>
+              <ScrollToTop />
+              <SmartImagePreloader />
+              <LayoutWrapper>
+                {children}
+              </LayoutWrapper>
+            </CartProvider>
+          </LoyaltyProvider>
         </AuthProvider>
       </body>
     </html>

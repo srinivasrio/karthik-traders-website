@@ -123,6 +123,13 @@ export async function POST(
         }
         console.log('[DEBUG] Order status updated successfully to confirmed');
 
+        // Confirm loyalty points redemption
+        try {
+            await supabaseAdmin.rpc('loyalty_confirm_redemption', { p_order_id: orderId });
+        } catch (e: any) {
+            console.warn('Loyalty confirm redemption notice:', e?.message);
+        }
+
         return NextResponse.json({
             success: true,
             message: 'Order accepted and stock updated'

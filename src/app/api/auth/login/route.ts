@@ -109,6 +109,13 @@ export async function POST(request: Request) {
                     role: 'customer'
                 });
 
+                // Automatically initialize loyalty wallet & award signup bonus
+                try {
+                    await supabaseAdmin.rpc('loyalty_init_wallet', { p_user_id: newUser.user.id });
+                } catch (loyaltyErr) {
+                    console.warn('[Login API] Loyalty init warning:', loyaltyErr);
+                }
+
                 // Sign in with derived password to get session
                 const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
                     email,

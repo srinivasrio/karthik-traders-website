@@ -83,6 +83,16 @@ export async function POST(
             return NextResponse.json({ error: 'Failed to update order: ' + updateError.message }, { status: 500 });
         }
 
+        // Release any reserved loyalty points back to customer wallet
+        try {
+            await supabaseAdmin.rpc('loyalty_release_points', {
+                p_order_id: orderId,
+                p_reason: 'Order rejected by administrator'
+            });
+        } catch (e: any) {
+            console.warn('Loyalty release points notice:', e?.message);
+        }
+
         return NextResponse.json({
             success: true,
             message: 'Order rejected'

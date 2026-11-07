@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { sendTelegramMessage } from '@/lib/telegram';
+import {
+    calculateEligibleSubtotalPaise,
+    previewRedemption,
+    reservePoints,
+} from '@/lib/loyalty';
 
 // Initialize Supabase Admin Client
 const supabaseAdmin = createClient(
@@ -30,8 +35,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
         }
 
-        const token = authHeader.replace('Bearer ', '');
-        console.log('Token received length:', token.length);
+        const token = authHeader.replace(/^Bearer\s+/i, '').trim();
         console.log('Verifying token at /api/checkout...');
 
         // Use getUser(token) to verify the client-side JWT
@@ -46,9 +50,16 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { items, shippingAddress, totalAmount, couponCode, discountAmount } = body;
+        const {
+            items,
+            shippingAddress,
+            totalAmount,
+            couponCode,
+            discountAmount,
+            pointsToRedeem: clientPointsToRedeem,
+        } = body;
 
-        if (!items || !shippingAddress || !totalAmount) {
+        if (!items || !shippingAddress || totalAmount === undefined || totalAmount === null) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -58,6 +69,27 @@ export async function POST(request: Request) {
             .select('mobile, full_name')
             .eq('id', user.id)
             .single();
+
+        // Server-side validation of eligible product subtotal (excluding delivery charges)
+        const eligibleSubtotalPaise = calculateEligibleSubtotalPaise(items);
+
+        let validatedLoyaltyPoints = 0;
+        let loyaltyDiscountRupees = 0;
+
+        // Process loyalty points redemption if requested
+        const requestedPoints = parseInt(clientPointsToRedeem || '0', 10);
+        if (requestedPoints > 0) {
+            const preview = await previewRedemption(user.id, eligibleSubtotalPaise, requestedPoints);
+            if (!preview.is_eligible) {
+                return NextResponse.json({
+                    error: preview.message || 'Cart does not meet loyalty points redemption requirements',
+                    code: preview.reason_code,
+                }, { status: 400 });
+            }
+
+            validatedLoyaltyPoints = Math.min(requestedPoints, preview.max_redeemable_points || 0);
+            loyaltyDiscountRupees = preview.discount_rupees || 0;
+        }
 
         // Format items for RPC
         const formattedItems = items.map((item: any) => ({
@@ -70,27 +102,55 @@ export async function POST(request: Request) {
         const rawMobile = profile?.mobile || shippingAddress.mobile || '';
         const normalizedMobile = rawMobile.replace(/\D/g, '');
 
-        // Create order directly (with customer_mobile for linking)
+        // Generate clean idempotency key for this order checkout
+        const orderIdempotencyKey = `chk_${user.id}_${Date.now()}`;
+
+        // Create order directly (with customer_mobile and loyalty fields)
+        const orderPayload: any = {
+            user_id: user.id,
+            customer_mobile: normalizedMobile,
+            customer_name: profile?.full_name || shippingAddress.fullName,
+            total_amount: totalAmount,
+            discount_amount: discountAmount || 0,
+            coupon_code: couponCode || null,
+            shipping_address: shippingAddress,
+            status: 'pending',
+            payment_status: 'pending',
+            created_by_admin: false,
+            loyalty_points_redeemed: validatedLoyaltyPoints,
+            loyalty_discount_amount: loyaltyDiscountRupees,
+            loyalty_status: validatedLoyaltyPoints > 0 ? 'reserved' : 'none',
+        };
+
         const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
-            .insert({
-                user_id: user.id,
-                customer_mobile: normalizedMobile,
-                customer_name: profile?.full_name || shippingAddress.fullName,
-                total_amount: totalAmount,
-                discount_amount: discountAmount || 0,
-                coupon_code: couponCode || null,
-                shipping_address: shippingAddress,
-                status: 'pending',
-                payment_status: 'pending',
-                created_by_admin: false
-            })
+            .insert(orderPayload)
             .select()
             .single();
 
         if (orderError) {
             console.error('Order creation error:', orderError);
             return NextResponse.json({ error: orderError.message }, { status: 500 });
+        }
+
+        // Reserve loyalty points atomically
+        if (validatedLoyaltyPoints > 0) {
+            try {
+                await reservePoints(
+                    user.id,
+                    order.id,
+                    validatedLoyaltyPoints,
+                    eligibleSubtotalPaise,
+                    orderIdempotencyKey
+                );
+            } catch (ptsError: any) {
+                console.error('Failed to reserve points, rolling back order:', ptsError);
+                // Rollback order creation
+                await supabaseAdmin.from('orders').delete().eq('id', order.id);
+                return NextResponse.json({
+                    error: `Failed to redeem points: ${ptsError.message}`,
+                }, { status: 400 });
+            }
         }
 
         // Insert order items
@@ -107,6 +167,18 @@ export async function POST(request: Request) {
 
         if (itemsError) {
             console.error('Order items error:', itemsError);
+            // Rollback order and release points if reserved
+            if (validatedLoyaltyPoints > 0) {
+                try {
+                    await supabaseAdmin.rpc('loyalty_release_points', {
+                        p_order_id: order.id,
+                        p_reason: 'Checkout items insertion failed'
+                    });
+                } catch (e) {
+                    console.error('Release points rollback failed:', e);
+                }
+            }
+            await supabaseAdmin.from('orders').delete().eq('id', order.id);
             return NextResponse.json({ error: itemsError.message }, { status: 500 });
         }
 
@@ -115,13 +187,18 @@ export async function POST(request: Request) {
             `• ${item.name} x${item.quantity} - ₹${(item.salePrice || item.price).toLocaleString()}`
         ).join('\n');
 
+        let loyaltyText = '';
+        if (validatedLoyaltyPoints > 0) {
+            loyaltyText = `\n<b>🎁 Loyalty Redeemed:</b> <b>${validatedLoyaltyPoints} pts (-₹${loyaltyDiscountRupees.toLocaleString()})</b>`;
+        }
+
         const telegramText = `
 <b>🛍️ New Order Received!</b>
 ━━━━━━━━━━━━━━━━━━
 <b>Order #:</b> <code>${order.order_number}</code>
 <b>Customer:</b> ${order.customer_name}
 <b>Mobile:</b> <code>${order.customer_mobile}</code>
-<b>Total:</b> <b>₹${totalAmount.toLocaleString()}</b>
+<b>Total:</b> <b>₹${totalAmount.toLocaleString()}</b>${loyaltyText}
 ━━━━━━━━━━━━━━━━━━
 <b>Items:</b>
 ${itemsList}
@@ -135,7 +212,12 @@ ${shippingAddress.state}, ${shippingAddress.pincode}
             console.error('Async Telegram Error:', err);
         });
 
-        return NextResponse.json({ success: true, orderId: order.order_number });
+        return NextResponse.json({
+            success: true,
+            orderId: order.order_number,
+            loyaltyPointsRedeemed: validatedLoyaltyPoints,
+            loyaltyDiscount: loyaltyDiscountRupees
+        });
     } catch (err: any) {
         console.error('Internal error:', err);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

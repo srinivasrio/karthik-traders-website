@@ -1,0 +1,15 @@
+{
+  "id": 1,
+  "is_enabled": true,
+  "signup_bonus_points": 500,
+  "earning_percentage": 1,
+  "rupees_spent_per_point": 100,
+  "paise_per_point": 100,
+  "min_cart_subtotal_paise": 500000,
+  "min_points_to_redeem": 50,
+  "max_redemption_percentage": 20,
+  "max_points_per_order": 2000,
+  "expiry_days": 365,
+  "updated_at": "2026-11-07T12:20:20.053Z",
+  "updated_by": "50db9da9-0238-4242-8c55-6f574bea0432"
+}

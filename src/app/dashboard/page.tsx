@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
+import LoyaltyCustomerView from '@/components/dashboard/LoyaltyCustomerView';
 
 interface OrderItem {
   quantity: number;
@@ -34,14 +35,40 @@ interface Order {
 }
 
 export default function DashboardPage() {
-  const { user, profile, logout, loading } = useAuth();
+  const { user, profile, session, logout, loading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled' | 'loyalty'>('all');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
+  const [loyaltyData, setLoyaltyData] = useState<any>(null);
+  const [loadingLoyalty, setLoadingLoyalty] = useState(false);
+
+  const fetchLoyalty = async () => {
+    if (!session?.access_token) return;
+    setLoadingLoyalty(true);
+    try {
+      const res = await fetch('/api/loyalty/summary', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLoyaltyData(data);
+      }
+    } catch (err) {
+      console.warn('Error fetching loyalty data:', err);
+    } finally {
+      setLoadingLoyalty(false);
+    }
+  };
+
+  useEffect(() => {
+    if (session?.access_token) {
+      fetchLoyalty();
+    }
+  }, [session?.access_token]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -260,6 +287,51 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Loyalty Wallet Summary Card */}
+            {loyaltyData?.settings?.is_enabled && (
+              <div className="rounded-[24px] bg-linear-to-br from-amber-500 via-yellow-500 to-amber-600 text-white p-5 shadow-sm flex flex-col gap-3 relative overflow-hidden">
+                <div className="absolute top-0 right-0 translate-x-4 -translate-y-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-100 flex items-center gap-1.5 font-poppins">
+                    <span>🪙</span>
+                    <span>Loyalty Points</span>
+                  </span>
+                  <span className="text-[10px] font-mono font-bold bg-white/20 px-2 py-0.5 rounded-full">
+                    Karthik Rewards
+                  </span>
+                </div>
+
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <span className="text-3xl font-extrabold font-poppins tracking-tight">
+                      {loyaltyData.points_balance || 0}
+                    </span>
+                    <span className="text-xs font-bold text-amber-100 ml-1">pts</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-amber-100">Worth</span>{' '}
+                    <span className="text-lg font-extrabold font-poppins">
+                      ₹{(loyaltyData.rupee_value || 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {loyaltyData.expiring_soon_points > 0 && (
+                  <div className="text-[11px] bg-black/20 px-2.5 py-1 rounded-lg text-amber-100">
+                    ⚠️ {loyaltyData.expiring_soon_points} pts expiring soon!
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('loyalty')}
+                  className="w-full h-8 rounded-xl bg-white text-amber-900 font-extrabold text-xs flex items-center justify-center hover:bg-amber-50 transition-colors shadow-2xs cursor-pointer mt-1"
+                >
+                  View Rewards Ledger →
+                </button>
+              </div>
+            )}
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 rounded-2xl bg-white border border-[#E3E8F0] shadow-2xs">
@@ -306,6 +378,7 @@ export default function DashboardPage() {
                   { id: 'active', label: 'Active' },
                   { id: 'completed', label: 'Delivered' },
                   { id: 'cancelled', label: 'Cancelled' },
+                  { id: 'loyalty', label: 'Rewards & Points 🪙' },
                 ] as const
               ).map((tab) => {
                 const active = activeTab === tab.id;
@@ -326,8 +399,14 @@ export default function DashboardPage() {
               })}
             </div>
 
-            {/* Orders Feed */}
-            {loadingOrders ? (
+            {/* Loyalty View or Orders Feed */}
+            {activeTab === 'loyalty' ? (
+              <LoyaltyCustomerView
+                loyaltyData={loyaltyData}
+                loading={loadingLoyalty}
+                onRefresh={fetchLoyalty}
+              />
+            ) : loadingOrders ? (
               <div className="p-12 text-center text-sm font-medium text-[#5B6880]">
                 Loading your orders from Nellore warehouse...
               </div>

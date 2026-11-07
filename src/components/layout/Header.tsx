@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { aeratorSets, motors, allGearboxes as gearboxes, allSpares as spares, longArmProducts } from '@/data/products';
 import { CONTACT_INFO, formatPrice } from '@/data/kt-ui';
+import HeaderLoyaltyBadge from '@/components/loyalty/HeaderLoyaltyBadge';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -191,7 +192,7 @@ export default function Header() {
                 priority
               />
             </div>
-            <span className="font-poppins font-extrabold text-base sm:text-xl lg:text-2xl tracking-tight text-[#0A1F5C] whitespace-nowrap leading-none">
+            <span className="font-poppins font-extrabold text-sm min-[380px]:text-base sm:text-xl lg:text-2xl tracking-tight text-[#0A1F5C] whitespace-nowrap leading-none">
               KARTHIK TRADERS
             </span>
           </Link>
@@ -259,6 +260,10 @@ export default function Header() {
                     </span>
                   )}
                 </Link>
+
+                {user && (
+                  <HeaderLoyaltyBadge variant="header" />
+                )}
               </div>
             ) : null}
 
@@ -303,65 +308,91 @@ export default function Header() {
             {pathname !== '/compare' && (
               <>
                 {user ? (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsAcctOpen(!isAcctOpen)}
-                      className="h-10 pl-1.5 pr-3 rounded-full border border-[#E3E8F0] bg-white flex items-center gap-2 font-bold text-xs text-[#0B1A33] hover:bg-[#E8F9FF] transition-all cursor-pointer"
-                    >
-                      <span className="w-7 h-7 rounded-full bg-[#C5BAFF] text-[#0B1A33] font-extrabold text-xs grid place-items-center">
-                        {userInitials}
-                      </span>
-                      <span className="hidden md:inline max-w-[100px] truncate">
-                        {profile?.full_name?.split(' ')[0] || 'Account'}
-                      </span>
-                      <svg className="w-3 h-3 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </button>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    {/* Loyalty Points Badge directly beside Profile Button */}
+                    <HeaderLoyaltyBadge variant="header" />
 
-                    {/* Account Dropdown */}
-                    {isAcctOpen && (
-                      <div className="absolute right-0 top-12 w-52 bg-white border border-[#E3E8F0] rounded-2xl shadow-xl p-1.5 flex flex-col z-50 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="px-3 py-2 border-b border-gray-100 mb-1">
-                          <div className="text-xs font-bold text-[#0B1A33] truncate">
-                            {profile?.full_name || 'Customer'}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsAcctOpen(!isAcctOpen)}
+                        className="h-9 sm:h-10 pl-1 sm:pl-1.5 pr-2 sm:pr-3 rounded-full border border-[#E3E8F0] bg-white flex items-center gap-1.5 sm:gap-2 font-bold text-xs text-[#0B1A33] hover:bg-[#E8F9FF] transition-all cursor-pointer shadow-2xs"
+                      >
+                        <span className="w-7 h-7 rounded-full bg-[#C5BAFF] text-[#0B1A33] font-extrabold text-xs grid place-items-center">
+                          {userInitials}
+                        </span>
+                        <span className="hidden md:inline max-w-[100px] truncate">
+                          {profile?.full_name?.split(' ')[0] || 'Account'}
+                        </span>
+                        <svg className="w-3 h-3 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </button>
+
+                      {/* Account Dropdown */}
+                      {isAcctOpen && (
+                        <div className="absolute right-0 top-12 w-56 bg-white border border-[#E3E8F0] rounded-2xl shadow-xl p-1.5 flex flex-col z-50 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                            <div className="text-xs font-bold text-[#0B1A33] truncate">
+                              {profile?.full_name || 'Customer'}
+                            </div>
+                            <div className="text-[11px] text-gray-500 truncate font-mono">
+                              {profile?.mobile || user.phone || (user.email && !user.email.endsWith('@karthiktraders.com') ? user.email : '')}
+                            </div>
                           </div>
-                          <div className="text-[11px] text-gray-500 truncate font-mono">
-                            {profile?.mobile || user.phone || (user.email && !user.email.endsWith('@karthiktraders.com') ? user.email : '')}
-                          </div>
-                        </div>
-                        <Link
-                          href="/dashboard"
-                          onClick={() => setIsAcctOpen(false)}
-                          className="px-3 py-2 rounded-xl text-xs font-bold text-[#0B1A33] hover:bg-[#E8F9FF] transition-colors"
-                        >
-                          Dashboard & Orders
-                        </Link>
-                        {isAdmin && (
+
+                          {/* Quick Loyalty Card in Dropdown */}
                           <Link
-                            href="/admin"
+                            href="/dashboard?tab=loyalty"
                             onClick={() => setIsAcctOpen(false)}
-                            className="px-3 py-2 rounded-xl text-xs font-bold text-[#4338CA] bg-[#F1EEFF] hover:bg-[#E0D8FF] transition-colors flex items-center justify-between"
+                            className="mx-1 mb-1 p-2 rounded-xl bg-amber-50/80 border border-amber-200/80 hover:bg-amber-100/80 transition-colors flex items-center justify-between group"
                           >
-                            <span>Admin Panel</span>
-                            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-[#C5BAFF] text-[#0B1A33]">
-                              ADMIN
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm">🪙</span>
+                              <div className="flex flex-col">
+                                <span className="text-[11px] font-extrabold text-amber-900 leading-tight">
+                                  Loyalty Points
+                                </span>
+                                <span className="text-[10px] text-amber-700">
+                                  View Rewards & History
+                                </span>
+                              </div>
+                            </div>
+                            <HeaderLoyaltyBadge variant="menu" className="scale-90 origin-right" />
                           </Link>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsAcctOpen(false);
-                            setIsLogoutModalOpen(true);
-                          }}
-                          className="text-left px-3 py-2 rounded-xl text-xs font-bold text-[#B4123A] hover:bg-[#FFF1F4] transition-colors cursor-pointer"
-                        >
-                          Logout
-                        </button>
-                      </div>
-                    )}
+
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setIsAcctOpen(false)}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-[#0B1A33] hover:bg-[#E8F9FF] transition-colors"
+                          >
+                            Dashboard & Orders
+                          </Link>
+                          {isAdmin && (
+                            <Link
+                              href="/admin"
+                              onClick={() => setIsAcctOpen(false)}
+                              className="px-3 py-2 rounded-xl text-xs font-bold text-[#4338CA] bg-[#F1EEFF] hover:bg-[#E0D8FF] transition-colors flex items-center justify-between"
+                            >
+                              <span>Admin Panel</span>
+                              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-[#C5BAFF] text-[#0B1A33]">
+                                ADMIN
+                              </span>
+                            </Link>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAcctOpen(false);
+                              setIsLogoutModalOpen(true);
+                            }}
+                            className="text-left px-3 py-2 rounded-xl text-xs font-bold text-[#B4123A] hover:bg-[#FFF1F4] transition-colors cursor-pointer"
+                          >
+                            Logout
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <Link
@@ -431,6 +462,9 @@ export default function Header() {
 
             {/* Login / Admin Button at Top Right inside Menu Section (Mobile & Desktop) */}
             <div className="flex items-center gap-2 flex-none ml-auto">
+              {user && (
+                <HeaderLoyaltyBadge variant="menu" />
+              )}
               {isAdmin && (
                 <Link
                   href="/admin"
