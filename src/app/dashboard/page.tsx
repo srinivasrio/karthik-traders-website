@@ -578,108 +578,196 @@ export default function DashboardPage() {
       {/* GST Invoice Preview Modal */}
       {invoiceOrder && (
         <div
-          className="fixed inset-0 z-50 bg-[#0B1A33]/50 backdrop-blur-xs grid place-items-center p-4"
+          className="fixed inset-0 z-50 bg-[#0B1A33]/60 backdrop-blur-xs grid place-items-center p-2 sm:p-4 overflow-y-auto"
           onClick={() => setInvoiceOrder(null)}
         >
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-white p-6 sm:p-8 flex flex-col gap-6 animate-[ktUp_0.3s_both]"
+            className="w-full max-w-2xl max-h-[94vh] overflow-y-auto bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-7 flex flex-col gap-4 sm:gap-6 animate-[ktUp_0.3s_both] my-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Bar */}
-            <div className="flex justify-between items-center pb-4 border-b border-[#E3E8F0]">
-              <span className="font-extrabold text-base text-[#0B1A33]">
-                Tax Invoice Preview · #KT-{invoiceOrder.order_number || invoiceOrder.id.slice(0, 6)}
-              </span>
-              <div className="flex items-center gap-2">
-                <DownloadInvoiceBtn order={invoiceOrder} variant="customer" />
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="h-9 px-4 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-bold text-xs cursor-pointer"
-                >
-                  Print
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInvoiceOrder(null)}
-                  className="w-8 h-8 rounded-full bg-[#EEF2F8] text-[#0B1A33] flex items-center justify-center font-bold text-sm cursor-pointer"
-                >
-                  ✕
-                </button>
+            {/* Top Modal Header Bar with Close Button */}
+            <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#E3E8F0]">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-extrabold text-sm sm:text-base text-[#0B1A33] truncate">
+                  Tax Invoice Preview
+                </span>
+                <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0A1F5C] shrink-0">
+                  #KT-{invoiceOrder.order_number || invoiceOrder.id.slice(0, 6)}
+                </span>
               </div>
+              <button
+                type="button"
+                onClick={() => setInvoiceOrder(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-[#0B1A33] flex items-center justify-center font-bold text-sm cursor-pointer shrink-0 transition-colors"
+                aria-label="Close Preview"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Invoice Document Content */}
-            <div className="flex flex-col gap-5 text-xs sm:text-sm">
-              <div className="flex flex-wrap justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-extrabold text-[#0B1A33] tracking-tight font-poppins">
-                    KARTHIK TRADERS
-                  </h3>
-                  <p className="text-xs text-[#5B6880] leading-relaxed max-w-xs mt-1">
-                    Shop no 13, Opp. Madhura Sweets Line, Near MRF Tyres Line,<br />
-                    Subedar Pet, Nellore - 524001, Andhra Pradesh<br />
-                    GSTIN: 37AFGPY0727H1Z6 · Ph: +91 86885 66023
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-lg font-extrabold text-[#0B1A33] block">
-                    TAX INVOICE
-                  </span>
-                  <span className="font-mono text-xs text-[#5B6880] block">
-                    Date:{' '}
-                    {new Date(invoiceOrder.created_at).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </span>
-                  <span className="text-[11px] font-bold text-[#1450C8] uppercase block mt-1">
-                    Status: {invoiceOrder.payment_status?.toUpperCase() || 'PENDING'}
-                  </span>
-                </div>
+            {/* Quick Actions (Download PDF & Print) */}
+            <div className="flex items-center gap-2 pb-1">
+              <div className="flex-1 sm:flex-initial">
+                <DownloadInvoiceBtn order={invoiceOrder} variant="customer" />
               </div>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="h-10 px-4 rounded-full bg-[#E8F9FF] hover:bg-[#D4F1FF] text-[#0B5C86] font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+              >
+                <span>🖨️ Print</span>
+              </button>
+            </div>
 
-              {/* Billed To */}
-              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#EEF2F8]">
-                <strong className="block text-[#0B1A33] mb-1">Billed to:</strong>
-                <span>{invoiceOrder.customer_name || userName}</span> ·{' '}
-                <span className="font-mono">{invoiceOrder.customer_mobile || userPhone}</span>
-                {invoiceOrder.shipping_address && (
-                  <div className="text-xs text-[#5B6880] mt-1">
-                    {[
-                      invoiceOrder.shipping_address.addressLine1 || invoiceOrder.shipping_address.address || '',
-                      invoiceOrder.shipping_address.city || '',
-                      invoiceOrder.shipping_address.state || '',
-                      invoiceOrder.shipping_address.pincode || '',
-                    ].filter(Boolean).join(', ')}
+            {/* Invoice Document Card */}
+            <div className="flex flex-col gap-4 sm:gap-5 text-xs sm:text-sm border border-slate-200 rounded-2xl p-4 sm:p-5 bg-white shadow-2xs">
+              {/* Header: Logo on Top Left + Structured Info + Invoice Meta */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-slate-200">
+                {/* Top Left: Logo + Company Name & Tagline */}
+                <div className="flex items-start gap-3">
+                  <img
+                    src="/images/logo-small.png"
+                    alt="Karthik Traders Logo"
+                    className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-xl border border-slate-200 p-1 bg-slate-50 shrink-0"
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="text-lg sm:text-xl font-extrabold text-[#0A1F5C] tracking-tight font-poppins leading-tight">
+                      KARTHIK TRADERS
+                    </h3>
+                    <p className="text-[10.5px] font-bold text-[#1D64EC] uppercase tracking-wide mt-0.5">
+                      Aquaculture Equipment & Aeration Specialists
+                    </p>
+                    <p className="text-[11px] text-[#5B6880] leading-relaxed mt-1.5">
+                      Shop No. 13, Opp. Madhura Sweets Line, Near MRF Tyres Line,<br />
+                      Subedar Pet, Nellore - 524001, Andhra Pradesh
+                    </p>
+                    {/* Customer Support details arranged up and below it */}
+                    <div className="mt-2 flex flex-col gap-0.5 text-[11px]">
+                      <span className="font-bold text-[#0B1A33]">
+                        Customer Support: +91 86885 66023, +91 91776 57576
+                      </span>
+                      <span className="font-bold text-[#0B1A33]">
+                        Email: karthiktrader111@gmail.com
+                      </span>
+                      <span className="font-extrabold text-[#0A1F5C] mt-0.5">
+                        GSTIN: 37AFGPY0727H1Z6
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                {/* Invoice Metadata Box */}
+                <div className="flex flex-row sm:flex-col justify-between sm:items-end items-center bg-[#F8FAFC] sm:bg-transparent p-3 sm:p-0 rounded-xl border sm:border-0 border-slate-200 shrink-0">
+                  <div className="sm:text-right">
+                    <span className="inline-block px-3 py-1 bg-[#0A1F5C] text-white font-extrabold text-[10px] uppercase tracking-wider rounded-md">
+                      TAX INVOICE
+                    </span>
+                    <span className="text-[9.5px] text-slate-500 uppercase tracking-wide block mt-0.5">
+                      Original For Recipient
+                    </span>
+                  </div>
+                  <div className="text-right sm:mt-2">
+                    <span className="text-xs font-mono font-extrabold text-[#0A1F5C] block">
+                      KT-INV-{String(invoiceOrder.order_number || invoiceOrder.id.slice(0, 6)).padStart(5, '0')}
+                    </span>
+                    <span className="text-[11px] text-[#5B6880] block">
+                      Date:{' '}
+                      {new Date(invoiceOrder.created_at).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <span
+                      className={`inline-block mt-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                        (invoiceOrder.payment_status || '').toLowerCase() === 'paid'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      Payment: {(invoiceOrder.payment_status || 'PENDING').toUpperCase()}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* Items Table */}
-              <div className="rounded-xl border border-[#EEF2F8] overflow-hidden text-xs">
-                <div className="grid grid-cols-12 p-3 font-extrabold bg-[#E8F9FF] text-[#0B5C86]">
+              {/* Billed To & Shipping Address Card */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#F8FAFC] border border-slate-200 text-xs">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">
+                    Billed To / Customer Details
+                  </span>
+                  <strong className="block text-sm text-[#0B1A33]">{invoiceOrder.customer_name || userName}</strong>
+                  <span className="text-slate-600 font-mono block mt-0.5">
+                    Mobile: {invoiceOrder.customer_mobile || userPhone || 'Not specified'}
+                  </span>
+                  <span className="text-slate-500 block">State: Andhra Pradesh (37)</span>
+                </div>
+                <div className="border-t sm:border-t-0 sm:border-l border-slate-200 pt-2 sm:pt-0 sm:pl-3">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">
+                    Shipping / Delivery Address
+                  </span>
+                  <p className="text-slate-700 leading-relaxed">
+                    {[
+                      invoiceOrder.shipping_address?.addressLine1 || invoiceOrder.shipping_address?.address || '',
+                      invoiceOrder.shipping_address?.city || '',
+                      invoiceOrder.shipping_address?.state || '',
+                      invoiceOrder.shipping_address?.pincode || '',
+                    ].filter(Boolean).join(', ') || 'Standard Farm Delivery'}
+                  </p>
+                  <span className="text-[10px] text-slate-500 block mt-1">
+                    Dispatch: Nellore Central Warehouse (AP)
+                  </span>
+                </div>
+              </div>
+
+              {/* Items Section: Structured Mobile Cards (sm:hidden) */}
+              <div className="sm:hidden flex flex-col gap-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                  Order Items ({invoiceOrder.order_items?.length || 0})
+                </span>
+                {(invoiceOrder.order_items || []).map((l, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-[#F8FAFC] border border-slate-200 flex flex-col gap-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-bold text-xs text-[#0B1A33] leading-snug">
+                        <span className="text-slate-400 font-mono mr-1.5">#{idx + 1}</span>
+                        {l.product?.name || 'Aerator Product'}
+                      </span>
+                      <span className="font-extrabold text-sm text-[#0A1F5C] font-mono shrink-0">
+                        {formatPrice(l.quantity * l.price_at_purchase)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 font-mono">
+                      <span>Qty: <strong className="text-slate-800">{l.quantity}</strong></span>
+                      <span>Rate: {formatPrice(l.price_at_purchase)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Items Section: Desktop Table (hidden sm:block) */}
+              <div className="hidden sm:block rounded-xl border border-slate-200 overflow-hidden text-xs">
+                <div className="grid grid-cols-12 p-3 font-extrabold bg-[#0A1F5C] text-white">
                   <span className="col-span-1 text-center">#</span>
-                  <span className="col-span-5">Item</span>
+                  <span className="col-span-5">Description of Goods</span>
                   <span className="col-span-2 text-center">Qty</span>
                   <span className="col-span-2 text-right">Rate</span>
                   <span className="col-span-2 text-right">Amount</span>
                 </div>
-                <div className="divide-y divide-[#EEF2F8]">
+                <div className="divide-y divide-slate-100 bg-white">
                   {(invoiceOrder.order_items || []).map((l, idx) => (
-                    <div key={idx} className="grid grid-cols-12 p-3 items-center">
-                      <span className="col-span-1 text-center text-[#5B6880]">{idx + 1}</span>
+                    <div key={idx} className={`grid grid-cols-12 p-3 items-center ${idx % 2 === 1 ? 'bg-[#F8FAFC]' : ''}`}>
+                      <span className="col-span-1 text-center text-slate-500">{idx + 1}</span>
                       <span className="col-span-5 font-bold text-[#0B1A33]">
                         {l.product?.name || 'Aerator Product'}
                       </span>
                       <span className="col-span-2 text-center font-mono">{l.quantity}</span>
-                      <span className="col-span-2 text-right font-mono">
+                      <span className="col-span-2 text-right font-mono text-slate-600">
                         {formatPrice(l.price_at_purchase)}
                       </span>
-                      <span className="col-span-2 text-right font-mono font-bold">
+                      <span className="col-span-2 text-right font-mono font-bold text-[#0A1F5C]">
                         {formatPrice(l.quantity * l.price_at_purchase)}
                       </span>
                     </div>
@@ -687,12 +775,21 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Stamp and Total Breakdown */}
-              <div className="flex flex-wrap justify-between items-end gap-4 pt-2">
-                <div className="w-28 h-28 rounded-full border-2 border-dashed border-[#4338CA] text-[#4338CA] flex items-center justify-center text-[10px] font-extrabold text-center rotate-[-8deg] uppercase tracking-wider p-2">
-                  Karthik Traders<br />Nellore<br />Official Seal
+              {/* Financial Summary & Official Seal */}
+              <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 pt-2">
+                {/* Official Seal and Computer Generated Note */}
+                <div className="order-2 sm:order-1 flex items-center gap-3 text-left w-full sm:w-auto">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-dashed border-[#0A1F5C]/60 text-[#0A1F5C] flex flex-col items-center justify-center text-[8.5px] sm:text-[9px] font-extrabold text-center rotate-[-6deg] uppercase tracking-wider p-2 bg-[#F8FAFC] shrink-0">
+                    <span>Karthik Traders</span>
+                    <span className="text-[7px] sm:text-[7.5px] font-semibold text-slate-500">Nellore, AP</span>
+                    <span className="text-[6.5px] sm:text-[7px] text-emerald-700 font-extrabold mt-0.5">Official Seal</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 max-w-[220px] leading-relaxed">
+                    This is a computer-generated tax invoice issued by Karthik Traders, Nellore. Valid without signature.
+                  </div>
                 </div>
 
+                {/* Financial Totals Breakdown */}
                 {(() => {
                   const couponDisc = Number(invoiceOrder.discount_amount || 0);
                   const loyaltyDisc = Number(invoiceOrder.loyalty_discount_amount || 0);
@@ -701,30 +798,30 @@ export default function DashboardPage() {
                   const subtotal = total + couponDisc + loyaltyDisc;
 
                   return (
-                    <div className="min-w-[240px] flex flex-col gap-1.5 text-right text-xs">
-                      <div className="flex justify-between text-[#5B6880]">
-                        <span>Subtotal (MRP/Gross)</span>
-                        <span className="font-mono font-bold text-[#0B1A33]">{formatPrice(subtotal)}</span>
+                    <div className="order-1 sm:order-2 w-full sm:w-auto sm:min-w-[280px] p-3.5 sm:p-4 rounded-xl bg-[#F8FAFC] border border-slate-200 flex flex-col gap-2 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal (MRP/Gross):</span>
+                        <span className="font-mono font-bold text-slate-900">{formatPrice(subtotal)}</span>
                       </div>
                       {couponDisc > 0 && (
                         <div className="flex justify-between text-emerald-700 font-bold">
-                          <span>Coupon ({invoiceOrder.coupon_code || 'APPLIED'})</span>
+                          <span>Coupon ({invoiceOrder.coupon_code || 'APPLIED'}):</span>
                           <span className="font-mono">− {formatPrice(couponDisc)}</span>
                         </div>
                       )}
                       {loyaltyDisc > 0 && (
                         <div className="flex justify-between text-emerald-700 font-bold">
-                          <span>Loyalty Points ({loyaltyPts} pts)</span>
+                          <span>Loyalty Rewards ({loyaltyPts.toLocaleString()} pts):</span>
                           <span className="font-mono">− {formatPrice(loyaltyDisc)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-[#5B6880] text-[11px]">
-                        <span>GST Taxes</span>
-                        <span>Included</span>
+                      <div className="flex justify-between text-slate-500 text-[11px]">
+                        <span>GST (Taxes Included):</span>
+                        <span>Included in Price</span>
                       </div>
-                      <div className="flex justify-between font-extrabold text-base text-[#0B1A33] pt-1.5 border-t border-[#EEF2F8]">
-                        <span>Total Payable</span>
-                        <span className="font-poppins">{formatPrice(total)}</span>
+                      <div className="flex justify-between items-center p-3 rounded-lg bg-[#0A1F5C] text-white font-extrabold mt-1">
+                        <span className="text-xs uppercase tracking-wide">Net Amount Payable:</span>
+                        <span className="text-base font-poppins">{formatPrice(total)}</span>
                       </div>
                     </div>
                   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 import { allProducts } from '@/data/products';
 
 function numberToIndianWords(num: number): string {
@@ -55,99 +55,124 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         borderBottomWidth: 2,
         borderBottomColor: '#0A1F5C',
-        paddingBottom: 14,
+        paddingBottom: 12,
         marginBottom: 12,
     },
-    brandInfo: {
-        width: '62%',
+    brandContainer: {
+        width: '64%',
+    },
+    logoAndTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    topLogo: {
+        width: 46,
+        height: 46,
+        marginRight: 8,
+        objectFit: 'contain',
+    },
+    nameAndTaglineCol: {
+        flexDirection: 'column',
+        justifyContent: 'center',
     },
     brandName: {
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#0A1F5C',
-        letterSpacing: 0.5,
+        lineHeight: 1.2,
         marginBottom: 2,
     },
     brandTagline: {
-        fontSize: 8,
+        fontSize: 7.5,
         fontWeight: 'bold',
         color: '#1D4ED8',
         textTransform: 'uppercase',
-        letterSpacing: 0.8,
-        marginBottom: 4,
+        lineHeight: 1.2,
     },
-    sellerAddress: {
-        fontSize: 8,
-        color: '#475569',
-        lineHeight: 1.3,
-    },
-    sellerContact: {
-        fontSize: 8,
-        fontWeight: 'bold',
-        color: '#1E293B',
-        marginTop: 3,
-    },
-    sellerGst: {
-        fontSize: 9,
-        fontWeight: 'bold',
-        color: '#0A1F5C',
+    companyDetailsBlock: {
+        flexDirection: 'column',
         marginTop: 2,
     },
-    invoiceMetaBox: {
-        width: '35%',
+    addressLine: {
+        fontSize: 7.5,
+        color: '#475569',
+        lineHeight: 1.3,
+        marginBottom: 1,
+    },
+    supportLine: {
+        fontSize: 7.5,
+        fontWeight: 'bold',
+        color: '#1E293B',
+        lineHeight: 1.35,
+        marginTop: 1,
+    },
+    gstinLine: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#0A1F5C',
+        lineHeight: 1.35,
+        marginTop: 2,
+    },
+
+    // Invoice Meta (Right side)
+    metaContainer: {
+        width: '33%',
         alignItems: 'flex-end',
     },
-    taxInvoiceBadge: {
+    taxInvoicePill: {
         backgroundColor: '#0A1F5C',
         color: '#FFFFFF',
         fontSize: 10,
         fontWeight: 'bold',
-        paddingVertical: 4,
-        paddingHorizontal: 10,
+        paddingVertical: 3.5,
+        paddingHorizontal: 9,
         borderRadius: 4,
         textTransform: 'uppercase',
-        letterSpacing: 0.8,
-        marginBottom: 6,
+        marginBottom: 4,
     },
-    originalText: {
-        fontSize: 7.5,
+    copyType: {
+        fontSize: 7,
         color: '#64748B',
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
         marginBottom: 6,
     },
-    invoiceNumber: {
-        fontSize: 12,
+    invNumber: {
+        fontSize: 11,
         fontWeight: 'bold',
         color: '#0A1F5C',
         marginBottom: 2,
     },
-    invoiceDate: {
-        fontSize: 8.5,
+    invDate: {
+        fontSize: 8,
         color: '#475569',
         marginBottom: 4,
     },
-    statusBadgePaid: {
+    paidBadge: {
         backgroundColor: '#DCFCE7',
-        color: '#15803D',
-        fontSize: 8,
-        fontWeight: 'bold',
         paddingVertical: 2,
         paddingHorizontal: 8,
         borderRadius: 3,
-        textTransform: 'uppercase',
         marginTop: 2,
     },
-    statusBadgePending: {
-        backgroundColor: '#FEF3C7',
-        color: '#B45309',
-        fontSize: 8,
+    paidBadgeText: {
+        color: '#15803D',
+        fontSize: 7.5,
         fontWeight: 'bold',
+        textTransform: 'uppercase',
+    },
+    pendingBadge: {
+        backgroundColor: '#FEF3C7',
         paddingVertical: 2,
         paddingHorizontal: 8,
         borderRadius: 3,
-        textTransform: 'uppercase',
         marginTop: 2,
+    },
+    pendingBadgeText: {
+        color: '#B45309',
+        fontSize: 7.5,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
     },
 
     // Customer & Shipping Info Box
@@ -157,29 +182,28 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E2E8F0',
         borderRadius: 6,
-        padding: 10,
-        marginBottom: 14,
+        padding: 9,
+        marginBottom: 12,
         justifyContent: 'space-between',
     },
     customerCol: {
         width: '48%',
     },
     sectionHeading: {
-        fontSize: 8,
+        fontSize: 7.5,
         fontWeight: 'bold',
         color: '#64748B',
         textTransform: 'uppercase',
-        letterSpacing: 0.6,
-        marginBottom: 4,
+        marginBottom: 3,
     },
     customerName: {
-        fontSize: 10,
+        fontSize: 9.5,
         fontWeight: 'bold',
         color: '#0A1F5C',
         marginBottom: 2,
     },
     customerText: {
-        fontSize: 8.5,
+        fontSize: 8,
         color: '#334155',
         lineHeight: 1.3,
     },
@@ -190,25 +214,25 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: '#CBD5E1',
-        marginBottom: 12,
+        marginBottom: 10,
     },
     tableHeader: {
         flexDirection: 'row',
         backgroundColor: '#0A1F5C',
         alignItems: 'center',
-        minHeight: 24,
+        minHeight: 22,
     },
     tableHeaderCell: {
         color: '#FFFFFF',
-        fontSize: 8.5,
+        fontSize: 8,
         fontWeight: 'bold',
-        paddingVertical: 5,
+        paddingVertical: 4,
         paddingHorizontal: 6,
     },
     tableRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        minHeight: 22,
+        minHeight: 20,
         borderTopWidth: 1,
         borderTopColor: '#E2E8F0',
     },
@@ -218,36 +242,36 @@ const styles = StyleSheet.create({
     cellSno: {
         width: '7%',
         textAlign: 'center',
-        fontSize: 8.5,
-        paddingVertical: 4,
+        fontSize: 8,
+        paddingVertical: 3.5,
         paddingHorizontal: 4,
     },
     cellDesc: {
         width: '51%',
-        fontSize: 8.5,
-        paddingVertical: 4,
+        fontSize: 8,
+        paddingVertical: 3.5,
         paddingHorizontal: 6,
     },
     cellPrice: {
         width: '16%',
         textAlign: 'right',
-        fontSize: 8.5,
-        paddingVertical: 4,
+        fontSize: 8,
+        paddingVertical: 3.5,
         paddingHorizontal: 6,
     },
     cellQty: {
         width: '10%',
         textAlign: 'center',
-        fontSize: 8.5,
-        paddingVertical: 4,
+        fontSize: 8,
+        paddingVertical: 3.5,
         paddingHorizontal: 4,
     },
     cellAmount: {
         width: '16%',
         textAlign: 'right',
-        fontSize: 8.5,
+        fontSize: 8,
         fontWeight: 'bold',
-        paddingVertical: 4,
+        paddingVertical: 3.5,
         paddingHorizontal: 6,
     },
 
@@ -257,18 +281,18 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#FECACA',
         borderRadius: 4,
-        padding: 6,
-        marginBottom: 10,
+        padding: 5,
+        marginBottom: 8,
     },
     oosTitle: {
-        fontSize: 8,
+        fontSize: 7.5,
         fontWeight: 'bold',
         color: '#B91C1C',
         textTransform: 'uppercase',
         marginBottom: 2,
     },
     oosItem: {
-        fontSize: 7.5,
+        fontSize: 7,
         color: '#7F1D1D',
     },
 
@@ -276,8 +300,8 @@ const styles = StyleSheet.create({
     calcSection: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 4,
-        marginBottom: 14,
+        marginTop: 2,
+        marginBottom: 10,
     },
     wordsCol: {
         width: '54%',
@@ -288,39 +312,37 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        borderRadius: 6,
-        padding: 8,
-        marginBottom: 8,
+        borderRadius: 5,
+        padding: 7,
+        marginBottom: 6,
     },
     wordsLabel: {
-        fontSize: 7.5,
+        fontSize: 7,
         fontWeight: 'bold',
         color: '#64748B',
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
         marginBottom: 2,
     },
     wordsText: {
-        fontSize: 8.5,
-        fontWeight: 'bold',
-        color: '#0A1F5C',
-        fontStyle: 'italic',
-    },
-    termsBox: {
-        paddingTop: 4,
-    },
-    termsHeading: {
         fontSize: 8,
         fontWeight: 'bold',
+        color: '#0A1F5C',
+    },
+    termsBox: {
+        paddingTop: 2,
+    },
+    termsHeading: {
+        fontSize: 7.5,
+        fontWeight: 'bold',
         color: '#334155',
-        marginBottom: 3,
+        marginBottom: 2,
         textTransform: 'uppercase',
     },
     termsLine: {
-        fontSize: 7,
+        fontSize: 6.8,
         color: '#64748B',
-        lineHeight: 1.3,
-        marginBottom: 1.5,
+        lineHeight: 1.25,
+        marginBottom: 1,
     },
 
     totalsCol: {
@@ -328,57 +350,57 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        borderRadius: 6,
-        padding: 8,
+        borderRadius: 5,
+        padding: 7,
     },
     totalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 2.5,
+        paddingVertical: 2,
     },
     totalLabel: {
-        fontSize: 8.5,
+        fontSize: 8,
         color: '#475569',
     },
     totalValue: {
-        fontSize: 8.5,
+        fontSize: 8,
         fontWeight: 'bold',
         color: '#1E293B',
     },
     discountLabel: {
-        fontSize: 8.5,
+        fontSize: 8,
         color: '#15803D',
         fontWeight: 'bold',
     },
     discountValue: {
-        fontSize: 8.5,
+        fontSize: 8,
         fontWeight: 'bold',
         color: '#15803D',
     },
     divider: {
         borderTopWidth: 1,
         borderTopColor: '#CBD5E1',
-        marginVertical: 4,
+        marginVertical: 3,
     },
     grandTotalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: '#0A1F5C',
-        paddingVertical: 6,
-        paddingHorizontal: 8,
+        paddingVertical: 5,
+        paddingHorizontal: 7,
         borderRadius: 4,
         marginTop: 2,
     },
     grandTotalLabel: {
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: 'bold',
         color: '#FFFFFF',
         textTransform: 'uppercase',
     },
     grandTotalValue: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
         color: '#FFFFFF',
     },
@@ -390,12 +412,12 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         borderTopWidth: 1,
         borderTopColor: '#E2E8F0',
-        paddingTop: 10,
+        paddingTop: 8,
         marginTop: 'auto',
     },
     jurisdictionNote: {
         width: '55%',
-        fontSize: 7.5,
+        fontSize: 7,
         color: '#64748B',
         lineHeight: 1.3,
     },
@@ -404,11 +426,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     signCompany: {
-        fontSize: 8.5,
+        fontSize: 8,
         fontWeight: 'bold',
         color: '#0A1F5C',
         textTransform: 'uppercase',
-        marginBottom: 28,
+        marginBottom: 24,
         textAlign: 'center',
     },
     signLine: {
@@ -416,27 +438,27 @@ const styles = StyleSheet.create({
         borderTopColor: '#475569',
         width: '80%',
         textAlign: 'center',
-        paddingTop: 3,
-        fontSize: 7.5,
+        paddingTop: 2,
+        fontSize: 7,
         color: '#475569',
     },
 
     // Page Footer
     footer: {
-        marginTop: 10,
+        marginTop: 8,
         borderTopWidth: 1,
         borderTopColor: '#E2E8F0',
-        paddingTop: 6,
+        paddingTop: 5,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
     footerContact: {
-        fontSize: 7,
+        fontSize: 6.8,
         color: '#64748B',
     },
     footerWebsite: {
-        fontSize: 7.5,
+        fontSize: 7,
         fontWeight: 'bold',
         color: '#0A1F5C',
     },
@@ -509,34 +531,55 @@ export default function InvoicePDF({ order }: InvoiceProps) {
             order.shipping_address.state || '',
             order.shipping_address.pincode || order.shipping_address.zip || ''
         ].filter(Boolean).join(', ')
-        : (typeof order.shipping_address === 'string' ? order.shipping_address : 'Standard Delivery');
+        : (typeof order.shipping_address === 'string' ? order.shipping_address : 'Standard Farm Delivery');
 
     return (
         <Document title={`Tax-Invoice-${invoiceNumber}`} author="Karthik Traders">
             <Page size="A4" style={styles.page}>
 
-                {/* 1. Header Bar: Brand Information + Invoice Metadata */}
+                {/* 1. Header Bar: Logo on Top Left + Structured Company Info + Metadata on Right */}
                 <View style={styles.headerBar}>
-                    <View style={styles.brandInfo}>
-                        <Text style={styles.brandName}>KARTHIK TRADERS</Text>
-                        <Text style={styles.brandTagline}>Aquaculture Equipment & Aeration Specialists</Text>
-                        <Text style={styles.sellerAddress}>
-                            Shop No. 13, Opp. Madhura Sweets Line, Near MRF Tyres Line, Subedar Pet, Nellore, Andhra Pradesh - 524001
-                        </Text>
-                        <Text style={styles.sellerContact}>
-                            Customer Support: +91 86885 66023, +91 91776 57576 | Email: karthiktrader111@gmail.com
-                        </Text>
-                        <Text style={styles.sellerGst}>GSTIN: 37AFGPY0727H1Z6</Text>
+                    <View style={styles.brandContainer}>
+                        {/* Top Left: Logo + Company Name & Tagline */}
+                        <View style={styles.logoAndTitleRow}>
+                            <Image src="/images/logo-small.png" style={styles.topLogo} />
+                            <View style={styles.nameAndTaglineCol}>
+                                <Text style={styles.brandName}>KARTHIK TRADERS</Text>
+                                <Text style={styles.brandTagline}>Aquaculture Equipment & Aeration Specialists</Text>
+                            </View>
+                        </View>
+
+                        {/* Structured Address & Stacked Customer Support */}
+                        <View style={styles.companyDetailsBlock}>
+                            <Text style={styles.addressLine}>
+                                Shop No. 13, Opp. Madhura Sweets Line, Near MRF Tyres Line,
+                            </Text>
+                            <Text style={styles.addressLine}>
+                                Subedar Pet, Nellore, Andhra Pradesh - 524001
+                            </Text>
+                            <Text style={styles.supportLine}>
+                                Customer Support: +91 86885 66023, +91 91776 57576
+                            </Text>
+                            <Text style={styles.supportLine}>
+                                Email: karthiktrader111@gmail.com
+                            </Text>
+                            <Text style={styles.gstinLine}>
+                                GSTIN: 37AFGPY0727H1Z6
+                            </Text>
+                        </View>
                     </View>
 
-                    <View style={styles.invoiceMetaBox}>
-                        <Text style={styles.taxInvoiceBadge}>TAX INVOICE</Text>
-                        <Text style={styles.originalText}>Original For Recipient</Text>
-                        <Text style={styles.invoiceNumber}>{invoiceNumber}</Text>
-                        <Text style={styles.invoiceDate}>Date: {formattedDate}</Text>
-                        <Text style={isPaid ? styles.statusBadgePaid : styles.statusBadgePending}>
-                            Payment: {isPaid ? 'PAID' : 'PENDING'}
-                        </Text>
+                    {/* Right: Invoice Metadata */}
+                    <View style={styles.metaContainer}>
+                        <Text style={styles.taxInvoicePill}>TAX INVOICE</Text>
+                        <Text style={styles.copyType}>ORIGINAL FOR RECIPIENT</Text>
+                        <Text style={styles.invNumber}>{invoiceNumber}</Text>
+                        <Text style={styles.invDate}>Date: {formattedDate}</Text>
+                        <View style={isPaid ? styles.paidBadge : styles.pendingBadge}>
+                            <Text style={isPaid ? styles.paidBadgeText : styles.pendingBadgeText}>
+                                {isPaid ? 'PAID' : 'PAYMENT PENDING'}
+                            </Text>
+                        </View>
                     </View>
                 </View>
 
@@ -555,7 +598,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                     <View style={styles.customerCol}>
                         <Text style={styles.sectionHeading}>Shipping / Delivery Address</Text>
                         <Text style={styles.customerText}>{shippingAddressText}</Text>
-                        <Text style={[styles.customerText, { marginTop: 4 }]}>
+                        <Text style={[styles.customerText, { marginTop: 3 }]}>
                             Dispatch From: Nellore Central Warehouse (AP)
                         </Text>
                         <Text style={styles.customerText}>Mode: Surface Logistics / Express Freight</Text>
