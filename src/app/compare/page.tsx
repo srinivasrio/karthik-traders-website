@@ -40,11 +40,48 @@ interface FormattedSpec {
   secondary: string | null;
 }
 
-function formatSpecValue(raw: string | null | undefined): FormattedSpec {
+function formatSpecValue(raw: string | null | undefined, label?: string): FormattedSpec {
   if (!raw || raw === '—' || raw.trim() === '') {
     return { primary: '—', secondary: null };
   }
   const str = raw.trim();
+  const l = (label || '').toLowerCase();
+
+  // 1. Weight handling (Total Set Weight, Fan Weight, Float Weight, Frame Weight, etc.)
+  if (l.includes('weight')) {
+    const kgMatch = str.match(/^([\d.]+)\s*kg/i);
+    if (kgMatch) {
+      const hasApx = /apx|approx/i.test(str);
+      return { primary: `${kgMatch[1]} kg`, secondary: hasApx ? '(Approx)' : null };
+    }
+  }
+
+  // 2. RPM / Speed handling (Gear Box RPM)
+  if (l.includes('rpm') || l.includes('speed')) {
+    const rpmMatch = str.match(/^([\d\s\-–]+)\s*rpm$/i);
+    if (rpmMatch) {
+      const cleanRange = rpmMatch[1].trim().replace(/\s*[-–]\s*/, ' - ');
+      return { primary: `${cleanRange} RPM`, secondary: null };
+    }
+  }
+
+  // 3. Gear Box & Motor Material handling
+  if (l.includes('material') && /cast iron/i.test(str)) {
+    let sec = 'Powder Coated';
+    if (/ed\s*[-–]?\s*coating/i.test(str) && /powder/i.test(str)) {
+      sec = 'Powder & ED-Coating';
+    } else if (/e\s*[-–]?\s*coating/i.test(str) && /powder/i.test(str)) {
+      sec = 'Powder & E-Coating';
+    } else if (/ed\s*[-–]?\s*coating/i.test(str)) {
+      sec = 'ED-Coating';
+    } else if (/powder/i.test(str)) {
+      sec = 'Powder Coated';
+    } else {
+      const m = str.match(/\(([^)]+)\)/);
+      if (m) sec = m[1].trim();
+    }
+    return { primary: 'Cast Iron Body', secondary: sec };
+  }
 
   // Direct normalizations
   if (/^made in india$/i.test(str)) return { primary: 'Made in India', secondary: null };
@@ -60,8 +97,11 @@ function formatSpecValue(raw: string | null | undefined): FormattedSpec {
   if (/^50\s*hz$/i.test(str)) return { primary: '50 Hz', secondary: null };
   if (/^50\s*[-–]\s*60\s*hz$/i.test(str)) return { primary: '50 – 60 Hz', secondary: null };
 
-  // Gear Box & Motor Material
+  // Gear Box & Motor Material fallback
   if (/cast iron/i.test(str)) {
+    if (/ed\s*[-–]?\s*coating/i.test(str) && /powder/i.test(str)) {
+      return { primary: 'Cast Iron Body', secondary: 'Powder & ED-Coating' };
+    }
     if (/e\s*[-–]?\s*coating/i.test(str)) {
       return { primary: 'Cast Iron Body', secondary: 'Powder & E-Coating' };
     }
@@ -130,10 +170,11 @@ function formatSpecValue(raw: string | null | undefined): FormattedSpec {
     return { primary: 'Shrimp & Fish Farming', secondary: 'Pond Aeration' };
   }
 
-  // Gear Box RPM
-  if (/^105/i.test(str)) {
-    if (/a3/i.test(str)) return { primary: '105 RPM', secondary: '(A3 Ultra)' };
-    return { primary: '105 RPM', secondary: null };
+  // Gear Box RPM fallback (only matches actual RPM patterns, never raw numbers)
+  const rpmEndMatch = str.match(/^([\d\s\-–]+)\s*rpm$/i);
+  if (rpmEndMatch) {
+    const cleanRange = rpmEndMatch[1].trim().replace(/\s*[-–]\s*/, ' - ');
+    return { primary: `${cleanRange} RPM`, secondary: null };
   }
 
   // Frame Material
@@ -196,8 +237,8 @@ function formatSpecValue(raw: string | null | undefined): FormattedSpec {
 }
 
 /** Formatted Spec Value View with regular normal weight values & structured subtext */
-function FormattedValueView({ raw }: { raw: string }) {
-  const { primary, secondary } = formatSpecValue(raw);
+function FormattedValueView({ raw, label }: { raw: string; label?: string }) {
+  const { primary, secondary } = formatSpecValue(raw, label);
 
   if (primary === '—') {
     return <span className="text-slate-300 font-normal">—</span>;
@@ -1175,12 +1216,12 @@ function CompareContent() {
 
                     {/* Col 2: Product 1 Value (Structured & Centered) */}
                     <div className="col-span-4 flex items-center justify-center text-center px-2">
-                      <FormattedValueView raw={row.val1} />
+                      <FormattedValueView raw={row.val1} label={row.label} />
                     </div>
 
                     {/* Col 3: Product 2 Value (Structured & Centered) */}
                     <div className="col-span-4 flex items-center justify-center text-center px-2">
-                      <FormattedValueView raw={row.val2} />
+                      <FormattedValueView raw={row.val2} label={row.label} />
                     </div>
                   </div>
 
@@ -1196,12 +1237,12 @@ function CompareContent() {
 
                     {/* Col 2: Product 1 Value (30% width) */}
                     <div className="w-[30%] flex items-center justify-center text-center px-0.5">
-                      <FormattedValueView raw={row.val1} />
+                      <FormattedValueView raw={row.val1} label={row.label} />
                     </div>
 
                     {/* Col 3: Product 2 Value (30% width) */}
                     <div className="w-[30%] flex items-center justify-center text-center px-0.5">
-                      <FormattedValueView raw={row.val2} />
+                      <FormattedValueView raw={row.val2} label={row.label} />
                     </div>
                   </div>
                 </div>
