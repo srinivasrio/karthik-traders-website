@@ -610,9 +610,9 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                     <View style={styles.tableHeader}>
                         <Text style={[styles.cellSno, styles.tableHeaderCell]}>#</Text>
                         <Text style={[styles.cellDesc, styles.tableHeaderCell]}>Description of Goods</Text>
-                        <Text style={[styles.cellPrice, styles.tableHeaderCell]}>Rate (₹)</Text>
+                        <Text style={[styles.cellPrice, styles.tableHeaderCell]}>Rate (Rs.)</Text>
                         <Text style={[styles.cellQty, styles.tableHeaderCell]}>Qty</Text>
-                        <Text style={[styles.cellAmount, styles.tableHeaderCell]}>Amount (₹)</Text>
+                        <Text style={[styles.cellAmount, styles.tableHeaderCell]}>Amount (Rs.)</Text>
                     </View>
 
                     {fulfilledItems.length > 0 ? (
@@ -629,9 +629,9 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                                     <Text style={styles.cellDesc}>
                                         {productDetails?.name || item.product_name || item.product_id || 'Aquaculture Equipment'}
                                     </Text>
-                                    <Text style={styles.cellPrice}>₹{price.toLocaleString('en-IN')}</Text>
+                                    <Text style={styles.cellPrice}>Rs. {price.toLocaleString('en-IN')}</Text>
                                     <Text style={styles.cellQty}>{qty}</Text>
-                                    <Text style={styles.cellAmount}>₹{rowAmount.toLocaleString('en-IN')}</Text>
+                                    <Text style={styles.cellAmount}>Rs. {rowAmount.toLocaleString('en-IN')}</Text>
                                 </View>
                             );
                         })
@@ -650,7 +650,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                         <Text style={styles.oosTitle}>Out Of Stock / Unfulfilled Items Notice:</Text>
                         {outOfStockItems.map((oosItem, idx) => (
                             <Text key={idx} style={styles.oosItem}>
-                                • {oosItem.name} — Qty: {oosItem.qty} ({oosItem.reason})
+                                - {oosItem.name} - Qty: {oosItem.qty} ({oosItem.reason})
                             </Text>
                         ))}
                     </View>
@@ -677,7 +677,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                     <View style={styles.totalsCol}>
                         <View style={styles.totalRow}>
                             <Text style={styles.totalLabel}>Subtotal (MRP/Gross):</Text>
-                            <Text style={styles.totalValue}>₹{grossSubtotal.toLocaleString('en-IN')}</Text>
+                            <Text style={styles.totalValue}>Rs. {grossSubtotal.toLocaleString('en-IN')}</Text>
                         </View>
 
                         {couponDiscount > 0 && (
@@ -685,7 +685,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                                 <Text style={styles.discountLabel}>
                                     Coupon Discount ({order.coupon_code || 'PROMO'}):
                                 </Text>
-                                <Text style={styles.discountValue}>− ₹{couponDiscount.toLocaleString('en-IN')}</Text>
+                                <Text style={styles.discountValue}>- Rs. {couponDiscount.toLocaleString('en-IN')}</Text>
                             </View>
                         )}
 
@@ -694,7 +694,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                                 <Text style={styles.discountLabel}>
                                     Loyalty Rewards ({loyaltyPoints.toLocaleString()} pts):
                                 </Text>
-                                <Text style={styles.discountValue}>− ₹{loyaltyDiscount.toLocaleString('en-IN')}</Text>
+                                <Text style={styles.discountValue}>- Rs. {loyaltyDiscount.toLocaleString('en-IN')}</Text>
                             </View>
                         )}
 
@@ -707,7 +707,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
 
                         <View style={styles.grandTotalRow}>
                             <Text style={styles.grandTotalLabel}>Net Amount Payable:</Text>
-                            <Text style={styles.grandTotalValue}>₹{totalPaid.toLocaleString('en-IN')}</Text>
+                            <Text style={styles.grandTotalValue}>Rs. {totalPaid.toLocaleString('en-IN')}</Text>
                         </View>
                     </View>
                 </View>

@@ -146,7 +146,19 @@ export default function ProductCard({
 
   // Images handling
   const rawImages = product.images && product.images.length > 0 ? product.images : [];
-  let mainImg = rawImages[0] || '/images/hero-aerator.png';
+  let mainImg = rawImages[0];
+  if (!mainImg) {
+    const pName = (product.name || '').toLowerCase();
+    if (cat.includes('motor') || pName.includes('motor')) {
+      mainImg = '/images/products/Products/Motors/Sea boss/Sea Boss Motor .png';
+    } else if (cat.includes('gearbox') || pName.includes('gear')) {
+      mainImg = '/images/products/Products/Gear boxes/Bevel/Sea Boss/Sea Boss A3.png';
+    } else if (cat.includes('spare')) {
+      mainImg = '/images/products/Products/Aerator spares/Kit box/Standard Kit Box .png';
+    } else {
+      mainImg = '/images/hero-aerator.png';
+    }
+  }
   if (mainImg.startsWith('assets/')) mainImg = '/' + mainImg;
   if (mainImg.startsWith('uploads/')) mainImg = '/' + mainImg;
 
