@@ -656,11 +656,6 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                         )}
 
                         <View style={styles.totalRow}>
-                            <Text style={styles.totalLabel}>Freight & Delivery:</Text>
-                            <Text style={[styles.totalValue, { color: '#15803D' }]}>FREE Delivery</Text>
-                        </View>
-
-                        <View style={styles.totalRow}>
                             <Text style={[styles.totalLabel, { fontSize: 7.5 }]}>GST (Taxes Included):</Text>
                             <Text style={[styles.totalValue, { fontSize: 7.5, color: '#64748B' }]}>Included in Price</Text>
                         </View>

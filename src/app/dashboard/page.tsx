@@ -718,10 +718,6 @@ export default function DashboardPage() {
                           <span className="font-mono">− {formatPrice(loyaltyDisc)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-[#5B6880]">
-                        <span>Delivery</span>
-                        <span className="text-emerald-700 font-bold">Free Delivery</span>
-                      </div>
                       <div className="flex justify-between text-[#5B6880] text-[11px]">
                         <span>GST Taxes</span>
                         <span>Included</span>

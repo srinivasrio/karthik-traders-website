@@ -79,7 +79,7 @@ export default function CheckoutPage() {
     0
   );
   const totalSavings = mrpTotal - subtotal;
-  const deliveryFee = 0; // Flat ₹0 (Free Delivery per user request)
+  const deliveryFee = 0; // Flat ₹0 (Delivery fee removed per user request)
   const baseDiscountedSubtotal = finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount);
   const currentTotal = Math.max(0, baseDiscountedSubtotal - loyaltyDiscount);
 
@@ -183,7 +183,7 @@ export default function CheckoutPage() {
     },
     {
       k: 'SHIPPING',
-      v: 'Direct transport from Nellore warehouse. Free delivery for all current orders.',
+      v: 'Direct transport from Nellore warehouse to your farm location.',
     },
     {
       k: 'TAXES & GST',
@@ -507,12 +507,6 @@ export default function CheckoutPage() {
                   <span className="font-extrabold text-[#0B7A4B]">− {formatPrice(loyaltyDiscount)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-[#5B6880]">Transport Delivery</span>
-                <span className="font-extrabold text-[#0B1A33]">
-                  {deliveryFee === 0 ? 'Free Delivery' : formatPrice(deliveryFee)}
-                </span>
-              </div>
               <div className="flex justify-between">
                 <span className="text-[#5B6880]">GST Taxes</span>
                 <span className="font-extrabold text-[#0B7A4B]">Included</span>
