@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import { COUPONS_STORE } from '@/data/kt-ui';
 import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionControl';
+import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, totalPrice, finalPrice, discountAmount, coupon, applyCoupon } = useCart();
@@ -30,8 +31,21 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState('');
+  const [placedOrderData, setPlacedOrderData] = useState<any>(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
+
+  // Restore loyalty points selected in Cart if available
+  useEffect(() => {
+    try {
+      const savedPts = sessionStorage.getItem('kt_cart_points');
+      const savedDisc = sessionStorage.getItem('kt_cart_loyalty_discount');
+      if (savedPts && savedDisc) {
+        setLoyaltyPoints(parseInt(savedPts, 10));
+        setLoyaltyDiscount(parseFloat(savedDisc));
+      }
+    } catch (e) {}
+  }, []);
 
   // Check Supabase session
   useEffect(() => {
@@ -65,9 +79,9 @@ export default function CheckoutPage() {
     0
   );
   const totalSavings = mrpTotal - subtotal;
-  const deliveryFee = subtotal >= 50000 || subtotal === 0 ? 0 : 1500;
+  const deliveryFee = 0; // Flat ₹0 (Free Delivery per user request)
   const baseDiscountedSubtotal = finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount);
-  const currentTotal = Math.max(0, baseDiscountedSubtotal - loyaltyDiscount) + deliveryFee;
+  const currentTotal = Math.max(0, baseDiscountedSubtotal - loyaltyDiscount);
 
   const validate = () => {
     const err: Record<string, string> = {};
@@ -109,7 +123,7 @@ export default function CheckoutPage() {
           discountAmount: discountAmount,
           pointsToRedeem: loyaltyPoints,
           loyaltyDiscount: loyaltyDiscount,
-          deliveryFee,
+          deliveryFee: 0,
         }),
       });
 
@@ -118,11 +132,42 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Failed to place order');
       }
 
+      const orderId = data.orderId || `KT-${Date.now().toString().slice(-6)}`;
+      setPlacedOrderId(orderId);
+
+      // Cache placed order payload for immediate invoice generation
+      setPlacedOrderData({
+        id: orderId,
+        order_number: orderId.replace(/\D/g, '').slice(-6) || Date.now().toString().slice(-6),
+        created_at: new Date().toISOString(),
+        customer_name: formData.fullName,
+        customer_mobile: formData.mobile,
+        shipping_address: formData,
+        total_amount: currentTotal,
+        discount_amount: discountAmount || 0,
+        coupon_code: coupon?.code || null,
+        loyalty_points_redeemed: loyaltyPoints,
+        loyalty_discount_amount: loyaltyDiscount,
+        payment_status: 'pending',
+        status: 'pending',
+        order_items: cartItems.map((item) => ({
+          product_id: item.slug || item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          price_at_purchase: Number(item.salePrice ?? item.price ?? 0),
+          is_available: true,
+        })),
+      });
+
       clearCart();
+      try {
+        sessionStorage.removeItem('kt_cart_points');
+        sessionStorage.removeItem('kt_cart_loyalty_discount');
+      } catch (e) {}
+
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('loyalty:refresh'));
       }
-      setPlacedOrderId(data.orderId || `KT-${Date.now().toString().slice(-6)}`);
       setIsSuccessModalOpen(true);
     } catch (err: any) {
       alert('Error placing order: ' + err.message);
@@ -138,7 +183,7 @@ export default function CheckoutPage() {
     },
     {
       k: 'SHIPPING',
-      v: deliveryFee === 0 ? 'Free direct delivery from Nellore on orders over ₹50,000.' : 'Direct transport from Nellore warehouse. Flat ₹1,500 freight.',
+      v: 'Direct transport from Nellore warehouse. Free delivery for all current orders.',
     },
     {
       k: 'TAXES & GST',
@@ -535,6 +580,13 @@ export default function CheckoutPage() {
             <p className="text-sm text-[#3D4A63] leading-relaxed">
               Our sales manager will call <strong className="text-[#0B1A33] font-mono">+91 {formData.mobile}</strong> to confirm dispatch timing, freight carrier, and billing details.
             </p>
+
+            {/* Instant Tax Invoice Download for customer */}
+            {placedOrderData && (
+              <div className="w-full pt-1 pb-1 flex justify-center">
+                <DownloadInvoiceBtn order={placedOrderData} variant="customer" />
+              </div>
+            )}
 
             <div className="flex flex-col gap-2.5 w-full mt-2">
               <Link

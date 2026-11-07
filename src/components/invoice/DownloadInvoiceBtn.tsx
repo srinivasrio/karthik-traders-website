@@ -28,19 +28,14 @@ export default function DownloadInvoiceBtn({ order, variant = 'customer' }: Down
         setIsClient(true);
     }, []);
 
-    if (!isClient) return null;
+    if (!isClient || !order) return null;
 
-    // Access Control: Only allow download if status is not 'pending' (Approved)
-    // This applies to both Admin and Customer as per user request.
+    // Access Control: Allow download for all active orders (including pending orders placed by customer)
+    // Only cancel orders are blocked from tax invoice download.
     const status = order.status?.toLowerCase() || '';
-    const isApproved = status !== 'pending' && status !== 'cancelled' && status !== 'cart' && status !== '';
-
-    // Debugging
-    console.log('Invoice Access Debug:', { id: order.id, status, isApproved, variant });
-
-    if (!isApproved) {
+    if (status === 'cancelled') {
         if (variant === 'admin') {
-            return <span className="text-xs text-slate-400 italic">Invoice unavailable (Pending)</span>;
+            return <span className="text-xs text-rose-500 italic">Invoice unavailable (Cancelled)</span>;
         }
         return null;
     }

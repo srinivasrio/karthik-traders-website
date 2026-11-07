@@ -112,10 +112,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#000',
     },
-    cellItems: { width: '50%', padding: 5, borderRightWidth: 1, borderRightColor: '#000' },
-    cellPrice: { width: '20%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'right' },
-    cellQty: { width: '10%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'center' },
-    cellTotal: { width: '20%', padding: 5, textAlign: 'right' },
+    cellSno: { width: '7%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'center', fontSize: 9 },
+    cellItems: { width: '51%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', fontSize: 9 },
+    cellPrice: { width: '17%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'right', fontSize: 9 },
+    cellQty: { width: '8%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'center', fontSize: 9 },
+    cellTotal: { width: '17%', padding: 5, textAlign: 'right', fontSize: 9 },
 
     // Totals
     totalsSection: {
@@ -125,24 +126,92 @@ const styles = StyleSheet.create({
     totalRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        marginBottom: 4,
+        alignItems: 'center',
+        marginBottom: 3,
     },
     totalLabel: {
-        width: 100,
+        width: 180,
         textAlign: 'right',
         paddingRight: 10,
-        color: '#000',
+        color: '#111',
         fontWeight: 'bold',
+        fontSize: 9,
     },
     totalValue: {
         width: 100,
         textAlign: 'right',
         fontWeight: 'bold',
+        fontSize: 9,
     },
     grandTotal: {
         backgroundColor: '#f3f4f6',
-        padding: 5,
-        marginTop: 5,
+        padding: '5 8',
+        marginTop: 4,
+        borderTopWidth: 1,
+        borderTopColor: '#000',
+    },
+    grandTotalLabel: {
+        width: 180,
+        textAlign: 'right',
+        paddingRight: 10,
+        color: '#000',
+        fontWeight: 'bold',
+        fontSize: 11,
+    },
+    grandTotalValue: {
+        width: 100,
+        textAlign: 'right',
+        fontWeight: 'bold',
+        fontSize: 11,
+        color: '#000',
+    },
+
+    // Terms & Signatory
+    termsAndSignRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 15,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#e5e7eb',
+    },
+    termsBox: {
+        width: '60%',
+    },
+    termsTitle: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        marginBottom: 3,
+        color: '#444',
+    },
+    termsText: {
+        fontSize: 7.5,
+        color: '#555',
+        marginBottom: 2,
+        lineHeight: 1.3,
+    },
+    signatoryBox: {
+        width: '35%',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingBottom: 5,
+    },
+    signatoryCompany: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        marginBottom: 30,
+        textAlign: 'center',
+    },
+    signatoryLine: {
+        fontSize: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#444',
+        paddingTop: 3,
+        textAlign: 'center',
+        width: '80%',
+        color: '#333',
     },
 
     // Footer
@@ -336,6 +405,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                 <View style={styles.table}>
                     {/* Header */}
                     <View style={[styles.tableRow, styles.tableHeader]}>
+                        <Text style={styles.cellSno}>#</Text>
                         <Text style={styles.cellItems}>Item Description</Text>
                         <Text style={styles.cellPrice}>Price</Text>
                         <Text style={styles.cellQty}>Qty</Text>
@@ -350,6 +420,7 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                         const total = price * qty;
                         return (
                             <View key={idx} style={styles.tableRow}>
+                                <Text style={styles.cellSno}>{idx + 1}</Text>
                                 <Text style={styles.cellItems}>{productDetails?.name || item.product_name || item.product_id || 'Item'}</Text>
                                 <Text style={styles.cellPrice}>Rs. {price.toLocaleString()}</Text>
                                 <Text style={styles.cellQty}>{qty}</Text>
@@ -371,23 +442,74 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
                     </View>
                 )}
 
-                {/* Totals */}
-                <View style={styles.totalsSection}>
-                    {Number(order.discount_amount) > 0 && (
-                        <>
+                {/* Totals Section */}
+                {(() => {
+                    const couponDiscount = Number(order.discount_amount || 0);
+                    const loyaltyDiscount = Number(order.loyalty_discount_amount || 0);
+                    const loyaltyPoints = Number(order.loyalty_points_redeemed || 0);
+                    const totalPaid = Number(order.total_amount || 0);
+                    const grossSubtotal = totalPaid + couponDiscount + loyaltyDiscount;
+
+                    return (
+                        <View style={styles.totalsSection}>
                             <View style={styles.totalRow}>
-                                <Text style={styles.totalLabel}>Subtotal:</Text>
-                                <Text style={styles.totalValue}>Rs. {(Number(order.total_amount || 0) + Number(order.discount_amount || 0)).toLocaleString()}</Text>
+                                <Text style={styles.totalLabel}>Subtotal (MRP/Gross):</Text>
+                                <Text style={styles.totalValue}>Rs. {grossSubtotal.toLocaleString()}</Text>
                             </View>
+
+                            {couponDiscount > 0 && (
+                                <View style={styles.totalRow}>
+                                    <Text style={[styles.totalLabel, { color: '#15803d' }]}>
+                                        Coupon Discount ({order.coupon_code || 'APPLIED'}):
+                                    </Text>
+                                    <Text style={[styles.totalValue, { color: '#15803d' }]}>
+                                        - Rs. {couponDiscount.toLocaleString()}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {loyaltyDiscount > 0 && (
+                                <View style={styles.totalRow}>
+                                    <Text style={[styles.totalLabel, { color: '#15803d' }]}>
+                                        Loyalty Rewards ({loyaltyPoints} pts):
+                                    </Text>
+                                    <Text style={[styles.totalValue, { color: '#15803d' }]}>
+                                        - Rs. {loyaltyDiscount.toLocaleString()}
+                                    </Text>
+                                </View>
+                            )}
+
                             <View style={styles.totalRow}>
-                                <Text style={[styles.totalLabel, { color: '#15803d', width: 120 }]}>Coupon Discount:</Text>
-                                <Text style={[styles.totalValue, { color: '#15803d' }]}>- Rs. {Number(order.discount_amount || 0).toLocaleString()}</Text>
+                                <Text style={styles.totalLabel}>Transport / Delivery:</Text>
+                                <Text style={[styles.totalValue, { color: '#15803d' }]}>Free Delivery</Text>
                             </View>
-                        </>
-                    )}
-                    <View style={[styles.totalRow, styles.grandTotal]}>
-                        <Text style={styles.totalLabel}>Grand Total:</Text>
-                        <Text style={styles.totalValue}>Rs. {Number(order.total_amount || 0).toLocaleString()}</Text>
+
+                            <View style={styles.totalRow}>
+                                <Text style={[styles.totalLabel, { color: '#555', fontSize: 8 }]}>GST Taxes:</Text>
+                                <Text style={[styles.totalValue, { color: '#555', fontSize: 8 }]}>Included in Prices</Text>
+                            </View>
+
+                            <View style={[styles.totalRow, styles.grandTotal]}>
+                                <Text style={styles.grandTotalLabel}>Net Amount Payable:</Text>
+                                <Text style={styles.grandTotalValue}>Rs. {totalPaid.toLocaleString()}</Text>
+                            </View>
+                        </View>
+                    );
+                })()}
+
+                {/* Terms and Signatory Block */}
+                <View style={styles.termsAndSignRow}>
+                    <View style={styles.termsBox}>
+                        <Text style={styles.termsTitle}>Terms & Conditions:</Text>
+                        <Text style={styles.termsText}>1. All prices are inclusive of applicable GST.</Text>
+                        <Text style={styles.termsText}>2. Warranty on motors & gearboxes is as per manufacturer terms.</Text>
+                        <Text style={styles.termsText}>3. Transit claims must be reported within 24 hours of delivery.</Text>
+                        <Text style={styles.termsText}>4. Subject to Nellore jurisdiction.</Text>
+                    </View>
+
+                    <View style={styles.signatoryBox}>
+                        <Text style={styles.signatoryCompany}>For KARTHIK TRADERS</Text>
+                        <Text style={styles.signatoryLine}>Authorized Signatory</Text>
                     </View>
                 </View>
 

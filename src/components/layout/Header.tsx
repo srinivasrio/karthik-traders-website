@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { useLoyalty } from '@/context/LoyaltyContext';
 import { aeratorSets, motors, allGearboxes as gearboxes, allSpares as spares, longArmProducts } from '@/data/products';
 import { CONTACT_INFO, formatPrice } from '@/data/kt-ui';
 import HeaderLoyaltyBadge from '@/components/loyalty/HeaderLoyaltyBadge';
@@ -20,6 +21,7 @@ export default function Header() {
   const [cartBump, setCartBump] = useState(false);
 
   const { user, profile, logout } = useAuth();
+  const { points: loyaltyPoints, rupeeValue: loyaltyRupeeValue } = useLoyalty();
   const { cartCount } = useCart();
   const pathname = usePathname();
   const router = useRouter();
@@ -312,11 +314,13 @@ export default function Header() {
                     {/* Loyalty Points Badge directly beside Profile Button */}
                     <HeaderLoyaltyBadge variant="header" />
 
-                    <div className="relative">
+                    {/* Profile Button - Hidden on mobile (< sm), shown on tablet/desktop */}
+                    <div className="hidden sm:inline-flex relative">
                       <button
                         type="button"
                         onClick={() => setIsAcctOpen(!isAcctOpen)}
-                        className="h-9 sm:h-10 pl-1 sm:pl-1.5 pr-2 sm:pr-3 rounded-full border border-[#E3E8F0] bg-white flex items-center gap-1.5 sm:gap-2 font-bold text-xs text-[#0B1A33] hover:bg-[#E8F9FF] transition-all cursor-pointer shadow-2xs"
+                        className="h-9 sm:h-10 pl-1.5 pr-2.5 sm:pr-3 rounded-full border border-[#E3E8F0] bg-white flex items-center gap-1.5 sm:gap-2 font-bold text-xs text-[#0B1A33] hover:bg-[#E8F9FF] transition-all cursor-pointer shadow-2xs"
+                        aria-label="Account menu"
                       >
                         <span className="w-7 h-7 rounded-full bg-[#C5BAFF] text-[#0B1A33] font-extrabold text-xs grid place-items-center">
                           {userInitials}
@@ -331,8 +335,8 @@ export default function Header() {
 
                       {/* Account Dropdown */}
                       {isAcctOpen && (
-                        <div className="absolute right-0 top-12 w-56 bg-white border border-[#E3E8F0] rounded-2xl shadow-xl p-1.5 flex flex-col z-50 animate-in fade-in zoom-in-95 duration-150">
-                          <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                        <div className="absolute right-0 top-12 w-64 bg-white border border-[#E3E8F0] rounded-2xl shadow-xl p-2 flex flex-col z-50 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="px-3 py-2 border-b border-gray-100 mb-1.5">
                             <div className="text-xs font-bold text-[#0B1A33] truncate">
                               {profile?.full_name || 'Customer'}
                             </div>
@@ -341,24 +345,33 @@ export default function Header() {
                             </div>
                           </div>
 
-                          {/* Quick Loyalty Card in Dropdown */}
+                          {/* Structured Loyalty Points Card in Dropdown */}
                           <Link
                             href="/dashboard?tab=loyalty"
                             onClick={() => setIsAcctOpen(false)}
-                            className="mx-1 mb-1 p-2 rounded-xl bg-amber-50/80 border border-amber-200/80 hover:bg-amber-100/80 transition-colors flex items-center justify-between group"
+                            className="mx-1 mb-1.5 p-2.5 rounded-xl bg-linear-to-r from-amber-50 to-yellow-50 border border-amber-200/90 hover:border-amber-300 hover:bg-amber-100/60 transition-all flex items-center justify-between group"
                           >
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm">🪙</span>
-                              <div className="flex flex-col">
-                                <span className="text-[11px] font-extrabold text-amber-900 leading-tight">
+                            <div className="flex items-center gap-2">
+                              <span className="w-7 h-7 rounded-full bg-amber-400 text-amber-950 font-black text-xs grid place-items-center shadow-2xs shrink-0">
+                                ₹
+                              </span>
+                              <div className="flex flex-col text-left">
+                                <span className="text-xs font-bold text-amber-950 leading-tight">
                                   Loyalty Points
                                 </span>
-                                <span className="text-[10px] text-amber-700">
-                                  View Rewards & History
+                                <span className="text-[10px] text-amber-800 font-medium">
+                                  {loyaltyRupeeValue > 0 ? `Worth ₹${loyaltyRupeeValue.toFixed(2)}` : 'Earn on every order'}
                                 </span>
                               </div>
                             </div>
-                            <HeaderLoyaltyBadge variant="menu" className="scale-90 origin-right" />
+                            <div className="text-right flex flex-col items-end">
+                              <span className="font-mono font-black text-xs text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300/80">
+                                {loyaltyPoints.toLocaleString()} pts
+                              </span>
+                              <span className="text-[9px] text-amber-700 font-bold mt-0.5 group-hover:underline">
+                                View rewards →
+                              </span>
+                            </div>
                           </Link>
 
                           <Link
@@ -438,7 +451,7 @@ export default function Header() {
       <div
         data-menu-panel="1"
         aria-hidden={!isMenuOpen}
-        className={`fixed inset-x-0 top-[60px] sm:top-[72px] bottom-0 z-[65] bg-[#FBFBFB] overflow-y-auto transition-all duration-500 ease-[cubic-bezier(0.25,0.85,0.3,1)] ${
+        className={`fixed inset-x-0 top-[60px] sm:top-[72px] bottom-0 z-[65] bg-[#FBFBFB] overflow-y-auto overflow-x-hidden w-full max-w-full transition-all duration-500 ease-[cubic-bezier(0.25,0.85,0.3,1)] ${
           isMenuOpen
             ? 'opacity-100 visible pointer-events-auto'
             : 'opacity-0 invisible pointer-events-none'
@@ -450,57 +463,125 @@ export default function Header() {
           willChange: 'clip-path',
         }}
       >
-        <div className="max-w-[1040px] mx-auto px-4 sm:px-8 py-6 sm:py-8 pb-32 sm:pb-24">
+        <div className="max-w-[1040px] mx-auto px-4 sm:px-8 py-5 sm:py-8 pb-32 sm:pb-24 w-full">
           {/* Panel Header Bar */}
-          <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#E3E8F0]">
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#E3E8F0]">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#1450C8] animate-pulse flex-none" />
-              <span className="text-xs font-extrabold tracking-widest text-[#5B6880] uppercase truncate">
+              <span className="text-xs font-extrabold tracking-widest text-[#5B6880] uppercase">
                 Store Menu
               </span>
             </div>
 
-            {/* Login / Admin Button at Top Right inside Menu Section (Mobile & Desktop) */}
-            <div className="flex items-center gap-2 flex-none ml-auto">
-              {user && (
-                <HeaderLoyaltyBadge variant="menu" />
-              )}
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="h-9 px-3 rounded-full bg-linear-to-r from-purple-700 to-indigo-700 text-white font-extrabold text-xs inline-flex items-center gap-1.5 shadow-sm hover:opacity-95"
-                >
-                  <svg className="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                  <span>Admin</span>
-                </Link>
-              )}
-              {user ? (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="h-9 px-4 rounded-full bg-[#1450C8] text-white font-extrabold text-xs inline-flex items-center gap-2 hover:bg-[#0F42A8] transition-colors shadow-sm"
-                >
-                  <span className="w-5 h-5 rounded-full bg-white/20 grid place-items-center text-[10px]">
-                    {userInitials}
-                  </span>
-                  <span>Dashboard</span>
-                </Link>
-              ) : (
+            <button
+              type="button"
+              onClick={() => toggleMenu(false)}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold active:scale-95 transition-all cursor-pointer"
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Dedicated Account / Profile Section inside Menu (Requests 5 & 6) */}
+          <div className="mt-4 w-full">
+            {user ? (
+              <div className="p-4 rounded-2xl bg-white border border-[#C4D9FF] shadow-xs flex flex-col gap-3.5">
+                <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-11 h-11 rounded-full bg-[#C5BAFF] text-[#0B1A33] font-black text-sm flex items-center justify-center shrink-0 shadow-2xs">
+                      {userInitials}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-sm font-extrabold text-[#0B1A33] truncate">
+                        {profile?.full_name || 'Valued Customer'}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate font-mono">
+                        {profile?.mobile || user.phone || (user.email && !user.email.endsWith('@karthiktraders.com') ? user.email : '')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Loyalty Points Badge in Menu Profile */}
+                  <Link
+                    href="/dashboard?tab=loyalty"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-linear-to-r from-amber-50 to-yellow-100 border border-amber-300 text-amber-950 font-extrabold text-xs shadow-2xs hover:bg-amber-100 transition-all shrink-0"
+                  >
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-950 font-black text-[10px]">
+                      ₹
+                    </span>
+                    <span className="font-mono">{loyaltyPoints.toLocaleString()}</span>
+                    <span className="text-[10px] text-amber-800 uppercase font-bold">pts</span>
+                    {loyaltyRupeeValue > 0 && (
+                      <span className="text-[10px] text-amber-700/80 font-medium">
+                        (₹{loyaltyRupeeValue.toFixed(0)})
+                      </span>
+                    )}
+                  </Link>
+                </div>
+
+                {/* Structured Action Buttons */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="h-10 px-3 rounded-xl bg-[#1450C8] hover:bg-[#0F42A8] text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <span>My Orders</span>
+                  </Link>
+
+                  <Link
+                    href="/dashboard?tab=loyalty"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="h-10 px-3 rounded-xl bg-amber-100/90 hover:bg-amber-200/90 text-amber-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors border border-amber-300/80 shadow-2xs"
+                  >
+                    <span>Rewards</span>
+                  </Link>
+
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="col-span-2 sm:col-span-1 h-10 px-3 rounded-xl bg-linear-to-r from-purple-700 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-2xs hover:opacity-95"
+                    >
+                      <svg className="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      <span>Admin</span>
+                    </Link>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsLogoutModalOpen(true);
+                    }}
+                    className={`${isAdmin ? 'col-span-2 sm:col-span-1' : 'col-span-2 sm:col-span-2'} h-10 px-3 rounded-xl text-[#B4123A] bg-[#FFF1F4] hover:bg-[#FDE2E8] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center`}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-linear-to-r from-[#E8F9FF] to-[#F1F8FF] border border-[#C4D9FF] shadow-xs flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-extrabold text-[#0B1A33]">Sign In to Your Account</div>
+                  <div className="text-xs text-[#5B6880]">Access your orders, GST tax invoices & earn ₹ rewards</div>
+                </div>
                 <Link
                   href="/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="h-9 px-4 sm:px-5 rounded-full bg-[#1450C8] text-white font-extrabold text-xs inline-flex items-center gap-1.5 hover:bg-[#0F42A8] transition-colors shadow-sm"
+                  className="h-10 px-5 rounded-full bg-[#1450C8] hover:bg-[#0F42A8] text-white font-extrabold text-xs inline-flex items-center gap-1.5 transition-colors shadow-2xs shrink-0"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
                   </svg>
-                  <span>Login</span>
+                  <span>Login / Register</span>
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Menu Body: Options List on Left & Call Buttons on Right */}

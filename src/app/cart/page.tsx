@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatPrice } from '@/data/products';
+import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { COUPONS_STORE } from '@/data/kt-ui';
 import { validateCoupon } from '@/app/actions/validateCoupon';
+import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionControl';
 
 export default function CartPage() {
+  const { session } = useAuth();
   const {
     cartItems,
     updateQuantity,
@@ -23,6 +26,34 @@ export default function CartPage() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number>(0);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState<number>(0);
+
+  // Restore loyalty points from sessionStorage if returning to cart
+  useEffect(() => {
+    try {
+      const savedPts = sessionStorage.getItem('kt_cart_points');
+      const savedDisc = sessionStorage.getItem('kt_cart_loyalty_discount');
+      if (savedPts && savedDisc) {
+        setLoyaltyPoints(parseInt(savedPts, 10));
+        setLoyaltyDiscount(parseFloat(savedDisc));
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleApplyLoyalty = (pts: number, discount: number) => {
+    setLoyaltyPoints(pts);
+    setLoyaltyDiscount(discount);
+    try {
+      if (pts > 0) {
+        sessionStorage.setItem('kt_cart_points', pts.toString());
+        sessionStorage.setItem('kt_cart_loyalty_discount', discount.toString());
+      } else {
+        sessionStorage.removeItem('kt_cart_points');
+        sessionStorage.removeItem('kt_cart_loyalty_discount');
+      }
+    } catch (e) {}
+  };
 
   // Subtotal and MRP total
   const subtotal = cartItems.reduce(
@@ -34,7 +65,8 @@ export default function CartPage() {
     0
   );
   const totalSavings = mrpTotal - subtotal;
-  const totalPayable = finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount);
+  const baseDiscounted = finalPrice > 0 ? finalPrice : Math.max(0, subtotal - discountAmount);
+  const totalPayable = Math.max(0, baseDiscounted - loyaltyDiscount);
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -259,6 +291,12 @@ export default function CartPage() {
                     <span className="font-extrabold text-[#4338CA]">− {formatPrice(discountAmount)}</span>
                   </div>
                 )}
+                {loyaltyDiscount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-[#3D4A63]">Loyalty Rewards ({loyaltyPoints} pts)</span>
+                    <span className="font-extrabold text-[#0B7A4B]">− {formatPrice(loyaltyDiscount)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Coupon Form */}
@@ -304,6 +342,17 @@ export default function CartPage() {
               {couponError && (
                 <span className="text-xs font-bold text-[#B4123A]">{couponError}</span>
               )}
+
+              {/* Loyalty Redemption in Cart Order Summary */}
+              <div className="pt-1">
+                <LoyaltyRedemptionControl
+                  items={cartItems}
+                  session={session}
+                  appliedPoints={loyaltyPoints}
+                  appliedDiscount={loyaltyDiscount}
+                  onApplyPoints={handleApplyLoyalty}
+                />
+              </div>
 
               <div className="h-px bg-black/10 my-1" />
 
@@ -363,6 +412,12 @@ export default function CartPage() {
                 type="button"
                 onClick={() => {
                   clearCart();
+                  setLoyaltyPoints(0);
+                  setLoyaltyDiscount(0);
+                  try {
+                    sessionStorage.removeItem('kt_cart_points');
+                    sessionStorage.removeItem('kt_cart_loyalty_discount');
+                  } catch (e) {}
                   setShowClearConfirm(false);
                 }}
                 className="h-10 px-5 rounded-full bg-[#D61F4A] text-white text-xs font-bold hover:bg-[#B4123A] cursor-pointer"

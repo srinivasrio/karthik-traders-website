@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatPrice } from '@/data/products';
-import { SparklesIcon, CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/solid';
+import { CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/solid';
 
 interface LoyaltyRedemptionControlProps {
     items: any[];
@@ -23,9 +23,17 @@ export default function LoyaltyRedemptionControl({
     const [loading, setLoading] = useState(false);
     const [walletData, setWalletData] = useState<any>(null);
     const [previewData, setPreviewData] = useState<any>(null);
-    const [isRedeeming, setIsRedeeming] = useState(false);
-    const [pointsInput, setPointsInput] = useState<number>(0);
+    const [isRedeeming, setIsRedeeming] = useState(appliedPoints > 0);
+    const [pointsInput, setPointsInput] = useState<number>(appliedPoints || 0);
     const [errorMsg, setErrorMsg] = useState('');
+
+    // Sync if appliedPoints changes from outside
+    useEffect(() => {
+        if (appliedPoints > 0 && !isRedeeming) {
+            setIsRedeeming(true);
+            setPointsInput(appliedPoints);
+        }
+    }, [appliedPoints]);
 
     // Fetch wallet summary when session is present
     useEffect(() => {
@@ -97,13 +105,15 @@ export default function LoyaltyRedemptionControl({
 
     if (!session) {
         return (
-            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/70 text-xs text-amber-900 flex items-center justify-between">
+            <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-xs text-amber-950 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2">
-                    <SparklesIcon className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Log in to earn & redeem <strong>Loyalty Points</strong></span>
+                    <span className="w-5 h-5 rounded-full bg-amber-400 text-amber-950 font-black text-xs grid place-items-center shrink-0">
+                        ₹
+                    </span>
+                    <span className="leading-snug">Sign in to earn & redeem <strong>Loyalty Points</strong></span>
                 </div>
-                <Link href="/login" className="font-extrabold text-[#1E3A8A] underline hover:text-[#0B1A33]">
-                    Log In
+                <Link href="/login" className="font-extrabold text-[#1450C8] hover:underline shrink-0">
+                    Sign In →
                 </Link>
             </div>
         );
@@ -121,17 +131,18 @@ export default function LoyaltyRedemptionControl({
     const shortfallRupees = previewData?.shortfall_rupees || 0;
     const paisePerPoint = previewData?.paise_per_point || walletData?.settings?.paise_per_point || 25;
 
-    const handleToggle = (checked: boolean) => {
-        setIsRedeeming(checked);
-        if (checked) {
-            const initialPts = maxRedeemablePoints;
-            setPointsInput(initialPts);
-            const discount = Math.round(initialPts * paisePerPoint) / 100;
-            onApplyPoints(initialPts, discount);
-        } else {
-            setPointsInput(0);
-            onApplyPoints(0, 0);
-        }
+    const handleStartRedeem = () => {
+        setIsRedeeming(true);
+        const initialPts = maxRedeemablePoints;
+        setPointsInput(initialPts);
+        const discount = Math.round(initialPts * paisePerPoint) / 100;
+        onApplyPoints(initialPts, discount);
+    };
+
+    const handleRemoveRedeem = () => {
+        setIsRedeeming(false);
+        setPointsInput(0);
+        onApplyPoints(0, 0);
     };
 
     const handlePointsChange = (pts: number) => {
@@ -142,39 +153,39 @@ export default function LoyaltyRedemptionControl({
     };
 
     return (
-        <div className="rounded-2xl border border-[#DDE4F0] bg-linear-to-b from-white to-[#F8FAFC] p-4 flex flex-col gap-3 shadow-xs">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <div className="rounded-2xl border border-[#DDE4F0] bg-white p-4 flex flex-col gap-3 shadow-xs">
+            {/* Header: Title and Available Points */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
-                        <SparklesIcon className="w-4 h-4" />
-                    </div>
-                    <div>
-                        <div className="text-xs font-extrabold text-[#0B1A33] flex items-center gap-1.5 font-poppins">
-                            <span>Karthik Loyalty Rewards</span>
-                            <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">
-                                {availablePoints} pts (≈ ₹{rupeeValue.toLocaleString()})
-                            </span>
-                        </div>
+                    <span className="w-6 h-6 rounded-full bg-linear-to-b from-amber-300 to-amber-500 text-amber-950 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        ₹
+                    </span>
+                    <div className="flex flex-col">
+                        <span className="text-xs font-extrabold text-[#0B1A33] font-poppins">
+                            Loyalty Rewards
+                        </span>
+                        <span className="text-[11px] text-[#5B6880]">
+                            Balance: <strong className="text-amber-900 font-mono">{availablePoints.toLocaleString()} pts</strong> (≈ ₹{rupeeValue.toLocaleString()})
+                        </span>
                     </div>
                 </div>
 
-                {isEligible && (
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={isRedeeming}
-                            onChange={(e) => handleToggle(e.target.checked)}
-                            className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0B7A4B]"></div>
-                    </label>
+                {/* Redeem Button when eligible and not active */}
+                {isEligible && !isRedeeming && (
+                    <button
+                        type="button"
+                        onClick={handleStartRedeem}
+                        className="h-8 px-3.5 rounded-full bg-[#0B7A4B] hover:bg-[#08633D] text-white font-extrabold text-xs flex items-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer shrink-0"
+                    >
+                        <span>Redeem</span>
+                        <span className="text-[10px] font-mono">({maxRedeemablePoints} pts)</span>
+                    </button>
                 )}
             </div>
 
-            {/* Ineligible states */}
+            {/* Ineligible State: Minimum Cart Subtotal Not Met */}
             {!isEligible && previewData?.reason_code === 'MIN_SUBTOTAL_NOT_MET' && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
                     <InformationCircleIcon className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div className="leading-relaxed">
                         Add <strong>₹{shortfallRupees.toLocaleString()}</strong> more worth of items to unlock points redemption (Min subtotal: <strong>₹{minSubtotalRupees.toLocaleString()}</strong>).
@@ -182,8 +193,9 @@ export default function LoyaltyRedemptionControl({
                 </div>
             )}
 
+            {/* Ineligible State: Minimum Points Balance Not Met */}
             {!isEligible && previewData?.reason_code === 'MIN_POINTS_NOT_MET' && (
-                <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-start gap-2">
                     <InformationCircleIcon className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
                     <div className="leading-relaxed">
                         You have <strong>{availablePoints} points</strong>. A minimum of <strong>{walletData?.settings?.min_points_to_redeem || 50} points</strong> is required to redeem.
@@ -191,54 +203,74 @@ export default function LoyaltyRedemptionControl({
                 </div>
             )}
 
-            {/* Eligible and Active */}
+            {/* Eligible and Active: Structured Redemption Box */}
             {isEligible && isRedeeming && (
-                <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col gap-3">
-                    <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
-                        <span>Redeem Points:</span>
-                        <div className="flex items-center gap-2">
+                <div className="p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-300 flex flex-col gap-3">
+                    <div className="flex items-center justify-between text-xs">
+                        <span className="font-extrabold text-emerald-950 flex items-center gap-1.5">
+                            <CheckCircleIcon className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Points Applied</span>
+                        </span>
+                        <button
+                            type="button"
+                            onClick={handleRemoveRedeem}
+                            className="text-xs font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer"
+                        >
+                            Remove
+                        </button>
+                    </div>
+
+                    {/* Stepper / Input and Max action */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center bg-white border border-emerald-300 rounded-xl px-2 h-9 flex-1 min-w-0">
                             <input
                                 type="number"
                                 min={0}
                                 max={maxRedeemablePoints}
                                 value={pointsInput}
                                 onChange={(e) => handlePointsChange(parseInt(e.target.value || '0', 10))}
-                                className="w-20 h-7 text-center font-mono font-bold text-xs bg-white border border-emerald-300 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
+                                className="w-full text-center font-mono font-bold text-xs bg-transparent outline-none text-[#0B1A33]"
                             />
-                            <button
-                                type="button"
-                                onClick={() => handlePointsChange(maxRedeemablePoints)}
-                                className="px-2 py-1 rounded-md bg-emerald-600 text-white font-extrabold text-[10px] hover:bg-emerald-700 transition-colors cursor-pointer"
-                            >
-                                Max
-                            </button>
+                            <span className="text-[11px] font-bold text-emerald-800 px-1 select-none">
+                                pts
+                            </span>
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={() => handlePointsChange(maxRedeemablePoints)}
+                            className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors cursor-pointer shrink-0 shadow-2xs"
+                        >
+                            Max
+                        </button>
                     </div>
 
-                    {/* Discount feedback */}
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-200/60">
-                        <span className="text-emerald-800 font-medium">Applied Points Discount:</span>
-                        <span className="font-extrabold font-mono text-emerald-700 text-sm">
+                    {/* Summary row */}
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-200">
+                        <span className="text-emerald-900 font-medium">Discount Applied:</span>
+                        <span className="font-extrabold font-mono text-emerald-800 text-sm">
                             − {formatPrice(appliedDiscount)}
                         </span>
                     </div>
 
-                    <div className="text-[11px] text-emerald-800/80 leading-normal">
-                        Using {pointsInput} points out of {maxRedeemablePoints} max redeemable for this order (1 pt = ₹{(paisePerPoint / 100).toFixed(2)}).
+                    <div className="text-[10px] text-emerald-800/80 leading-normal">
+                        Redeeming {pointsInput} of {maxRedeemablePoints} max eligible points (1 pt = ₹{(paisePerPoint / 100).toFixed(2)} discount).
                     </div>
                 </div>
             )}
 
-            {/* Eligible but Not Active prompt */}
+            {/* Eligible and Inactive Prompt */}
             {isEligible && !isRedeeming && (
-                <div className="flex items-center justify-between text-xs text-[#5B6880] px-1">
-                    <span>You can redeem up to <strong>{maxRedeemablePoints} points</strong> (Save <strong>₹{(maxRedeemablePoints * paisePerPoint / 100).toLocaleString()}</strong>)</span>
+                <div className="text-xs text-[#5B6880] flex items-center justify-between pt-1 border-t border-slate-100">
+                    <span>
+                        Save up to <strong className="text-emerald-700 font-mono">₹{Math.round(maxRedeemablePoints * paisePerPoint / 100).toLocaleString()}</strong> with points
+                    </span>
                     <button
                         type="button"
-                        onClick={() => handleToggle(true)}
-                        className="text-xs font-extrabold text-[#0B7A4B] hover:underline cursor-pointer"
+                        onClick={handleStartRedeem}
+                        className="text-xs font-bold text-[#0B7A4B] hover:underline cursor-pointer"
                     >
-                        Redeem Now
+                        Apply points →
                     </button>
                 </div>
             )}

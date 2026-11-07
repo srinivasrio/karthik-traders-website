@@ -36,8 +36,8 @@ export default function HeaderLoyaltyBadge({
         href={destinationHref}
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-linear-to-r from-amber-500/15 via-amber-400/20 to-yellow-500/15 border border-amber-300/80 text-amber-900 font-extrabold text-xs shadow-2xs hover:bg-amber-100 hover:border-amber-400 transition-all active:scale-95 ${className}`}
       >
-        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-950 text-[10px] shadow-2xs">
-          🪙
+        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-950 font-black text-[10px] shadow-2xs">
+          ₹
         </span>
         <span className="font-mono">{points.toLocaleString()}</span>
         <span className="text-[10px] text-amber-800 font-bold uppercase tracking-wider">pts</span>
@@ -56,8 +56,8 @@ export default function HeaderLoyaltyBadge({
           className={`group inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 font-extrabold text-xs hover:bg-amber-100 hover:border-amber-300 transition-all shadow-2xs cursor-pointer ${className}`}
           title="Loyalty Points Management"
         >
-          <span className="flex items-center justify-center text-xs">
-            🪙
+          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-300 text-amber-950 font-black text-[11px] shadow-2xs">
+            ₹
           </span>
           <span className="font-mono text-[11px] font-black text-amber-900">
             {points.toLocaleString()}
@@ -69,7 +69,7 @@ export default function HeaderLoyaltyBadge({
         {showTooltip && (
           <div className="absolute top-full mt-1.5 right-0 z-50 w-48 p-2.5 bg-slate-900 text-white rounded-xl shadow-xl text-[11px] animate-in fade-in zoom-in-95 pointer-events-none">
             <div className="font-bold flex items-center justify-between text-amber-300">
-              <span>Loyalty Points</span>
+              <span className="flex items-center gap-1"><span className="font-black">₹</span> Loyalty Points</span>
               <span>{points} pts</span>
             </div>
             <div className="text-slate-300 text-[10px] mt-0.5">
@@ -94,23 +94,9 @@ export default function HeaderLoyaltyBadge({
         className={`group inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-linear-to-r from-amber-50 via-amber-100/70 to-yellow-50 border border-amber-300/90 hover:border-amber-400 hover:bg-amber-100/80 text-amber-950 font-extrabold text-xs shadow-2xs hover:shadow-xs transition-all duration-200 active:scale-95 cursor-pointer flex-none ${className}`}
         aria-label={`${points} loyalty points worth ${formattedRupee}`}
       >
-        {/* Animated Gold Coin Icon */}
-        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-linear-to-b from-amber-300 to-amber-500 text-amber-950 shadow-2xs group-hover:scale-110 transition-transform flex-none">
-          <svg
-            className="w-3.5 h-3.5 text-amber-950"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <circle cx="12" cy="12" r="10" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" />
-            <circle cx="12" cy="12" r="7" fill="#FBBF24" />
-            <path
-              d="M12 7v10M9 9.5c0-.83.67-1.5 1.5-1.5h3c.83 0 1.5.67 1.5 1.5 0 .83-.67 1.5-1.5 1.5h-3c-.83 0-1.5.67-1.5 1.5 0 .83.67 1.5 1.5 1.5h3c.83 0 1.5-.67 1.5-1.5"
-              stroke="#78350F"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </svg>
+        {/* Crisp Rupee Icon Badge */}
+        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-linear-to-b from-amber-300 to-amber-500 text-amber-950 font-black text-xs shadow-2xs group-hover:scale-110 transition-transform flex-none">
+          ₹
         </span>
 
         {/* Points Counter */}
@@ -118,7 +104,7 @@ export default function HeaderLoyaltyBadge({
           {points.toLocaleString()}
         </span>
 
-        {/* "pts" label (hidden on tiny screens < 360px, visible on all normal views) */}
+        {/* "pts" label */}
         <span className="hidden min-[360px]:inline text-[10px] sm:text-xs font-bold text-amber-800 uppercase tracking-wider">
           pts
         </span>
@@ -136,7 +122,7 @@ export default function HeaderLoyaltyBadge({
         <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-52 p-3 bg-[#0B1A33] text-white rounded-2xl shadow-xl border border-slate-700/50 text-xs animate-in fade-in zoom-in-95 pointer-events-none">
           <div className="flex items-center justify-between pb-1.5 border-b border-slate-700">
             <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-              <span>🪙</span> Loyalty Points
+              <span className="font-black text-xs">₹</span> Loyalty Points
             </span>
             <span className="font-mono font-extrabold text-amber-300">
               {points.toLocaleString()} pts

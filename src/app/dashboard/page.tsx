@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import LoyaltyCustomerView from '@/components/dashboard/LoyaltyCustomerView';
+import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 
 interface OrderItem {
   quantity: number;
@@ -24,9 +25,12 @@ interface Order {
   order_number?: number;
   created_at: string;
   status: string;
+  payment_status?: string;
   total_amount: number;
   discount_amount: number;
   coupon_code?: string;
+  loyalty_points_redeemed?: number;
+  loyalty_discount_amount?: number;
   customer_name: string;
   customer_mobile?: string;
   shipping_address?: any;
@@ -116,6 +120,8 @@ export default function DashboardPage() {
           total_amount, 
           discount_amount, 
           coupon_code, 
+          loyalty_points_redeemed,
+          loyalty_discount_amount,
           customer_name, 
           customer_mobile, 
           shipping_address, 
@@ -570,14 +576,15 @@ export default function DashboardPage() {
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex flex-wrap gap-2.5 pt-1">
+                          <div className="flex flex-wrap items-center gap-2.5 pt-1">
                             <button
                               type="button"
                               onClick={() => setInvoiceOrder(order)}
                               className="h-10 px-4 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                              <span>📄 GST Invoice Preview</span>
+                              <span>📄 Invoice Preview</span>
                             </button>
+                            <DownloadInvoiceBtn order={order} variant="customer" />
                             <a
                               href={`https://wa.me/918688566023?text=${encodeURIComponent(
                                 `Hi Karthik Traders, inquiring regarding Order #${orderRef}`
@@ -618,12 +625,13 @@ export default function DashboardPage() {
                 Tax Invoice Preview · #KT-{invoiceOrder.order_number || invoiceOrder.id.slice(0, 6)}
               </span>
               <div className="flex items-center gap-2">
+                <DownloadInvoiceBtn order={invoiceOrder} variant="customer" />
                 <button
                   type="button"
                   onClick={() => window.print()}
                   className="h-9 px-4 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-bold text-xs cursor-pointer"
                 >
-                  Print / PDF
+                  Print
                 </button>
                 <button
                   type="button"
@@ -643,9 +651,9 @@ export default function DashboardPage() {
                     KARTHIK TRADERS
                   </h3>
                   <p className="text-xs text-[#5B6880] leading-relaxed max-w-xs mt-1">
-                    D.No: 15-2-124, Subedar Pet, Near Vegetable Market,<br />
-                    Nellore - 524001, Andhra Pradesh<br />
-                    GSTIN: 37AAAAK0000A1Z5
+                    Shop no 13, Opp. Madhura Sweets Line, Near MRF Tyres Line,<br />
+                    Subedar Pet, Nellore - 524001, Andhra Pradesh<br />
+                    GSTIN: 37AFGPY0727H1Z6 · Ph: +91 86885 66023
                   </p>
                 </div>
                 <div className="text-right">
@@ -660,6 +668,9 @@ export default function DashboardPage() {
                       year: 'numeric',
                     })}
                   </span>
+                  <span className="text-[11px] font-bold text-[#1450C8] uppercase block mt-1">
+                    Status: {invoiceOrder.payment_status?.toUpperCase() || 'PENDING'}
+                  </span>
                 </div>
               </div>
 
@@ -668,12 +679,23 @@ export default function DashboardPage() {
                 <strong className="block text-[#0B1A33] mb-1">Billed to:</strong>
                 <span>{invoiceOrder.customer_name || userName}</span> ·{' '}
                 <span className="font-mono">{invoiceOrder.customer_mobile || userPhone}</span>
+                {invoiceOrder.shipping_address && (
+                  <div className="text-xs text-[#5B6880] mt-1">
+                    {[
+                      invoiceOrder.shipping_address.addressLine1 || invoiceOrder.shipping_address.address || '',
+                      invoiceOrder.shipping_address.city || '',
+                      invoiceOrder.shipping_address.state || '',
+                      invoiceOrder.shipping_address.pincode || '',
+                    ].filter(Boolean).join(', ')}
+                  </div>
+                )}
               </div>
 
               {/* Items Table */}
               <div className="rounded-xl border border-[#EEF2F8] overflow-hidden text-xs">
                 <div className="grid grid-cols-12 p-3 font-extrabold bg-[#E8F9FF] text-[#0B5C86]">
-                  <span className="col-span-6">Item</span>
+                  <span className="col-span-1 text-center">#</span>
+                  <span className="col-span-5">Item</span>
                   <span className="col-span-2 text-center">Qty</span>
                   <span className="col-span-2 text-right">Rate</span>
                   <span className="col-span-2 text-right">Amount</span>
@@ -681,8 +703,9 @@ export default function DashboardPage() {
                 <div className="divide-y divide-[#EEF2F8]">
                   {(invoiceOrder.order_items || []).map((l, idx) => (
                     <div key={idx} className="grid grid-cols-12 p-3 items-center">
-                      <span className="col-span-6 font-bold text-[#0B1A33]">
-                        {l.product?.name || 'Aerator Unit'}
+                      <span className="col-span-1 text-center text-[#5B6880]">{idx + 1}</span>
+                      <span className="col-span-5 font-bold text-[#0B1A33]">
+                        {l.product?.name || 'Aerator Product'}
                       </span>
                       <span className="col-span-2 text-center font-mono">{l.quantity}</span>
                       <span className="col-span-2 text-right font-mono">
@@ -696,22 +719,52 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Stamp and Total */}
+              {/* Stamp and Total Breakdown */}
               <div className="flex flex-wrap justify-between items-end gap-4 pt-2">
-                <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#4338CA] text-[#4338CA] flex items-center justify-center text-[10px] font-extrabold text-center rotate-[-8deg] uppercase tracking-wider p-2">
+                <div className="w-28 h-28 rounded-full border-2 border-dashed border-[#4338CA] text-[#4338CA] flex items-center justify-center text-[10px] font-extrabold text-center rotate-[-8deg] uppercase tracking-wider p-2">
                   Karthik Traders<br />Nellore<br />Official Seal
                 </div>
 
-                <div className="min-w-[200px] flex flex-col gap-1.5 text-right">
-                  <div className="flex justify-between text-xs text-[#5B6880]">
-                    <span>GST (Incl.)</span>
-                    <span>18%</span>
-                  </div>
-                  <div className="flex justify-between font-extrabold text-base text-[#0B1A33] pt-1 border-t border-[#EEF2F8]">
-                    <span>Total Amount</span>
-                    <span className="font-poppins">{formatPrice(invoiceOrder.total_amount)}</span>
-                  </div>
-                </div>
+                {(() => {
+                  const couponDisc = Number(invoiceOrder.discount_amount || 0);
+                  const loyaltyDisc = Number(invoiceOrder.loyalty_discount_amount || 0);
+                  const loyaltyPts = Number(invoiceOrder.loyalty_points_redeemed || 0);
+                  const total = Number(invoiceOrder.total_amount || 0);
+                  const subtotal = total + couponDisc + loyaltyDisc;
+
+                  return (
+                    <div className="min-w-[240px] flex flex-col gap-1.5 text-right text-xs">
+                      <div className="flex justify-between text-[#5B6880]">
+                        <span>Subtotal (MRP/Gross)</span>
+                        <span className="font-mono font-bold text-[#0B1A33]">{formatPrice(subtotal)}</span>
+                      </div>
+                      {couponDisc > 0 && (
+                        <div className="flex justify-between text-emerald-700 font-bold">
+                          <span>Coupon ({invoiceOrder.coupon_code || 'APPLIED'})</span>
+                          <span className="font-mono">− {formatPrice(couponDisc)}</span>
+                        </div>
+                      )}
+                      {loyaltyDisc > 0 && (
+                        <div className="flex justify-between text-emerald-700 font-bold">
+                          <span>Loyalty Points ({loyaltyPts} pts)</span>
+                          <span className="font-mono">− {formatPrice(loyaltyDisc)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-[#5B6880]">
+                        <span>Delivery</span>
+                        <span className="text-emerald-700 font-bold">Free Delivery</span>
+                      </div>
+                      <div className="flex justify-between text-[#5B6880] text-[11px]">
+                        <span>GST Taxes</span>
+                        <span>Included</span>
+                      </div>
+                      <div className="flex justify-between font-extrabold text-base text-[#0B1A33] pt-1.5 border-t border-[#EEF2F8]">
+                        <span>Total Payable</span>
+                        <span className="font-poppins">{formatPrice(total)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

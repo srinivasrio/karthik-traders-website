@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
         const supabase = getSupabaseAdmin();
 
-        // Query profiles and their loyalty wallets
+        // Query profiles and their loyalty wallets (exclude test users)
         let query = supabase
             .from('profiles')
             .select(`
@@ -33,7 +33,9 @@ export async function GET(request: Request) {
                     is_active,
                     updated_at
                 )
-            `, { count: 'exact' });
+            `, { count: 'exact' })
+            .not('full_name', 'ilike', '%Test User%')
+            .not('mobile', 'ilike', '+919999%');
 
         if (search.trim()) {
             const cleanSearch = search.trim();

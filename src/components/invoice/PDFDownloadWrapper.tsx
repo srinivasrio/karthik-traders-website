@@ -15,9 +15,9 @@ export default function PDFDownloadWrapper({ order, variant }: PDFDownloadWrappe
             document={<InvoicePDF order={order} />}
             fileName={`Invoice-${order.order_number || order.id.slice(0, 8)}.pdf`}
             className={`${variant === 'admin'
-                ? 'px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-700'
-                : 'px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                } text-xs font-bold rounded flex items-center gap-2 transition-colors`}
+                ? 'px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-700 rounded text-xs font-bold'
+                : 'px-5 py-2.5 bg-[#0B1A33] hover:bg-[#1D64EC] text-white font-extrabold rounded-full text-xs shadow-md active:scale-95'
+                } flex items-center justify-center gap-2 transition-all cursor-pointer`}
         >
             {/* @ts-ignore */}
             {({ blob, url, loading, error }) => {
