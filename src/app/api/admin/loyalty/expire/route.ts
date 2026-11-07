@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         }
 
         const result = await processExpiredPoints();
-        return NextResponse.json({ success: true, ...result });
+        return NextResponse.json(result || { success: true });
     } catch (error: any) {
         console.error('Points expiration job error:', error);
         return NextResponse.json({ error: error.message || 'Failed to expire points' }, { status: 500 });

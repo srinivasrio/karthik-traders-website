@@ -31,7 +31,7 @@ export async function POST(request: Request) {
             reason.trim()
         );
 
-        return NextResponse.json({ success: true, ...result });
+        return NextResponse.json(result || { success: true });
     } catch (error: any) {
         console.error('Points adjustment error:', error);
         return NextResponse.json(

@@ -615,7 +615,9 @@ export async function awardPurchasePoints(orderId: string) {
  */
 export async function processExpiredPoints() {
     const supabase = getSupabaseAdmin();
-    return await supabase.rpc('loyalty_process_expired_points');
+    const { data, error } = await supabase.rpc('loyalty_process_expired_points');
+    if (error) throw new Error(error.message);
+    return data;
 }
 
 /**
