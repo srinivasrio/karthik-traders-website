@@ -2,11 +2,13 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { uploadProductImageAction } from '@/app/actions/uploadImage';
+import { supabase } from '@/lib/supabase';
 import {
     PhotoIcon,
     XMarkIcon,
     ArrowUpTrayIcon,
     ArrowsUpDownIcon,
+    ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 
 interface ImageUploaderProps {
@@ -37,10 +39,14 @@ export default function ImageUploader({
     const [dragIndex, setDragIndex] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const acceptedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/pjpeg', 'image/x-png'];
 
     const validateFile = (file: File): string | null => {
-        if (!acceptedTypes.includes(file.type)) {
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        const validExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '');
+        const validMime = !file.type || acceptedMimes.includes(file.type.toLowerCase());
+
+        if (!validExt && !validMime) {
             return 'Only JPG, PNG, and WebP images are allowed';
         }
         if (file.size > maxSizeMB * 1024 * 1024) {
@@ -50,46 +56,52 @@ export default function ImageUploader({
     };
 
     const compressImage = async (file: File): Promise<File> => {
-        if (!file.type.startsWith('image/')) return file;
+        if (!file.type || !file.type.startsWith('image/')) return file;
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
-                    const maxWidth = 1200;
-                    const maxHeight = 1200;
-                    let { width, height } = img;
-                    if (width > maxWidth || height > maxHeight) {
-                        if (width / height > maxWidth / maxHeight) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        } else {
-                            width = Math.round((width * maxHeight) / height);
-                            height = maxHeight;
+                    try {
+                        const maxWidth = 1200;
+                        const maxHeight = 1200;
+                        let { width, height } = img;
+                        if (width > maxWidth || height > maxHeight) {
+                            if (width / height > maxWidth / maxHeight) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            } else {
+                                width = Math.round((width * maxHeight) / height);
+                                height = maxHeight;
+                            }
                         }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        ctx.drawImage(img, 0, 0, width, height);
-                        canvas.toBlob(
-                            (blob) => {
-                                if (blob && blob.size < file.size) {
-                                    const compressedFile = new File([blob], file.name, {
-                                        type: file.type === 'image/png' ? 'image/png' : 'image/jpeg',
-                                        lastModified: Date.now(),
-                                    });
-                                    resolve(compressedFile);
-                                } else {
-                                    resolve(file);
-                                }
-                            },
-                            file.type === 'image/png' ? 'image/png' : 'image/jpeg',
-                            0.82
-                        );
-                    } else {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                            canvas.toBlob(
+                                (blob) => {
+                                    if (blob && blob.size < file.size) {
+                                        const compressedFile = new File([blob], file.name, {
+                                            type: mime,
+                                            lastModified: Date.now(),
+                                        });
+                                        resolve(compressedFile);
+                                    } else {
+                                        resolve(file);
+                                    }
+                                },
+                                mime,
+                                0.85
+                            );
+                        } else {
+                            resolve(file);
+                        }
+                    } catch (canvasErr) {
+                        console.warn('Canvas compression error, using raw file:', canvasErr);
                         resolve(file);
                     }
                 };
@@ -108,57 +120,50 @@ export default function ImageUploader({
             formData.append('file', compressedFile);
             formData.append('category', category);
 
-            const result = await uploadProductImageAction(formData);
-
-            if (!result.success || !result.publicUrl) {
-                return { url: null, error: result.error || 'Upload failed' };
+            // Attempt 1: Server Action
+            try {
+                const result = await uploadProductImageAction(formData);
+                if (result.success && result.publicUrl) {
+                    return { url: result.publicUrl };
+                }
+                console.warn('Server Action upload returned unsuccessful, falling back to API route:', result.error);
+            } catch (actionErr: any) {
+                console.warn('Server Action threw exception, falling back to API route:', actionErr?.message);
             }
 
-            return { url: result.publicUrl };
+            // Attempt 2: Direct REST API route fallback with auth token
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: Record<string, string> = {};
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
+            }
+
+            const res = await fetch('/api/admin/products/upload-image', {
+                method: 'POST',
+                headers,
+                body: formData,
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.publicUrl) {
+                    return { url: data.publicUrl };
+                }
+                return { url: null, error: data.error || 'Upload API returned an error' };
+            }
+
+            const errorJson = await res.json().catch(() => ({}));
+            return { url: null, error: errorJson.error || `Upload failed (HTTP ${res.status})` };
         } catch (err: any) {
             console.error('Upload error in frontend:', err);
             return { url: null, error: err.message || 'An unexpected upload error occurred' };
         }
     };
 
-    const handleFiles = useCallback(async (files: FileList | File[]) => {
-        const fileArray = Array.from(files);
-        const remaining = maxImages - images.length;
-
-        if (remaining <= 0) {
-            alert(`Maximum ${maxImages} images allowed`);
-            return;
-        }
-
-        const toUpload = fileArray.slice(0, remaining);
-        const newUploading: UploadingFile[] = [];
-
-        for (const file of toUpload) {
-            const validationError = validateFile(file);
-            if (validationError) {
-                newUploading.push({
-                    id: Math.random().toString(36),
-                    file,
-                    preview: URL.createObjectURL(file),
-                    progress: 0,
-                    error: validationError,
-                });
-                continue;
-            }
-            newUploading.push({
-                id: Math.random().toString(36),
-                file,
-                preview: URL.createObjectURL(file),
-                progress: 0,
-            });
-        }
-
-        setUploading(prev => [...prev, ...newUploading]);
-        setUploading(prev => prev.map(u => u.error ? u : { ...u, progress: 30 }));
-
+    const processUploadList = async (itemsToUpload: UploadingFile[]) => {
         const uploadedUrls: string[] = [];
 
-        for (const item of newUploading) {
+        for (const item of itemsToUpload) {
             if (item.error) continue;
 
             setUploading(prev =>
@@ -179,14 +184,57 @@ export default function ImageUploader({
             }
         }
 
-        // Short delay so user sees 100% before removing
         setTimeout(() => {
             setUploading(prev => prev.filter(u => u.error));
             if (uploadedUrls.length > 0) {
                 onChange([...images, ...uploadedUrls]);
             }
         }, 500);
+    };
+
+    const handleFiles = useCallback(async (files: FileList | File[]) => {
+        const fileArray = Array.from(files);
+        const remaining = maxImages - images.length;
+
+        if (remaining <= 0) {
+            alert(`Maximum ${maxImages} images allowed`);
+            return;
+        }
+
+        const toUpload = fileArray.slice(0, remaining);
+        const newUploading: UploadingFile[] = [];
+
+        for (const file of toUpload) {
+            const validationError = validateFile(file);
+            if (validationError) {
+                newUploading.push({
+                    id: Math.random().toString(36).substring(2, 9),
+                    file,
+                    preview: URL.createObjectURL(file),
+                    progress: 0,
+                    error: validationError,
+                });
+                continue;
+            }
+            newUploading.push({
+                id: Math.random().toString(36).substring(2, 9),
+                file,
+                preview: URL.createObjectURL(file),
+                progress: 25,
+            });
+        }
+
+        setUploading(prev => [...prev, ...newUploading]);
+        await processUploadList(newUploading.filter(u => !u.error));
     }, [images, maxImages, onChange, category]);
+
+    const retryUpload = async (id: string) => {
+        const target = uploading.find(u => u.id === id);
+        if (!target) return;
+
+        setUploading(prev => prev.map(u => u.id === id ? { ...u, error: undefined, progress: 30 } : u));
+        await processUploadList([target]);
+    };
 
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -216,7 +264,7 @@ export default function ImageUploader({
     };
 
     const handleAddUrl = () => {
-        const url = prompt('Enter image URL:');
+        const url = prompt('Enter image URL or local path (e.g., /images/products/...):');
         if (url && url.trim()) {
             if (images.length >= maxImages) {
                 alert(`Maximum ${maxImages} images allowed`);
@@ -257,9 +305,9 @@ export default function ImageUploader({
                 <button
                     type="button"
                     onClick={handleAddUrl}
-                    className="text-xs text-aqua-600 hover:text-aqua-700 font-medium"
+                    className="text-xs text-aqua-600 hover:text-aqua-700 font-medium hover:underline"
                 >
-                    + Add URL
+                    + Add URL / Path
                 </button>
             </div>
 
@@ -283,7 +331,7 @@ export default function ImageUploader({
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept=".jpg,.jpeg,.png,.webp"
+                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                     onChange={(e) => e.target.files && handleFiles(e.target.files)}
                     className="hidden"
                 />
@@ -300,10 +348,10 @@ export default function ImageUploader({
                     </div>
                     <div>
                         <p className="text-sm font-medium text-slate-700">
-                            {dragOver ? 'Drop images here' : 'Drag & drop images here'}
+                            {dragOver ? 'Drop images here' : 'Drag & drop images here or browse'}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                            or click to browse • JPG, PNG, WebP • Max {maxSizeMB}MB each
+                            Supports JPG, PNG, WebP • Max {maxSizeMB}MB per image
                         </p>
                     </div>
                 </div>
@@ -313,18 +361,27 @@ export default function ImageUploader({
             {uploading.length > 0 && (
                 <div className="space-y-2">
                     {uploading.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
+                        <div key={item.id} className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                             <img
                                 src={item.preview}
                                 alt="Uploading"
-                                className="w-10 h-10 rounded object-cover"
+                                className="w-10 h-10 rounded object-cover border border-slate-200"
                             />
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs text-slate-600 truncate">
+                                <p className="text-xs font-medium text-slate-700 truncate">
                                     {item.file.name}
                                 </p>
                                 {item.error ? (
-                                    <p className="text-xs text-red-500">{item.error}</p>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-xs text-red-500">{item.error}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => retryUpload(item.id)}
+                                            className="text-[11px] text-aqua-600 hover:text-aqua-700 font-medium inline-flex items-center gap-0.5"
+                                        >
+                                            <ArrowPathIcon className="w-3 h-3" /> Retry
+                                        </button>
+                                    </div>
                                 ) : (
                                     <div className="mt-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                         <div
@@ -334,15 +391,14 @@ export default function ImageUploader({
                                     </div>
                                 )}
                             </div>
-                            {item.error && (
-                                <button
-                                    type="button"
-                                    onClick={() => removeUploadError(item.id)}
-                                    className="p-1 hover:bg-slate-200 rounded"
-                                >
-                                    <XMarkIcon className="h-4 w-4 text-slate-400" />
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                onClick={() => removeUploadError(item.id)}
+                                className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600"
+                                title="Dismiss"
+                            >
+                                <XMarkIcon className="h-4 w-4" />
+                            </button>
                         </div>
                     ))}
                 </div>
@@ -360,36 +416,36 @@ export default function ImageUploader({
                             onDragEnd={handleReorderDragEnd}
                             className={`
                                 group relative aspect-square rounded-lg overflow-hidden border-2
-                                cursor-grab active:cursor-grabbing transition-all duration-200
+                                cursor-grab active:cursor-grabbing transition-all duration-200 bg-slate-100
                                 ${dragIndex === index
                                     ? 'border-aqua-400 opacity-50 scale-95'
-                                    : 'border-slate-200 hover:border-aqua-300'
+                                    : 'border-slate-200 hover:border-aqua-300 shadow-sm'
                                 }
-                                ${index === 0 ? 'ring-2 ring-aqua-400 ring-offset-1' : ''}
+                                ${index === 0 ? 'ring-2 ring-aqua-500 ring-offset-1' : ''}
                             `}
                         >
                             <img
                                 src={url}
                                 alt={`Product image ${index + 1}`}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain p-1"
                                 onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23f1f5f9" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%2394a3b8" font-size="12">No Image</text></svg>';
+                                    (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23f1f5f9" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%2394a3b8" font-size="12">Image Error</text></svg>';
                                 }}
                             />
 
                             {/* Overlay */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
 
                             {/* Primary badge */}
                             {index === 0 && (
-                                <span className="absolute top-1.5 left-1.5 text-[9px] font-bold bg-aqua-500 text-white px-1.5 py-0.5 rounded">
+                                <span className="absolute top-1.5 left-1.5 text-[9px] font-bold bg-aqua-600 text-white px-1.5 py-0.5 rounded shadow">
                                     PRIMARY
                                 </span>
                             )}
 
                             {/* Reorder hint */}
-                            <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ArrowsUpDownIcon className="h-4 w-4 text-white drop-shadow" />
+                            <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 p-1 rounded">
+                                <ArrowsUpDownIcon className="h-3.5 w-3.5 text-white" />
                             </div>
 
                             {/* Delete button */}
@@ -399,7 +455,8 @@ export default function ImageUploader({
                                     e.stopPropagation();
                                     removeImage(index);
                                 }}
-                                className="absolute bottom-1.5 right-1.5 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110"
+                                className="absolute bottom-1.5 right-1.5 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110 shadow"
+                                title="Remove Image"
                             >
                                 <XMarkIcon className="h-3.5 w-3.5" />
                             </button>

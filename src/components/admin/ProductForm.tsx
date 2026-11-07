@@ -516,20 +516,56 @@ export default function ProductForm({ mode, productId, returnUrl = '/admin/produ
                 brand: brandValue,
             };
 
-            if (mode === 'create') {
-                const { error } = await supabase.from('products').insert([productData]);
-                if (error) {
-                    console.log(error);
-                    throw error;
+            // Attempt 1: Use dedicated Admin API route with service role execution
+            let apiSuccess = false;
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const headers: Record<string, string> = {
+                    'Content-Type': 'application/json',
+                };
+                if (session?.access_token) {
+                    headers['Authorization'] = `Bearer ${session.access_token}`;
                 }
-            } else {
-                const { error } = await supabase
-                    .from('products')
-                    .update(productData)
-                    .eq('id', productId);
-                if (error) {
-                    console.log(error);
-                    throw error;
+
+                const res = await fetch('/api/admin/products/save', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        mode,
+                        productId,
+                        productData,
+                    }),
+                });
+
+                if (res.ok) {
+                    const resData = await res.json();
+                    if (resData.success) {
+                        apiSuccess = true;
+                    } else if (resData.error) {
+                        console.warn('Admin API returned error:', resData.error);
+                    }
+                }
+            } catch (apiErr) {
+                console.warn('Admin API save route failed, falling back to direct client:', apiErr);
+            }
+
+            // Attempt 2: Fallback to direct client
+            if (!apiSuccess) {
+                if (mode === 'create') {
+                    const { error } = await supabase.from('products').insert([productData]);
+                    if (error) {
+                        console.log(error);
+                        throw error;
+                    }
+                } else {
+                    const { error } = await supabase
+                        .from('products')
+                        .update(productData)
+                        .eq('id', productId);
+                    if (error) {
+                        console.log(error);
+                        throw error;
+                    }
                 }
             }
 
