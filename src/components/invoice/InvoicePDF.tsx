@@ -1,315 +1,461 @@
 "use client";
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Image, Font } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 import { allProducts } from '@/data/products';
 
-// Define styles
+function numberToIndianWords(num: number): string {
+    const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    const n = Math.round(num);
+    if (n === 0) return 'Zero Rupees Only';
+
+    function inWords(val: number): string {
+        let str = '';
+        if (val > 99) {
+            str += a[Math.floor(val / 100)] + 'Hundred ';
+            val %= 100;
+        }
+        if (val > 19) {
+            str += b[Math.floor(val / 10)] + (val % 10 !== 0 ? ' ' + a[val % 10] : ' ');
+        } else if (val > 0) {
+            str += a[val];
+        }
+        return str;
+    }
+
+    const crore = Math.floor(n / 10000000);
+    const lakh = Math.floor((n % 10000000) / 100000);
+    const thousand = Math.floor((n % 100000) / 1000);
+    const remaining = n % 1000;
+
+    let res = '';
+    if (crore > 0) res += inWords(crore) + 'Crore ';
+    if (lakh > 0) res += inWords(lakh) + 'Lakh ';
+    if (thousand > 0) res += inWords(thousand) + 'Thousand ';
+    if (remaining > 0) res += inWords(remaining);
+
+    return `Rupees ${res.trim()} Only`;
+}
+
 const styles = StyleSheet.create({
     page: {
-        padding: 30,
+        padding: 28,
         fontFamily: 'Helvetica',
-        fontSize: 10,
-        lineHeight: 1.4,
-        color: '#111', // Darker text per request
+        fontSize: 9,
+        lineHeight: 1.35,
+        color: '#1E293B',
+        backgroundColor: '#FFFFFF',
     },
-    // Top Header Row: GST/Addr (Left) | Brand (Center) | Logo (Right)
-    topHeaderRow: {
+    // Top Brand Bar
+    headerBar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 20,
+        borderBottomWidth: 2,
+        borderBottomColor: '#0A1F5C',
+        paddingBottom: 14,
+        marginBottom: 12,
     },
-    topLeft: {
-        width: '35%',
+    brandInfo: {
+        width: '62%',
     },
-    topCenter: {
-        width: '30%',
-        alignItems: 'center',
-        paddingTop: 10,
+    brandName: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#0A1F5C',
+        letterSpacing: 0.5,
+        marginBottom: 2,
     },
-    topRight: {
+    brandTagline: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#1D4ED8',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        marginBottom: 4,
+    },
+    sellerAddress: {
+        fontSize: 8,
+        color: '#475569',
+        lineHeight: 1.3,
+    },
+    sellerContact: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#1E293B',
+        marginTop: 3,
+    },
+    sellerGst: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: '#0A1F5C',
+        marginTop: 2,
+    },
+    invoiceMetaBox: {
         width: '35%',
         alignItems: 'flex-end',
     },
-
-    // Brand
-    brandName: {
-        fontSize: 18,
+    taxInvoiceBadge: {
+        backgroundColor: '#0A1F5C',
+        color: '#FFFFFF',
+        fontSize: 10,
         fontWeight: 'bold',
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 4,
         textTransform: 'uppercase',
-        textAlign: 'center',
-        marginBottom: 4,
+        letterSpacing: 0.8,
+        marginBottom: 6,
     },
-
-    // GST & Address
-    gstText: {
+    originalText: {
+        fontSize: 7.5,
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 6,
+    },
+    invoiceNumber: {
         fontSize: 12,
         fontWeight: 'bold',
-        marginBottom: 8,
-    },
-    addressLabel: {
-        fontSize: 9,
-        fontWeight: 'bold',
-        textDecoration: 'underline',
+        color: '#0A1F5C',
         marginBottom: 2,
     },
-    addressLine: {
-        fontSize: 9,
-        marginBottom: 1,
+    invoiceDate: {
+        fontSize: 8.5,
+        color: '#475569',
+        marginBottom: 4,
     },
-
-    // Main Title
-    invoiceTitle: {
-        fontSize: 28,
-        fontWeight: 'bold', // changed from extra-bold
-        marginTop: 20,
-        marginBottom: 10,
-        textTransform: 'uppercase',
-    },
-
-    metaSection: {
-        marginBottom: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
-        paddingTop: 10,
-    },
-    billTo: {
-        width: '45%',
-    },
-    label: {
+    statusBadgePaid: {
+        backgroundColor: '#DCFCE7',
+        color: '#15803D',
         fontSize: 8,
-        color: '#444',
-        marginBottom: 2,
-        textTransform: 'uppercase',
         fontWeight: 'bold',
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        borderRadius: 3,
+        textTransform: 'uppercase',
+        marginTop: 2,
     },
-    value: {
-        fontSize: 10,
-        marginBottom: 8,
-        // fontWeight medium removed (default normal)
+    statusBadgePending: {
+        backgroundColor: '#FEF3C7',
+        color: '#B45309',
+        fontSize: 8,
+        fontWeight: 'bold',
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        borderRadius: 3,
+        textTransform: 'uppercase',
+        marginTop: 2,
     },
-    // Table
-    table: {
-        width: 'auto',
-        marginTop: 10,
-        borderWidth: 1,
-        borderColor: '#000', // darker border
-        borderStyle: 'solid',
-    },
-    tableRow: {
+
+    // Customer & Shipping Info Box
+    customerSection: {
         flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#000',
-        borderBottomStyle: 'solid',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 6,
+        padding: 10,
+        marginBottom: 14,
+        justifyContent: 'space-between',
+    },
+    customerCol: {
+        width: '48%',
+    },
+    sectionHeading: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.6,
+        marginBottom: 4,
+    },
+    customerName: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#0A1F5C',
+        marginBottom: 2,
+    },
+    customerText: {
+        fontSize: 8.5,
+        color: '#334155',
+        lineHeight: 1.3,
+    },
+
+    // Items Table
+    table: {
+        borderRadius: 6,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#CBD5E1',
+        marginBottom: 12,
+    },
+    tableHeader: {
+        flexDirection: 'row',
+        backgroundColor: '#0A1F5C',
         alignItems: 'center',
         minHeight: 24,
     },
-    tableHeader: {
-        backgroundColor: '#f3f4f6',
+    tableHeaderCell: {
+        color: '#FFFFFF',
+        fontSize: 8.5,
         fontWeight: 'bold',
-        color: '#000',
+        paddingVertical: 5,
+        paddingHorizontal: 6,
     },
-    cellSno: { width: '7%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'center', fontSize: 9 },
-    cellItems: { width: '51%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', fontSize: 9 },
-    cellPrice: { width: '17%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'right', fontSize: 9 },
-    cellQty: { width: '8%', padding: 5, borderRightWidth: 1, borderRightColor: '#000', textAlign: 'center', fontSize: 9 },
-    cellTotal: { width: '17%', padding: 5, textAlign: 'right', fontSize: 9 },
+    tableRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 22,
+        borderTopWidth: 1,
+        borderTopColor: '#E2E8F0',
+    },
+    tableRowEven: {
+        backgroundColor: '#F8FAFC',
+    },
+    cellSno: {
+        width: '7%',
+        textAlign: 'center',
+        fontSize: 8.5,
+        paddingVertical: 4,
+        paddingHorizontal: 4,
+    },
+    cellDesc: {
+        width: '51%',
+        fontSize: 8.5,
+        paddingVertical: 4,
+        paddingHorizontal: 6,
+    },
+    cellPrice: {
+        width: '16%',
+        textAlign: 'right',
+        fontSize: 8.5,
+        paddingVertical: 4,
+        paddingHorizontal: 6,
+    },
+    cellQty: {
+        width: '10%',
+        textAlign: 'center',
+        fontSize: 8.5,
+        paddingVertical: 4,
+        paddingHorizontal: 4,
+    },
+    cellAmount: {
+        width: '16%',
+        textAlign: 'right',
+        fontSize: 8.5,
+        fontWeight: 'bold',
+        paddingVertical: 4,
+        paddingHorizontal: 6,
+    },
 
-    // Totals
-    totalsSection: {
-        marginTop: 10,
-        alignItems: 'flex-end',
+    // Out of stock alert
+    oosSection: {
+        backgroundColor: '#FEF2F2',
+        borderWidth: 1,
+        borderColor: '#FECACA',
+        borderRadius: 4,
+        padding: 6,
+        marginBottom: 10,
+    },
+    oosTitle: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#B91C1C',
+        textTransform: 'uppercase',
+        marginBottom: 2,
+    },
+    oosItem: {
+        fontSize: 7.5,
+        color: '#7F1D1D',
+    },
+
+    // Bottom Calculation Section
+    calcSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 4,
+        marginBottom: 14,
+    },
+    wordsCol: {
+        width: '54%',
+        paddingRight: 10,
+        justifyContent: 'flex-start',
+    },
+    wordsBox: {
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 6,
+        padding: 8,
+        marginBottom: 8,
+    },
+    wordsLabel: {
+        fontSize: 7.5,
+        fontWeight: 'bold',
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 2,
+    },
+    wordsText: {
+        fontSize: 8.5,
+        fontWeight: 'bold',
+        color: '#0A1F5C',
+        fontStyle: 'italic',
+    },
+    termsBox: {
+        paddingTop: 4,
+    },
+    termsHeading: {
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#334155',
+        marginBottom: 3,
+        textTransform: 'uppercase',
+    },
+    termsLine: {
+        fontSize: 7,
+        color: '#64748B',
+        lineHeight: 1.3,
+        marginBottom: 1.5,
+    },
+
+    totalsCol: {
+        width: '44%',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 6,
+        padding: 8,
     },
     totalRow: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 3,
+        paddingVertical: 2.5,
     },
     totalLabel: {
-        width: 180,
-        textAlign: 'right',
-        paddingRight: 10,
-        color: '#111',
-        fontWeight: 'bold',
-        fontSize: 9,
+        fontSize: 8.5,
+        color: '#475569',
     },
     totalValue: {
-        width: 100,
-        textAlign: 'right',
+        fontSize: 8.5,
         fontWeight: 'bold',
-        fontSize: 9,
+        color: '#1E293B',
     },
-    grandTotal: {
-        backgroundColor: '#f3f4f6',
-        padding: '5 8',
-        marginTop: 4,
+    discountLabel: {
+        fontSize: 8.5,
+        color: '#15803D',
+        fontWeight: 'bold',
+    },
+    discountValue: {
+        fontSize: 8.5,
+        fontWeight: 'bold',
+        color: '#15803D',
+    },
+    divider: {
         borderTopWidth: 1,
-        borderTopColor: '#000',
+        borderTopColor: '#CBD5E1',
+        marginVertical: 4,
     },
-    grandTotalLabel: {
-        width: 180,
-        textAlign: 'right',
-        paddingRight: 10,
-        color: '#000',
-        fontWeight: 'bold',
-        fontSize: 11,
-    },
-    grandTotalValue: {
-        width: 100,
-        textAlign: 'right',
-        fontWeight: 'bold',
-        fontSize: 11,
-        color: '#000',
-    },
-
-    // Terms & Signatory
-    termsAndSignRow: {
+    grandTotalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 15,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
+        alignItems: 'center',
+        backgroundColor: '#0A1F5C',
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        marginTop: 2,
     },
-    termsBox: {
-        width: '60%',
-    },
-    termsTitle: {
-        fontSize: 8,
+    grandTotalLabel: {
+        fontSize: 10,
         fontWeight: 'bold',
+        color: '#FFFFFF',
         textTransform: 'uppercase',
-        marginBottom: 3,
-        color: '#444',
     },
-    termsText: {
+    grandTotalValue: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+    },
+
+    // Signatory Row
+    signatoryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        borderTopWidth: 1,
+        borderTopColor: '#E2E8F0',
+        paddingTop: 10,
+        marginTop: 'auto',
+    },
+    jurisdictionNote: {
+        width: '55%',
         fontSize: 7.5,
-        color: '#555',
-        marginBottom: 2,
+        color: '#64748B',
         lineHeight: 1.3,
     },
-    signatoryBox: {
-        width: '35%',
+    signatoryBlock: {
+        width: '40%',
         alignItems: 'center',
-        justifyContent: 'flex-end',
-        paddingBottom: 5,
     },
-    signatoryCompany: {
-        fontSize: 9,
+    signCompany: {
+        fontSize: 8.5,
         fontWeight: 'bold',
+        color: '#0A1F5C',
         textTransform: 'uppercase',
-        marginBottom: 30,
+        marginBottom: 28,
         textAlign: 'center',
     },
-    signatoryLine: {
-        fontSize: 8,
+    signLine: {
         borderTopWidth: 1,
-        borderTopColor: '#444',
-        paddingTop: 3,
-        textAlign: 'center',
+        borderTopColor: '#475569',
         width: '80%',
-        color: '#333',
+        textAlign: 'center',
+        paddingTop: 3,
+        fontSize: 7.5,
+        color: '#475569',
     },
 
-    // Footer
+    // Page Footer
     footer: {
-        position: 'absolute',
-        bottom: 30,
-        left: 30,
-        right: 30,
+        marginTop: 10,
         borderTopWidth: 1,
-        borderTopColor: '#000',
-        paddingTop: 10,
+        borderTopColor: '#E2E8F0',
+        paddingTop: 6,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
-
-    // Payment Status
-    statusStamp: {
-        position: 'absolute',
-        top: 250,
-        right: 40,
-        transform: 'rotate(-15deg)',
-        borderWidth: 4,
-        borderRadius: 8,
-        padding: '10 20',
-        opacity: 0.6,
-        zIndex: 10,
-    },
-    statusPaid: {
-        borderColor: '#22c55e',
-        color: '#22c55e',
-    },
-    statusPending: {
-        borderColor: '#f97316',
-        color: '#f97316',
-    },
-    stampText: {
-        fontSize: 24,
-        fontWeight: 'bold', // changed from black
-        textTransform: 'uppercase',
-    },
-
-    // Restored/Updated Footer Styles
-    title: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        textTransform: 'uppercase',
-    },
-    footerText: {
-        fontSize: 9,
-        color: '#111',
-        textAlign: 'center',
-        marginBottom: 3,
-        // fontWeight medium removed
+    footerContact: {
+        fontSize: 7,
+        color: '#64748B',
     },
     footerWebsite: {
-        fontSize: 11,
-        fontWeight: 'bold', // Bold Black as requested
-        color: '#000',
-        textAlign: 'center',
-        marginTop: 5,
-        textDecoration: 'none',
-    },
-    oosSection: {
-        marginTop: 15,
-        padding: 8,
-        borderWidth: 1,
-        borderColor: '#fca5a5',
-        borderStyle: 'solid',
-        backgroundColor: '#fef2f2',
-    },
-    oosTitle: {
-        fontSize: 9,
+        fontSize: 7.5,
         fontWeight: 'bold',
-        color: '#b91c1c',
-        marginBottom: 4,
-        textTransform: 'uppercase',
+        color: '#0A1F5C',
     },
-    oosItemText: {
-        fontSize: 9,
-        color: '#374151',
-        marginBottom: 2,
-    }
 });
 
 interface InvoiceProps {
     order: any;
 }
 
-const InvoicePDF = ({ order }: InvoiceProps) => {
+export default function InvoicePDF({ order }: InvoiceProps) {
     const items = order.order_items || [];
-    
-    // Filter fulfilled items (available and quantity > 0)
+
+    // Filter fulfilled items
     const fulfilledItems = items.filter((item: any) => {
         const isAvailable = item.is_available !== false;
-        const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null 
-            ? item.fulfilled_quantity 
+        const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null
+            ? item.fulfilled_quantity
             : item.quantity;
-        return isAvailable && fulfilledQty > 0;
+        return isAvailable && Number(fulfilledQty) > 0;
     });
 
     // Compute out of stock items
@@ -318,10 +464,10 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
         const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
         const name = productDetails?.name || item.product_name || item.product_id || 'Item';
         const isAvailable = item.is_available !== false;
-        const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null 
-            ? item.fulfilled_quantity 
+        const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null
+            ? item.fulfilled_quantity
             : item.quantity;
-        
+
         if (!isAvailable) {
             outOfStockItems.push({
                 name,
@@ -337,193 +483,218 @@ const InvoicePDF = ({ order }: InvoiceProps) => {
         }
     });
 
+    const isPaid = (order.payment_status || '').toLowerCase() === 'paid';
+    const totalPaid = Number(order.total_amount || 0);
+    const couponDiscount = Number(order.discount_amount || 0);
+    const loyaltyDiscount = Number(order.loyalty_discount_amount || 0);
+    const loyaltyPoints = Number(order.loyalty_points_redeemed || 0);
+    const grossSubtotal = totalPaid + couponDiscount + loyaltyDiscount;
+
+    const formattedDate = order.created_at
+        ? new Date(order.created_at).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        })
+        : new Date().toLocaleDateString('en-IN');
+
+    const invoiceNumber = order.order_number
+        ? `KT-INV-${String(order.order_number).padStart(5, '0')}`
+        : `KT-INV-${(typeof order.id === 'string' ? order.id.slice(0, 8) : '0000').toUpperCase()}`;
+
+    const shippingAddressText = order.shipping_address && typeof order.shipping_address === 'object'
+        ? [
+            order.shipping_address.address || order.shipping_address.street || '',
+            order.shipping_address.city || '',
+            order.shipping_address.state || '',
+            order.shipping_address.pincode || order.shipping_address.zip || ''
+        ].filter(Boolean).join(', ')
+        : (typeof order.shipping_address === 'string' ? order.shipping_address : 'Standard Delivery');
+
     return (
-        <Document>
+        <Document title={`Tax-Invoice-${invoiceNumber}`} author="Karthik Traders">
             <Page size="A4" style={styles.page}>
 
-                {/* Header: Brand & Logo */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 10 }}>
-                    <Text style={{ fontSize: 24, fontWeight: 'bold', textTransform: 'uppercase', width: '70%' }}>KARTHIK TRADERS</Text>
-                    <View style={{ width: '30%', alignItems: 'flex-end' }}>
-                        <Image src="/images/logo-small.png" style={{ width: 60, height: 60 }} />
+                {/* 1. Header Bar: Brand Information + Invoice Metadata */}
+                <View style={styles.headerBar}>
+                    <View style={styles.brandInfo}>
+                        <Text style={styles.brandName}>KARTHIK TRADERS</Text>
+                        <Text style={styles.brandTagline}>Aquaculture Equipment & Aeration Specialists</Text>
+                        <Text style={styles.sellerAddress}>
+                            Shop No. 13, Opp. Madhura Sweets Line, Near MRF Tyres Line, Subedar Pet, Nellore, Andhra Pradesh - 524001
+                        </Text>
+                        <Text style={styles.sellerContact}>
+                            Customer Support: +91 86885 66023, +91 91776 57576 | Email: karthiktrader111@gmail.com
+                        </Text>
+                        <Text style={styles.sellerGst}>GSTIN: 37AFGPY0727H1Z6</Text>
+                    </View>
+
+                    <View style={styles.invoiceMetaBox}>
+                        <Text style={styles.taxInvoiceBadge}>TAX INVOICE</Text>
+                        <Text style={styles.originalText}>Original For Recipient</Text>
+                        <Text style={styles.invoiceNumber}>{invoiceNumber}</Text>
+                        <Text style={styles.invoiceDate}>Date: {formattedDate}</Text>
+                        <Text style={isPaid ? styles.statusBadgePaid : styles.statusBadgePending}>
+                            Payment: {isPaid ? 'PAID' : 'PENDING'}
+                        </Text>
                     </View>
                 </View>
 
-                {/* Body Top: Title & Seller Address */}
-                <View style={{ marginBottom: 20 }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, textTransform: 'uppercase' }}>INVOICE</Text>
+                {/* 2. Customer & Delivery Information Card */}
+                <View style={styles.customerSection}>
+                    <View style={styles.customerCol}>
+                        <Text style={styles.sectionHeading}>Billed To / Customer Details</Text>
+                        <Text style={styles.customerName}>{order.customer_name || 'Valued Aquaculture Farmer'}</Text>
+                        <Text style={styles.customerText}>Mobile: {order.customer_mobile || 'Not specified'}</Text>
+                        {order.customer_email && (
+                            <Text style={styles.customerText}>Email: {order.customer_email}</Text>
+                        )}
+                        <Text style={styles.customerText}>State: Andhra Pradesh (37)</Text>
+                    </View>
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        {/* Left: Seller Details */}
-                        <View style={{ width: '50%' }}>
-                            <Text style={styles.gstText}>GSTIN: 37AFGPY0727H1Z6</Text>
-                            <Text style={styles.addressLabel}>From:</Text>
-                            <Text style={styles.addressLine}>Shop no 13, Opp. Madhura Sweets Line,</Text>
-                            <Text style={styles.addressLine}>Near MRF Tyres Line, Subedar Pet,</Text>
-                            <Text style={styles.addressLine}>Nellore, Andhra Pradesh - 524001.</Text>
-                            <Text style={{ ...styles.addressLine, marginTop: 4, fontWeight: 'bold' }}>Mobile: +91 86885 66023</Text>
-
-                            <View style={{ marginTop: 12 }}>
-                                <Text style={{ fontSize: 10, fontWeight: 'bold' }}>
-                                    Payment Status: <Text style={{ color: order.payment_status === 'paid' ? '#22c55e' : '#f97316' }}>
-                                        {order.payment_status === 'paid' ? 'PAID' : 'PENDING'}
-                                    </Text>
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Right: Invoice Info */}
-                        <View style={{ width: '40%' }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                                <Text style={styles.label}>Invoice No:</Text>
-                                <Text style={styles.value}>INV-{order.order_number || (typeof order.id === 'string' ? order.id.slice(0, 8).toUpperCase() : '0000')}</Text>
-                            </View>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                                <Text style={styles.label}>Date:</Text>
-                                <Text style={styles.value}>{new Date(order.created_at || Date.now()).toLocaleDateString()}</Text>
-                            </View>
-                            <View style={{ marginTop: 10 }}>
-                                <Text style={styles.label}>Bill To:</Text>
-                                <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 2 }}>{order.customer_name || 'Valued Customer'}</Text>
-                                <Text style={{ fontSize: 9, marginBottom: 8, maxWidth: 150 }}>
-                                    {order.shipping_address && typeof order.shipping_address === 'object'
-                                        ? [
-                                            order.shipping_address.address || order.shipping_address.street || '',
-                                            order.shipping_address.city || '',
-                                            order.shipping_address.state || '',
-                                            order.shipping_address.pincode || order.shipping_address.zip || ''
-                                        ].filter(Boolean).join(', ')
-                                        : (typeof order.shipping_address === 'string' ? order.shipping_address : '')}
-                                </Text>
-                                <Text style={{ fontSize: 9 }}>{order.customer_mobile || ''}</Text>
-                            </View>
-                        </View>
+                    <View style={styles.customerCol}>
+                        <Text style={styles.sectionHeading}>Shipping / Delivery Address</Text>
+                        <Text style={styles.customerText}>{shippingAddressText}</Text>
+                        <Text style={[styles.customerText, { marginTop: 4 }]}>
+                            Dispatch From: Nellore Central Warehouse (AP)
+                        </Text>
+                        <Text style={styles.customerText}>Mode: Surface Logistics / Express Freight</Text>
                     </View>
                 </View>
 
-                {/* Table */}
+                {/* 3. Items Table */}
                 <View style={styles.table}>
-                    {/* Header */}
-                    <View style={[styles.tableRow, styles.tableHeader]}>
-                        <Text style={styles.cellSno}>#</Text>
-                        <Text style={styles.cellItems}>Item Description</Text>
-                        <Text style={styles.cellPrice}>Price</Text>
-                        <Text style={styles.cellQty}>Qty</Text>
-                        <Text style={styles.cellTotal}>Total</Text>
+                    <View style={styles.tableHeader}>
+                        <Text style={[styles.cellSno, styles.tableHeaderCell]}>#</Text>
+                        <Text style={[styles.cellDesc, styles.tableHeaderCell]}>Description of Goods</Text>
+                        <Text style={[styles.cellPrice, styles.tableHeaderCell]}>Rate (₹)</Text>
+                        <Text style={[styles.cellQty, styles.tableHeaderCell]}>Qty</Text>
+                        <Text style={[styles.cellAmount, styles.tableHeaderCell]}>Amount (₹)</Text>
                     </View>
 
-                    {/* Rows */}
-                    {fulfilledItems.map((item: any, idx: number) => {
-                        const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
-                        const price = Number(item.price_at_purchase || 0);
-                        const qty = Number(item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null ? item.fulfilled_quantity : item.quantity);
-                        const total = price * qty;
-                        return (
-                            <View key={idx} style={styles.tableRow}>
-                                <Text style={styles.cellSno}>{idx + 1}</Text>
-                                <Text style={styles.cellItems}>{productDetails?.name || item.product_name || item.product_id || 'Item'}</Text>
-                                <Text style={styles.cellPrice}>Rs. {price.toLocaleString()}</Text>
-                                <Text style={styles.cellQty}>{qty}</Text>
-                                <Text style={styles.cellTotal}>Rs. {total.toLocaleString()}</Text>
-                            </View>
-                        );
-                    })}
+                    {fulfilledItems.length > 0 ? (
+                        fulfilledItems.map((item: any, idx: number) => {
+                            const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
+                            const price = Number(item.price_at_purchase || 0);
+                            const qty = Number(item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null ? item.fulfilled_quantity : item.quantity);
+                            const rowAmount = price * qty;
+                            const isEven = idx % 2 === 1;
+
+                            return (
+                                <View key={idx} style={[styles.tableRow, isEven ? styles.tableRowEven : {}]}>
+                                    <Text style={styles.cellSno}>{idx + 1}</Text>
+                                    <Text style={styles.cellDesc}>
+                                        {productDetails?.name || item.product_name || item.product_id || 'Aquaculture Equipment'}
+                                    </Text>
+                                    <Text style={styles.cellPrice}>₹{price.toLocaleString('en-IN')}</Text>
+                                    <Text style={styles.cellQty}>{qty}</Text>
+                                    <Text style={styles.cellAmount}>₹{rowAmount.toLocaleString('en-IN')}</Text>
+                                </View>
+                            );
+                        })
+                    ) : (
+                        <View style={styles.tableRow}>
+                            <Text style={[styles.cellDesc, { width: '100%', textAlign: 'center', padding: 8 }]}>
+                                No items listed
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
-                {/* Out of Stock Section */}
+                {/* Out of Stock Alert (if applicable) */}
                 {order.include_oos_in_invoice && outOfStockItems.length > 0 && (
                     <View style={styles.oosSection}>
-                        <Text style={styles.oosTitle}>Out Of Stock Items</Text>
+                        <Text style={styles.oosTitle}>Out Of Stock / Unfulfilled Items Notice:</Text>
                         {outOfStockItems.map((oosItem, idx) => (
-                            <Text key={idx} style={styles.oosItemText}>
-                                • {oosItem.name} x{oosItem.qty} ({oosItem.reason})
+                            <Text key={idx} style={styles.oosItem}>
+                                • {oosItem.name} — Qty: {oosItem.qty} ({oosItem.reason})
                             </Text>
                         ))}
                     </View>
                 )}
 
-                {/* Totals Section */}
-                {(() => {
-                    const couponDiscount = Number(order.discount_amount || 0);
-                    const loyaltyDiscount = Number(order.loyalty_discount_amount || 0);
-                    const loyaltyPoints = Number(order.loyalty_points_redeemed || 0);
-                    const totalPaid = Number(order.total_amount || 0);
-                    const grossSubtotal = totalPaid + couponDiscount + loyaltyDiscount;
-
-                    return (
-                        <View style={styles.totalsSection}>
-                            <View style={styles.totalRow}>
-                                <Text style={styles.totalLabel}>Subtotal (MRP/Gross):</Text>
-                                <Text style={styles.totalValue}>Rs. {grossSubtotal.toLocaleString()}</Text>
-                            </View>
-
-                            {couponDiscount > 0 && (
-                                <View style={styles.totalRow}>
-                                    <Text style={[styles.totalLabel, { color: '#15803d' }]}>
-                                        Coupon Discount ({order.coupon_code || 'APPLIED'}):
-                                    </Text>
-                                    <Text style={[styles.totalValue, { color: '#15803d' }]}>
-                                        - Rs. {couponDiscount.toLocaleString()}
-                                    </Text>
-                                </View>
-                            )}
-
-                            {loyaltyDiscount > 0 && (
-                                <View style={styles.totalRow}>
-                                    <Text style={[styles.totalLabel, { color: '#15803d' }]}>
-                                        Loyalty Rewards ({loyaltyPoints} pts):
-                                    </Text>
-                                    <Text style={[styles.totalValue, { color: '#15803d' }]}>
-                                        - Rs. {loyaltyDiscount.toLocaleString()}
-                                    </Text>
-                                </View>
-                            )}
-
-                            <View style={styles.totalRow}>
-                                <Text style={styles.totalLabel}>Transport / Delivery:</Text>
-                                <Text style={[styles.totalValue, { color: '#15803d' }]}>Free Delivery</Text>
-                            </View>
-
-                            <View style={styles.totalRow}>
-                                <Text style={[styles.totalLabel, { color: '#555', fontSize: 8 }]}>GST Taxes:</Text>
-                                <Text style={[styles.totalValue, { color: '#555', fontSize: 8 }]}>Included in Prices</Text>
-                            </View>
-
-                            <View style={[styles.totalRow, styles.grandTotal]}>
-                                <Text style={styles.grandTotalLabel}>Net Amount Payable:</Text>
-                                <Text style={styles.grandTotalValue}>Rs. {totalPaid.toLocaleString()}</Text>
-                            </View>
+                {/* 4. Amount in Words + Financial Summary */}
+                <View style={styles.calcSection}>
+                    <View style={styles.wordsCol}>
+                        <View style={styles.wordsBox}>
+                            <Text style={styles.wordsLabel}>Amount Chargeable (in words):</Text>
+                            <Text style={styles.wordsText}>{numberToIndianWords(totalPaid)}</Text>
                         </View>
-                    );
-                })()}
 
-                {/* Terms and Signatory Block */}
-                <View style={styles.termsAndSignRow}>
-                    <View style={styles.termsBox}>
-                        <Text style={styles.termsTitle}>Terms & Conditions:</Text>
-                        <Text style={styles.termsText}>1. All prices are inclusive of applicable GST.</Text>
-                        <Text style={styles.termsText}>2. Warranty on motors & gearboxes is as per manufacturer terms.</Text>
-                        <Text style={styles.termsText}>3. Transit claims must be reported within 24 hours of delivery.</Text>
-                        <Text style={styles.termsText}>4. Subject to Nellore jurisdiction.</Text>
+                        <View style={styles.termsBox}>
+                            <Text style={styles.termsHeading}>Terms & Conditions:</Text>
+                            <Text style={styles.termsLine}>1. All prices are inclusive of applicable GST (CGST + SGST).</Text>
+                            <Text style={styles.termsLine}>2. Warranty on aerators, motors, and gearboxes is per manufacturer terms.</Text>
+                            <Text style={styles.termsLine}>3. Goods once delivered in good condition cannot be returned.</Text>
+                            <Text style={styles.termsLine}>4. Any transit damages must be notified within 24 hours of receipt.</Text>
+                            <Text style={styles.termsLine}>5. Subject to Nellore, Andhra Pradesh jurisdiction.</Text>
+                        </View>
                     </View>
 
-                    <View style={styles.signatoryBox}>
-                        <Text style={styles.signatoryCompany}>For KARTHIK TRADERS</Text>
-                        <Text style={styles.signatoryLine}>Authorized Signatory</Text>
+                    <View style={styles.totalsCol}>
+                        <View style={styles.totalRow}>
+                            <Text style={styles.totalLabel}>Subtotal (MRP/Gross):</Text>
+                            <Text style={styles.totalValue}>₹{grossSubtotal.toLocaleString('en-IN')}</Text>
+                        </View>
+
+                        {couponDiscount > 0 && (
+                            <View style={styles.totalRow}>
+                                <Text style={styles.discountLabel}>
+                                    Coupon Discount ({order.coupon_code || 'PROMO'}):
+                                </Text>
+                                <Text style={styles.discountValue}>− ₹{couponDiscount.toLocaleString('en-IN')}</Text>
+                            </View>
+                        )}
+
+                        {loyaltyDiscount > 0 && (
+                            <View style={styles.totalRow}>
+                                <Text style={styles.discountLabel}>
+                                    Loyalty Rewards ({loyaltyPoints.toLocaleString()} pts):
+                                </Text>
+                                <Text style={styles.discountValue}>− ₹{loyaltyDiscount.toLocaleString('en-IN')}</Text>
+                            </View>
+                        )}
+
+                        <View style={styles.totalRow}>
+                            <Text style={styles.totalLabel}>Freight & Delivery:</Text>
+                            <Text style={[styles.totalValue, { color: '#15803D' }]}>FREE Delivery</Text>
+                        </View>
+
+                        <View style={styles.totalRow}>
+                            <Text style={[styles.totalLabel, { fontSize: 7.5 }]}>GST (Taxes Included):</Text>
+                            <Text style={[styles.totalValue, { fontSize: 7.5, color: '#64748B' }]}>Included in Price</Text>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.grandTotalRow}>
+                            <Text style={styles.grandTotalLabel}>Net Amount Payable:</Text>
+                            <Text style={styles.grandTotalValue}>₹{totalPaid.toLocaleString('en-IN')}</Text>
+                        </View>
                     </View>
                 </View>
 
-                {/* Footer */}
+                {/* 5. Signatory & Jurisdiction */}
+                <View style={styles.signatoryRow}>
+                    <Text style={styles.jurisdictionNote}>
+                        This is a computer-generated tax invoice issued by Karthik Traders, Nellore. Valid without signature under IT Act 2000.
+                    </Text>
+
+                    <View style={styles.signatoryBlock}>
+                        <Text style={styles.signCompany}>For KARTHIK TRADERS</Text>
+                        <Text style={styles.signLine}>Authorized Signatory</Text>
+                    </View>
+                </View>
+
+                {/* 6. Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.title}>THANK YOU!</Text>
-                    <Text style={styles.footerText}>For any questions concerning this invoice, please contact:</Text>
-                    <Text style={styles.footerText}>Karthik Traders | +91 86885 66023 | karthiktrader111@gmail.com</Text>
+                    <Text style={styles.footerContact}>
+                        Head Office: Nellore, AP | Support: +91 86885 66023 | GSTIN: 37AFGPY0727H1Z6
+                    </Text>
                     <Text style={styles.footerWebsite}>www.karthiktraders.in</Text>
                 </View>
 
             </Page>
         </Document>
     );
-};
-
-export default InvoicePDF;
+}

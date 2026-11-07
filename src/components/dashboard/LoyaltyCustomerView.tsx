@@ -134,9 +134,10 @@ export default function LoyaltyCustomerView({
                             <ArrowPathIcon className="w-4 h-4" />
                             <span>Refresh</span>
                         </button>
-                        <div className="text-right text-xs text-amber-100">
+                        <div className="text-right text-xs text-amber-100 flex flex-col gap-0.5">
                             <div>Lifetime Earned: <strong className="text-white">{lifetimeEarned} pts</strong></div>
                             <div>Total Redeemed: <strong className="text-white">{lifetimeRedeemed} pts</strong></div>
+                            <div>Total Saved: <strong className="text-white font-extrabold text-sm">₹{((lifetimeRedeemed * paisePerPoint) / 100).toLocaleString()}</strong></div>
                         </div>
                     </div>
                 </div>

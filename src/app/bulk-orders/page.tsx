@@ -491,7 +491,7 @@ export default function CheckoutPage() {
               </div>
               {totalSavings > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-[#5B6880]">Factory Discount</span>
+                  <span className="text-[#5B6880]">Discount</span>
                   <span className="font-extrabold text-[#0B7A4B]">− {formatPrice(totalSavings)}</span>
                 </div>
               )}

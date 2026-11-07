@@ -24,14 +24,12 @@ export default function LoyaltyRedemptionControl({
     const [walletData, setWalletData] = useState<any>(null);
     const [previewData, setPreviewData] = useState<any>(null);
     const [isRedeeming, setIsRedeeming] = useState(appliedPoints > 0);
-    const [pointsInput, setPointsInput] = useState<number>(appliedPoints || 0);
     const [errorMsg, setErrorMsg] = useState('');
 
     // Sync if appliedPoints changes from outside
     useEffect(() => {
         if (appliedPoints > 0 && !isRedeeming) {
             setIsRedeeming(true);
-            setPointsInput(appliedPoints);
         }
     }, [appliedPoints]);
 
@@ -77,7 +75,7 @@ export default function LoyaltyRedemptionControl({
                     },
                     body: JSON.stringify({
                         items,
-                        pointsRequested: isRedeeming ? pointsInput : null,
+                        pointsRequested: isRedeeming ? 999999 : null,
                     }),
                 });
 
@@ -85,8 +83,7 @@ export default function LoyaltyRedemptionControl({
                 if (res.ok && data.success) {
                     setPreviewData(data);
                     if (isRedeeming) {
-                        const maxPts = data.max_redeemable_points || 0;
-                        const pts = Math.min(pointsInput || maxPts, maxPts);
+                        const pts = data.max_redeemable_points || 0;
                         const discount = Math.round(pts * (data.paise_per_point || 25)) / 100;
                         onApplyPoints(pts, discount);
                     }
@@ -133,23 +130,14 @@ export default function LoyaltyRedemptionControl({
 
     const handleStartRedeem = () => {
         setIsRedeeming(true);
-        const initialPts = maxRedeemablePoints;
-        setPointsInput(initialPts);
-        const discount = Math.round(initialPts * paisePerPoint) / 100;
-        onApplyPoints(initialPts, discount);
+        const pts = maxRedeemablePoints;
+        const discount = Math.round(pts * paisePerPoint) / 100;
+        onApplyPoints(pts, discount);
     };
 
     const handleRemoveRedeem = () => {
         setIsRedeeming(false);
-        setPointsInput(0);
         onApplyPoints(0, 0);
-    };
-
-    const handlePointsChange = (pts: number) => {
-        const clamped = Math.max(0, Math.min(pts, maxRedeemablePoints));
-        setPointsInput(clamped);
-        const discount = Math.round(clamped * paisePerPoint) / 100;
-        onApplyPoints(clamped, discount);
     };
 
     return (
@@ -177,8 +165,7 @@ export default function LoyaltyRedemptionControl({
                         onClick={handleStartRedeem}
                         className="h-8 px-3.5 rounded-full bg-[#0B7A4B] hover:bg-[#08633D] text-white font-extrabold text-xs flex items-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer shrink-0"
                     >
-                        <span>Redeem</span>
-                        <span className="text-[10px] font-mono">({maxRedeemablePoints} pts)</span>
+                        <span>Redeem {maxRedeemablePoints} pts</span>
                     </button>
                 )}
             </div>
@@ -203,13 +190,13 @@ export default function LoyaltyRedemptionControl({
                 </div>
             )}
 
-            {/* Eligible and Active: Structured Redemption Box */}
+            {/* Eligible and Active: Points applied automatically with configuration conditions */}
             {isEligible && isRedeeming && (
-                <div className="p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-300 flex flex-col gap-3">
+                <div className="p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-300 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between text-xs">
                         <span className="font-extrabold text-emerald-950 flex items-center gap-1.5">
-                            <CheckCircleIcon className="w-4 h-4 text-emerald-600 shrink-0" />
-                            <span>Points Applied</span>
+                            <CheckCircleIcon className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                            <span>{maxRedeemablePoints.toLocaleString()} Points Applied</span>
                         </span>
                         <button
                             type="button"
@@ -220,41 +207,16 @@ export default function LoyaltyRedemptionControl({
                         </button>
                     </div>
 
-                    {/* Stepper / Input and Max action */}
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center bg-white border border-emerald-300 rounded-xl px-2 h-9 flex-1 min-w-0">
-                            <input
-                                type="number"
-                                min={0}
-                                max={maxRedeemablePoints}
-                                value={pointsInput}
-                                onChange={(e) => handlePointsChange(parseInt(e.target.value || '0', 10))}
-                                className="w-full text-center font-mono font-bold text-xs bg-transparent outline-none text-[#0B1A33]"
-                            />
-                            <span className="text-[11px] font-bold text-emerald-800 px-1 select-none">
-                                pts
-                            </span>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => handlePointsChange(maxRedeemablePoints)}
-                            className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors cursor-pointer shrink-0 shadow-2xs"
-                        >
-                            Max
-                        </button>
-                    </div>
-
                     {/* Summary row */}
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-200">
-                        <span className="text-emerald-900 font-medium">Discount Applied:</span>
+                        <span className="text-emerald-900 font-medium">Applied Points Discount:</span>
                         <span className="font-extrabold font-mono text-emerald-800 text-sm">
-                            − {formatPrice(appliedDiscount)}
+                            − {formatPrice(appliedDiscount || Math.round(maxRedeemablePoints * paisePerPoint) / 100)}
                         </span>
                     </div>
 
                     <div className="text-[10px] text-emerald-800/80 leading-normal">
-                        Redeeming {pointsInput} of {maxRedeemablePoints} max eligible points (1 pt = ₹{(paisePerPoint / 100).toFixed(2)} discount).
+                        Redeeming {maxRedeemablePoints.toLocaleString()} points automatically based on configured cart conditions (1 pt = ₹{(paisePerPoint / 100).toFixed(2)} discount).
                     </div>
                 </div>
             )}
@@ -263,7 +225,7 @@ export default function LoyaltyRedemptionControl({
             {isEligible && !isRedeeming && (
                 <div className="text-xs text-[#5B6880] flex items-center justify-between pt-1 border-t border-slate-100">
                     <span>
-                        Save up to <strong className="text-emerald-700 font-mono">₹{Math.round(maxRedeemablePoints * paisePerPoint / 100).toLocaleString()}</strong> with points
+                        Save <strong className="text-emerald-700 font-mono">₹{Math.round(maxRedeemablePoints * paisePerPoint / 100).toLocaleString()}</strong> with points
                     </span>
                     <button
                         type="button"

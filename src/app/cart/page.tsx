@@ -281,7 +281,7 @@ export default function CartPage() {
                 </div>
                 {totalSavings > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-[#3D4A63]">Factory Discount</span>
+                    <span className="text-[#3D4A63]">Discount</span>
                     <span className="font-extrabold text-[#0B7A4B]">− {formatPrice(totalSavings)}</span>
                   </div>
                 )}

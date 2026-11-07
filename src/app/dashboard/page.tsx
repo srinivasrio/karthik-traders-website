@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLoyalty } from '@/context/LoyaltyContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -40,6 +41,7 @@ interface Order {
 
 export default function DashboardPage() {
   const { user, profile, session, logout, loading } = useAuth();
+  const { wallet, points: loyaltyPoints, rupeeValue: loyaltyRupeeValue, refreshLoyalty } = useLoyalty();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -47,32 +49,6 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled' | 'loyalty'>('all');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
-  const [loyaltyData, setLoyaltyData] = useState<any>(null);
-  const [loadingLoyalty, setLoadingLoyalty] = useState(false);
-
-  const fetchLoyalty = async () => {
-    if (!session?.access_token) return;
-    setLoadingLoyalty(true);
-    try {
-      const res = await fetch('/api/loyalty/summary', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setLoyaltyData(data);
-      }
-    } catch (err) {
-      console.warn('Error fetching loyalty data:', err);
-    } finally {
-      setLoadingLoyalty(false);
-    }
-  };
-
-  useEffect(() => {
-    if (session?.access_token) {
-      fetchLoyalty();
-    }
-  }, [session?.access_token]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -187,8 +163,15 @@ export default function DashboardPage() {
   }, [orders, activeTab]);
 
   const totalSaved = useMemo(() => {
-    return orders.reduce((sum, o) => sum + (o.discount_amount || 0), 0);
-  }, [orders]);
+    const orderSavings = orders.reduce(
+      (sum, o) => sum + Number(o.discount_amount || 0) + Number(o.loyalty_discount_amount || 0),
+      0
+    );
+    const paisePerPt = Number(wallet?.settings?.paise_per_point || 100);
+    const lifetimeRedeemedPts = Number(wallet?.lifetime_redeemed_points || 0);
+    const lifetimePointsRupees = Math.round((lifetimeRedeemedPts * paisePerPt) / 100);
+    return Math.max(orderSavings, lifetimePointsRupees, orderSavings + (orderSavings === 0 ? lifetimePointsRupees : 0));
+  }, [orders, wallet]);
 
   const getStatusColor = (status: string) => {
     const s = (status || '').toLowerCase();
@@ -293,8 +276,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Loyalty Wallet Summary Card */}
-            {loyaltyData?.settings?.is_enabled && (
+            {/* Loyalty Wallet Summary Card - Loads instantly from cached context */}
+            {wallet && (wallet.settings?.is_enabled ?? true) && (
               <div className="rounded-[24px] bg-linear-to-br from-amber-500 via-yellow-500 to-amber-600 text-white p-5 shadow-sm flex flex-col gap-3 relative overflow-hidden">
                 <div className="absolute top-0 right-0 translate-x-4 -translate-y-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
                 <div className="flex items-center justify-between">
@@ -310,21 +293,21 @@ export default function DashboardPage() {
                 <div className="flex items-baseline justify-between">
                   <div>
                     <span className="text-3xl font-extrabold font-poppins tracking-tight">
-                      {loyaltyData.points_balance || 0}
+                      {loyaltyPoints.toLocaleString()}
                     </span>
                     <span className="text-xs font-bold text-amber-100 ml-1">pts</span>
                   </div>
                   <div className="text-right">
                     <span className="text-xs font-bold text-amber-100">Worth</span>{' '}
                     <span className="text-lg font-extrabold font-poppins">
-                      ₹{(loyaltyData.rupee_value || 0).toLocaleString()}
+                      ₹{loyaltyRupeeValue.toLocaleString()}
                     </span>
                   </div>
                 </div>
 
-                {loyaltyData.expiring_soon_points > 0 && (
+                {(wallet?.expiring_soon_points || 0) > 0 && (
                   <div className="text-[11px] bg-black/20 px-2.5 py-1 rounded-lg text-amber-100">
-                    ⚠️ {loyaltyData.expiring_soon_points} pts expiring soon!
+                    ⚠️ {wallet.expiring_soon_points} pts expiring soon!
                   </div>
                 )}
 
@@ -353,21 +336,6 @@ export default function DashboardPage() {
                 </span>
               </div>
             </div>
-
-            {/* Help & Support Card */}
-            <a
-              href="https://wa.me/919177657576?text=Hi%20Karthik%20Traders,%20I%20have%20a%20question%20regarding%20my%20orders."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-4 rounded-2xl bg-[#E8F9FF] border border-[#C4D9FF] text-[#0B1A33] flex flex-col gap-1 hover:bg-[#DDF3FF] transition-colors"
-            >
-              <span className="text-xs font-extrabold text-[#4338CA] uppercase tracking-wider">
-                NEED SPARES OR HELP?
-              </span>
-              <span className="text-sm font-extrabold">
-                Chat with Technical Support (Hazarathaiah) ↗
-              </span>
-            </a>
           </aside>
 
           {/* Right Column: Order History List */}
@@ -408,9 +376,9 @@ export default function DashboardPage() {
             {/* Loyalty View or Orders Feed */}
             {activeTab === 'loyalty' ? (
               <LoyaltyCustomerView
-                loyaltyData={loyaltyData}
-                loading={loadingLoyalty}
-                onRefresh={fetchLoyalty}
+                loyaltyData={wallet}
+                loading={false}
+                onRefresh={refreshLoyalty}
               />
             ) : loadingOrders ? (
               <div className="p-12 text-center text-sm font-medium text-[#5B6880]">
