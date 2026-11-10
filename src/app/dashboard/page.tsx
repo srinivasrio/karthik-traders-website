@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import LoyaltyCustomerView from '@/components/dashboard/LoyaltyCustomerView';
+import ReferralDashboardView from '@/components/referral/ReferralDashboardView';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 
 interface OrderItem {
@@ -46,7 +47,7 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled' | 'loyalty'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled' | 'loyalty' | 'referral'>('all');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
 
@@ -321,6 +322,29 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {/* Refer & Earn Banner Card */}
+            <div className="rounded-[24px] bg-linear-to-br from-indigo-600 via-blue-600 to-sky-600 text-white p-5 shadow-sm flex flex-col gap-3 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-100 flex items-center gap-1.5 font-poppins">
+                  <span>🎁</span>
+                  <span>Refer & Earn ₹500</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-white/20 px-2 py-0.5 rounded-full">
+                  Farmer Referral
+                </span>
+              </div>
+              <p className="text-xs text-sky-100 leading-relaxed">
+                Give farmers ₹500 off their first order. You earn 1,000 Loyalty Points (₹500 value) when delivered!
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('referral')}
+                className="w-full h-8 rounded-xl bg-white text-blue-900 font-extrabold text-xs flex items-center justify-center hover:bg-sky-50 transition-colors shadow-2xs cursor-pointer"
+              >
+                Share on WhatsApp →
+              </button>
+            </div>
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 rounded-2xl bg-white border border-[#E3E8F0] shadow-2xs">
@@ -353,6 +377,7 @@ export default function DashboardPage() {
                   { id: 'completed', label: 'Delivered' },
                   { id: 'cancelled', label: 'Cancelled' },
                   { id: 'loyalty', label: 'Rewards & Points 🪙' },
+                  { id: 'referral', label: 'Refer & Earn 🎁' },
                 ] as const
               ).map((tab) => {
                 const active = activeTab === tab.id;
@@ -373,8 +398,10 @@ export default function DashboardPage() {
               })}
             </div>
 
-            {/* Loyalty View or Orders Feed */}
-            {activeTab === 'loyalty' ? (
+            {/* Referral / Loyalty View or Orders Feed */}
+            {activeTab === 'referral' ? (
+              <ReferralDashboardView onTabSwitch={(tab) => setActiveTab(tab as any)} />
+            ) : activeTab === 'loyalty' ? (
               <LoyaltyCustomerView
                 loyaltyData={wallet}
                 loading={false}

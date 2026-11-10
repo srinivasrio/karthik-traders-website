@@ -9,6 +9,8 @@ import { CartProvider } from "@/context/CartContext";
 
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import SmartImagePreloader from "@/components/ui/SmartImagePreloader";
+import ReferralTracker from "@/components/referral/ReferralTracker";
+import { Suspense } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -92,6 +94,9 @@ export default function RootLayout({
         <AuthProvider>
           <LoyaltyProvider>
             <CartProvider>
+              <Suspense fallback={null}>
+                <ReferralTracker />
+              </Suspense>
               <ScrollToTop />
               <SmartImagePreloader />
               <LayoutWrapper>

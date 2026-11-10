@@ -105,7 +105,31 @@ export async function POST(request: Request) {
         // Generate clean idempotency key for this order checkout
         const orderIdempotencyKey = `chk_${user.id}_${Date.now()}`;
 
-        // Create order directly (with customer_mobile and loyalty fields)
+        // Check if a referral code was applied
+        let referredBy: string | null = null;
+        let orderReferralCode: string | null = null;
+        let referralDiscountAmount = 0;
+
+        const candidateCode = ((body.referralCode || couponCode || '') as string).trim().toUpperCase();
+        if (candidateCode) {
+            try {
+                const { data: refProfile } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id, referral_code')
+                    .eq('referral_code', candidateCode)
+                    .maybeSingle();
+
+                if (refProfile && refProfile.id !== user.id) {
+                    referredBy = refProfile.id;
+                    orderReferralCode = refProfile.referral_code;
+                    referralDiscountAmount = Number(discountAmount) || 0;
+                }
+            } catch (refErr) {
+                console.warn('Referral check error during checkout:', refErr);
+            }
+        }
+
+        // Create order directly (with customer_mobile, loyalty, and referral fields)
         const orderPayload: any = {
             user_id: user.id,
             customer_mobile: normalizedMobile,
@@ -120,6 +144,10 @@ export async function POST(request: Request) {
             loyalty_points_redeemed: validatedLoyaltyPoints,
             loyalty_discount_amount: loyaltyDiscountRupees,
             loyalty_status: validatedLoyaltyPoints > 0 ? 'reserved' : 'none',
+            referral_code: orderReferralCode,
+            referred_by: referredBy,
+            referral_discount_amount: referralDiscountAmount,
+            referral_reward_status: referredBy ? 'pending' : 'none',
         };
 
         const { data: order, error: orderError } = await supabaseAdmin
@@ -131,6 +159,23 @@ export async function POST(request: Request) {
         if (orderError) {
             console.error('Order creation error:', orderError);
             return NextResponse.json({ error: orderError.message }, { status: 500 });
+        }
+
+        // Record referral ledger entry if referred
+        if (referredBy && order) {
+            try {
+                await supabaseAdmin.from('referrals').insert({
+                    referrer_id: referredBy,
+                    referred_id: user.id,
+                    order_id: order.id,
+                    referral_code: orderReferralCode,
+                    status: 'pending',
+                    points_awarded: 0,
+                    discount_given: referralDiscountAmount,
+                });
+            } catch (refInsertErr) {
+                console.warn('Could not record referral ledger entry:', refInsertErr);
+            }
         }
 
         // Reserve loyalty points atomically

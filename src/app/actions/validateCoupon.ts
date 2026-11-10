@@ -38,6 +38,45 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
         .single();
 
     if (error || !coupon) {
+        // Check if input is a valid Referral Code (e.g. KT-XXXX-YYYY)
+        try {
+            const { data: referrer } = await supabase
+                .from('profiles')
+                .select('id, full_name, referral_code')
+                .eq('referral_code', normalizeCode)
+                .maybeSingle();
+
+            if (referrer) {
+                // Fetch referral settings
+                const { data: settings } = await supabase
+                    .from('loyalty_settings')
+                    .select('referral_enabled, referral_discount_rupees, referral_min_order_rupees')
+                    .limit(1)
+                    .maybeSingle();
+
+                if (settings && !settings.referral_enabled) {
+                    return { isValid: false, error: 'Referral discount program is currently inactive.' };
+                }
+
+                const discountRupees = settings?.referral_discount_rupees ?? 500;
+
+                // Return storewide coupon matching all cart items
+                const allCartIdentifiers = cartItems.flatMap(i => [i.uuid, i.slug, i.shortId]).filter((s): s is string => !!s);
+                return {
+                    isValid: true,
+                    coupon: {
+                        id: `ref_${referrer.id}`,
+                        code: referrer.referral_code,
+                        discount_type: 'flat',
+                        discount_value: discountRupees,
+                        applicable_products: allCartIdentifiers,
+                    }
+                };
+            }
+        } catch (refCheckErr) {
+            console.warn('Referral coupon check notice:', refCheckErr);
+        }
+
         return { isValid: false, error: 'Invalid or expired coupon code.' };
     }
 
