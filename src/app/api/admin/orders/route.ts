@@ -157,7 +157,7 @@ export async function GET(request: Request) {
             .from('orders')
             .select(`
                 *,
-                profile:profiles(full_name, mobile),
+                profile:profiles!orders_user_id_fkey(full_name, mobile),
                 order_items(
                     quantity,
                     price_at_purchase,

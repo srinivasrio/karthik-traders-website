@@ -74,7 +74,7 @@ export default function OrderDetailPage() {
                 .from('orders')
                 .select(`
             *,
-            profile:profiles(*),
+            profile:profiles!orders_user_id_fkey(*),
             order_items(*)
         `)
                 .eq('id', id)
@@ -263,7 +263,7 @@ export default function OrderDetailPage() {
                     .from('orders')
                     .select(`
                         *,
-                        profile:profiles(*),
+                        profile:profiles!orders_user_id_fkey(*),
                         order_items(*)
                     `)
                     .eq('id', order.id)

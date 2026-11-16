@@ -114,7 +114,7 @@ export default function AdminOrdersPage() {
                 .from('orders')
                 .select(`
                     *,
-                    profile:profiles(full_name, mobile),
+                    profile:profiles!orders_user_id_fkey(full_name, mobile),
                     order_items(
                         product_id,
                         quantity,
