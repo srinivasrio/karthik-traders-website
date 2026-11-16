@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/data/products';
 import { CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/solid';
 
@@ -33,18 +34,31 @@ export default function LoyaltyRedemptionControl({
         }
     }, [appliedPoints]);
 
+    const getAuthToken = async () => {
+        let token = session?.access_token;
+        if (!token) {
+            try {
+                const { data } = await supabase.auth.getSession();
+                token = data?.session?.access_token;
+            } catch (e) {}
+        }
+        return token;
+    };
+
     const fetchWallet = async () => {
-        if (!session?.access_token) return;
+        const token = await getAuthToken();
+        if (!token) return;
         try {
             const res = await fetch('/api/loyalty/summary', {
                 headers: {
-                    Authorization: `Bearer ${session.access_token}`,
+                    Authorization: `Bearer ${token}`,
                 },
             });
             if (res.ok) {
                 const data = await res.json();
                 setWalletData(data);
-                if ((data.points_balance || 0) === 0) {
+                const minPoints = data.settings?.min_points_to_redeem || 50;
+                if ((data.points_balance || 0) < minPoints) {
                     setIsRedeeming(false);
                     onApplyPoints(0, 0);
                     try {
@@ -59,7 +73,8 @@ export default function LoyaltyRedemptionControl({
     };
 
     const runPreview = async () => {
-        if (!session?.access_token || !items.length) {
+        const token = await getAuthToken();
+        if (!token || !items.length) {
             setPreviewData(null);
             return;
         }
@@ -70,7 +85,7 @@ export default function LoyaltyRedemptionControl({
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session.access_token}`,
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     items,

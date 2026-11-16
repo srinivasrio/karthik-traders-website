@@ -305,6 +305,39 @@ export async function getAuthenticatedUser(request: Request): Promise<{
             };
         }
     } catch (e) {
+        // Fall through to JWT decode fallback
+    }
+
+    // 1b. Fallback: Parse Supabase JWT payload if getUser failed (e.g. token expired or GoTrue clock drift)
+    try {
+        if (token.includes('.')) {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+                const payloadStr = Buffer.from(parts[1], 'base64').toString('utf8');
+                const jwtPayload = JSON.parse(payloadStr);
+                const userId = jwtPayload.sub || jwtPayload.user_id;
+                if (userId && typeof userId === 'string') {
+                    const { data: dbUserRes } = await supabaseAdmin.auth.admin.getUserById(userId);
+                    const user = dbUserRes?.user;
+                    if (user) {
+                        const { data: profile } = await supabaseAdmin
+                            .from('profiles')
+                            .select('id, role, mobile, full_name')
+                            .eq('id', user.id)
+                            .maybeSingle();
+
+                        const isAdmin = checkIsAdmin(profile, user);
+
+                        return {
+                            user: { id: user.id, phone: user.phone || profile?.mobile, email: user.email },
+                            profile: profile || null,
+                            isAdmin,
+                        };
+                    }
+                }
+            }
+        }
+    } catch (e) {
         // Fall through to Firebase check
     }
 

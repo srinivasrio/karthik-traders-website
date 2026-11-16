@@ -146,11 +146,19 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      let token = session?.access_token;
+      if (!token) {
+        try {
+          const { data } = await supabase.auth.getSession();
+          token = data?.session?.access_token;
+        } catch (e) {}
+      }
+
       const authHeaders: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      if (session?.access_token) {
-        authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+      if (token) {
+        authHeaders['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await fetch('/api/checkout', {

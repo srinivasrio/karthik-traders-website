@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { auth as firebaseAuth } from '@/lib/firebase';
 import { formatPrice } from '@/data/products';
 import {
     SparklesIcon,
@@ -95,53 +97,75 @@ export default function AdminLoyaltyPage() {
         setTimeout(() => setNotification(null), 4000);
     };
 
-    const getAuthHeaders = () => ({
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session?.access_token || ''}`,
-    });
+    const getAuthHeaders = async (): Promise<Record<string, string>> => {
+        let token = session?.access_token;
+        if (!token) {
+            try {
+                const { data } = await supabase.auth.getSession();
+                token = data?.session?.access_token;
+            } catch (e) {
+                // Ignore
+            }
+        }
+        if (!token) {
+            try {
+                const fbUser = firebaseAuth.currentUser;
+                if (fbUser) {
+                    token = await fbUser.getIdToken();
+                }
+            } catch (e) {
+                // Ignore
+            }
+        }
+        return {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
+    };
 
     // Load initial data
     const fetchAllData = async () => {
-        if (!session?.access_token) return;
         setLoading(true);
         try {
+            const headers = await getAuthHeaders();
+
             // 1. Fetch settings
-            const settingsRes = await fetch('/api/admin/loyalty/settings', { headers: getAuthHeaders() });
+            const settingsRes = await fetch('/api/admin/loyalty/settings', { headers });
             if (settingsRes.ok) {
                 const sData = await settingsRes.json();
                 if (sData.settings) setSettings(sData.settings);
             }
 
             // 2. Fetch referrals
-            const refRes = await fetch('/api/admin/loyalty/referrals', { headers: getAuthHeaders() });
+            const refRes = await fetch('/api/admin/loyalty/referrals', { headers });
             if (refRes.ok) {
                 const rData = await refRes.json();
                 setReferrals(rData.referrals || []);
             }
 
             // 3. Fetch wallets
-            const walletsRes = await fetch('/api/admin/loyalty/wallets?limit=50', { headers: getAuthHeaders() });
+            const walletsRes = await fetch('/api/admin/loyalty/wallets?limit=50', { headers });
             if (walletsRes.ok) {
                 const wData = await walletsRes.json();
                 setWallets(wData.wallets || []);
             }
 
-            // 3. Fetch promotions
-            const promoRes = await fetch('/api/admin/loyalty/promotions', { headers: getAuthHeaders() });
+            // 4. Fetch promotions
+            const promoRes = await fetch('/api/admin/loyalty/promotions', { headers });
             if (promoRes.ok) {
                 const pData = await promoRes.json();
                 setPromotions(pData.promotions || []);
             }
 
-            // 4. Fetch transactions
-            const txRes = await fetch('/api/admin/loyalty/transactions?limit=50', { headers: getAuthHeaders() });
+            // 5. Fetch transactions
+            const txRes = await fetch('/api/admin/loyalty/transactions?limit=50', { headers });
             if (txRes.ok) {
                 const tData = await txRes.json();
                 setTransactions(tData.transactions || []);
             }
 
-            // 5. Fetch audit logs
-            const auditRes = await fetch('/api/admin/loyalty/audit?limit=50', { headers: getAuthHeaders() });
+            // 6. Fetch audit logs
+            const auditRes = await fetch('/api/admin/loyalty/audit?limit=50', { headers });
             if (auditRes.ok) {
                 const aData = await auditRes.json();
                 setAuditLogs(aData.auditLogs || []);
@@ -155,9 +179,7 @@ export default function AdminLoyaltyPage() {
     };
 
     useEffect(() => {
-        if (session?.access_token) {
-            fetchAllData();
-        }
+        fetchAllData();
     }, [session?.access_token]);
 
     // Handle Settings Update
@@ -166,9 +188,10 @@ export default function AdminLoyaltyPage() {
 
         setSavingSettings(true);
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/loyalty/settings', {
                 method: 'PUT',
-                headers: getAuthHeaders(),
+                headers,
                 body: JSON.stringify({
                     settings,
                 }),
@@ -206,9 +229,10 @@ export default function AdminLoyaltyPage() {
         const signedPoints = adjustType === 'credit' ? pts : -pts;
         setAdjusting(true);
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/loyalty/adjust', {
                 method: 'POST',
-                headers: getAuthHeaders(),
+                headers,
                 body: JSON.stringify({
                     userId: selectedCustomer.userId,
                     points: signedPoints,
@@ -241,9 +265,10 @@ export default function AdminLoyaltyPage() {
     const handleCreatePromotion = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/loyalty/promotions', {
                 method: 'POST',
-                headers: getAuthHeaders(),
+                headers,
                 body: JSON.stringify({
                     ...newPromo,
                     min_cart_subtotal_paise: Math.round(Number(newPromo.min_cart_subtotal_rupees) * 100),
@@ -278,9 +303,10 @@ export default function AdminLoyaltyPage() {
     const handleDeletePromotion = async (id: string) => {
         if (!confirm('Are you sure you want to delete this promotional campaign?')) return;
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch(`/api/admin/loyalty/promotions?id=${id}`, {
                 method: 'DELETE',
-                headers: getAuthHeaders(),
+                headers,
             });
             if (res.ok) {
                 showNotice('Campaign deleted');
@@ -299,9 +325,10 @@ export default function AdminLoyaltyPage() {
         if (!confirm('Run the point expiration process now? All points older than the configured validity duration will be expired.')) return;
         setExpiring(true);
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/loyalty/expire', {
                 method: 'POST',
-                headers: getAuthHeaders(),
+                headers,
             });
             const data = await res.json();
             if (res.ok && data.success) {
@@ -470,8 +497,14 @@ export default function AdminLoyaltyPage() {
                 <div className="flex flex-col gap-6">
                     {/* KPI Cards Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col gap-2">
-                            <span className="text-xs font-bold text-slate-500">Active Customer Wallets</span>
+                        <div 
+                            onClick={() => setActiveTab('wallets')}
+                            className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col gap-2 hover:border-indigo-300 hover:shadow-xs transition-all cursor-pointer group"
+                        >
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-500">Active Customer Wallets</span>
+                                <span className="text-xs font-extrabold text-indigo-600 group-hover:underline">View All →</span>
+                            </div>
                             <span className="text-3xl font-extrabold text-slate-900 font-poppins">
                                 {wallets.length}
                             </span>
@@ -579,6 +612,87 @@ export default function AdminLoyaltyPage() {
                                 </span>
                                 <span className="text-[10px] text-slate-400">Excludes freight</span>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Customer Wallets Preview on Overview Tab */}
+                    <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-2xs">
+                        <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-base font-extrabold text-slate-900 font-poppins">
+                                    Customer Wallets & Rewards Balance
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    Live customer loyalty points balances and quick manual point adjustment.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('wallets')}
+                                className="text-xs font-extrabold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                            >
+                                View All ({wallets.length}) →
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead>
+                                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-extrabold uppercase tracking-wider text-[10px]">
+                                        <th className="py-3 px-4">Customer</th>
+                                        <th className="py-3 px-4">Mobile</th>
+                                        <th className="py-3 px-4 text-right">Available Points</th>
+                                        <th className="py-3 px-4 text-right">Rupee Value</th>
+                                        <th className="py-3 px-4 text-right">Lifetime Earned</th>
+                                        <th className="py-3 px-4 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {wallets.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="py-8 text-center text-slate-400">
+                                                {loading ? 'Loading customer wallets...' : 'No customer wallets registered yet.'}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        wallets.slice(0, 10).map((customer) => (
+                                            <tr key={customer.userId} className="hover:bg-slate-50/80 transition-colors">
+                                                <td className="py-3 px-4">
+                                                    <span className="font-extrabold text-slate-900 block font-poppins">
+                                                        {customer.fullName}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-mono">
+                                                        ID: {customer.userId.slice(0, 8)}...
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4 font-mono font-medium text-slate-700">
+                                                    {customer.mobile}
+                                                </td>
+                                                <td className="py-3 px-4 text-right font-extrabold font-mono text-sm text-amber-600">
+                                                    {customer.pointsBalance.toLocaleString()} pts
+                                                </td>
+                                                <td className="py-3 px-4 text-right font-bold font-mono text-slate-800">
+                                                    {formatPrice((customer.pointsBalance * (settings.paise_per_point || 25)) / 100)}
+                                                </td>
+                                                <td className="py-3 px-4 text-right font-mono text-slate-600">
+                                                    +{customer.lifetimeEarned.toLocaleString()}
+                                                </td>
+                                                <td className="py-3 px-4 text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedCustomer(customer);
+                                                            setAdjustModalOpen(true);
+                                                        }}
+                                                        className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[11px] transition-colors cursor-pointer"
+                                                    >
+                                                        Adjust Points
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

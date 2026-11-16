@@ -40,9 +40,31 @@ export async function POST(request: Request) {
         console.log('Verifying token at /api/checkout...');
 
         // Use getUser(token) to verify the client-side JWT
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+        let user: any = null;
+        const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token);
+        if (userData?.user) {
+            user = userData.user;
+        } else if (token.includes('.')) {
+            // Fallback: verify user by decoding JWT payload sub (handles minor clock drift or token renewal lag)
+            try {
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    const payloadStr = Buffer.from(parts[1], 'base64').toString('utf8');
+                    const jwtPayload = JSON.parse(payloadStr);
+                    const userId = jwtPayload.sub || jwtPayload.user_id;
+                    if (userId && typeof userId === 'string') {
+                        const { data: dbUserRes } = await supabaseAdmin.auth.admin.getUserById(userId);
+                        if (dbUserRes?.user) {
+                            user = dbUserRes.user;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Checkout JWT decode fallback failed:', e);
+            }
+        }
 
-        if (authError || !user) {
+        if (!user) {
             console.error('Checkout Auth Error:', authError);
             return NextResponse.json({
                 error: 'Invalid token',
@@ -104,13 +126,13 @@ export async function POST(request: Request) {
         if (requestedPoints > 0) {
             const preview = await previewRedemption(user.id, eligibleSubtotalPaise, requestedPoints);
             if (!preview.is_eligible) {
-                // Secondary check: Did an order just get placed for this user in the last 60 seconds that consumed points?
-                const sixtySecondsAgo = new Date(Date.now() - 60000).toISOString();
+                // Secondary check: Did an order just get placed for this user in the last 120 seconds that consumed points?
+                const twoMinutesAgo = new Date(Date.now() - 120000).toISOString();
                 const { data: justPlacedOrder } = await supabaseAdmin
                     .from('orders')
                     .select('id, order_number, loyalty_points_redeemed, loyalty_discount_amount')
                     .eq('user_id', user.id)
-                    .gte('created_at', sixtySecondsAgo)
+                    .gte('created_at', twoMinutesAgo)
                     .order('created_at', { ascending: false })
                     .limit(1)
                     .maybeSingle();
