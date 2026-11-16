@@ -1,19 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     TruckIcon,
     CheckCircleIcon,
     InformationCircleIcon,
     CameraIcon,
-    PhoneIcon,
-    ShieldCheckIcon,
     MapPinIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline';
 import {
-    STATE_DELIVERY_RULES,
+    DEFAULT_RULES,
     resolveDeliveryRule,
+    resolveDeliveryByPincode,
     StateDeliveryRule,
+    PincodeDeliveryLookupResult,
 } from '@/lib/delivery-config';
 
 interface ProductDeliveryEstimatorProps {
@@ -25,27 +26,47 @@ export default function ProductDeliveryEstimator({
     compact = false,
     className = '',
 }: ProductDeliveryEstimatorProps) {
+    const [rules, setRules] = useState<StateDeliveryRule[]>(DEFAULT_RULES);
     const [selectedState, setSelectedState] = useState<string>('Andhra Pradesh');
     const [pincodeInput, setPincodeInput] = useState<string>('');
-    const [activeRule, setActiveRule] = useState<StateDeliveryRule>(
-        STATE_DELIVERY_RULES['andhra pradesh']
-    );
+    const [pincodeResult, setPincodeResult] = useState<PincodeDeliveryLookupResult | null>(null);
+
+    // Fetch dynamic rules configured by admin
+    useEffect(() => {
+        fetch('/api/delivery/config')
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success && data.rules && data.rules.length > 0) {
+                    setRules(data.rules);
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    const activeRule = resolveDeliveryRule(pincodeResult ? pincodeResult.cleanPincode : selectedState, rules);
 
     const handleSelectState = (stateName: string) => {
         setSelectedState(stateName);
         setPincodeInput('');
-        setActiveRule(resolveDeliveryRule(stateName));
+        setPincodeResult(null);
     };
 
     const handlePincodeChange = (val: string) => {
         const digits = val.replace(/\D/g, '').slice(0, 6);
         setPincodeInput(digits);
-        if (digits.length >= 3) {
-            const rule = resolveDeliveryRule(digits);
-            setActiveRule(rule);
-            setSelectedState(rule.stateName);
+
+        if (digits.length >= 2) {
+            const res = resolveDeliveryByPincode(digits, rules);
+            setPincodeResult(res);
+            setSelectedState(res.stateName);
+        } else {
+            setPincodeResult(null);
         }
     };
+
+    const quickStates = rules
+        .filter((r) => r.isActive && r.id !== 'other_states')
+        .slice(0, 4);
 
     return (
         <div
@@ -57,7 +78,7 @@ export default function ProductDeliveryEstimator({
                     <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800">
                         <TruckIcon className="w-4 h-4" />
                     </span>
-                    <span>Farm Delivery & Dispatch Timelines</span>
+                    <span>Farm Delivery & Shipping Fee Estimator</span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
                     <MapPinIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -67,29 +88,26 @@ export default function ProductDeliveryEstimator({
 
             {/* Quick State Selector Buttons */}
             <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-                {[
-                    { name: 'Andhra Pradesh', label: 'Andhra Pradesh', free: true },
-                    { name: 'Telangana', label: 'Telangana', free: false },
-                    { name: 'Tamil Nadu', label: 'Tamil Nadu', free: false },
-                    { name: 'West Bengal', label: 'West Bengal', free: false },
-                ].map((st) => {
-                    const isSelected = selectedState === st.name;
+                {quickStates.map((st) => {
+                    const isSelected = selectedState === st.stateName;
                     return (
                         <button
-                            key={st.name}
+                            key={st.id}
                             type="button"
-                            onClick={() => handleSelectState(st.name)}
+                            onClick={() => handleSelectState(st.stateName)}
                             className={`px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
                                 isSelected
                                     ? 'bg-[#0B1A33] border-[#0B1A33] text-white shadow-xs'
                                     : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                             }`}
                         >
-                            <span>{st.label}</span>
-                            {st.free && (
-                                <span className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold ${
-                                    isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
-                                }`}>
+                            <span>{st.stateName}</span>
+                            {st.isFreeDelivery && (
+                                <span
+                                    className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold ${
+                                        isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
+                                    }`}
+                                >
                                     FREE
                                 </span>
                             )}
@@ -98,65 +116,75 @@ export default function ProductDeliveryEstimator({
                 })}
             </div>
 
-            {/* Pincode Search Bar */}
-            <div className="flex items-center h-10 px-3 rounded-xl border border-slate-300 bg-slate-50/70 focus-within:border-indigo-600 focus-within:bg-white transition-colors">
+            {/* Pincode Search Bar with dynamic detection */}
+            <div className="flex items-center h-10 px-3 rounded-xl border border-slate-300 bg-slate-50/70 focus-within:border-blue-600 focus-within:bg-white transition-colors">
                 <MapPinIcon className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
                 <input
                     type="text"
                     maxLength={6}
                     value={pincodeInput}
                     onChange={(e) => handlePincodeChange(e.target.value)}
-                    placeholder="Or enter 6-digit pond pincode (e.g. 524001)..."
+                    placeholder="Enter 6-digit Pincode to check shipping fee & timeline (e.g. 524001)..."
                     className="w-full text-xs font-mono font-medium text-slate-900 outline-none bg-transparent placeholder:font-sans placeholder:text-slate-400"
                 />
                 {pincodeInput && (
                     <button
                         type="button"
                         onClick={() => handlePincodeChange('')}
-                        className="text-xs text-slate-400 hover:text-slate-700 font-bold ml-1"
+                        className="text-xs text-slate-400 hover:text-slate-700 font-bold ml-1 cursor-pointer"
                     >
                         ✕
                     </button>
                 )}
             </div>
 
-            {/* Active Policy Status Card */}
+            {/* Dynamic Shipping Fee & Timeline Status Card */}
             <div
-                className={`p-3.5 rounded-xl border ${activeRule.badgeColor.border} ${activeRule.badgeColor.bg} flex flex-col gap-2`}
+                className={`p-3.5 rounded-xl border ${activeRule.badgeColor.border} ${activeRule.badgeColor.bg} flex flex-col gap-2.5 transition-all`}
             >
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <span
-                                className={`w-2 h-2 rounded-full ${activeRule.badgeColor.dot}`}
-                            />
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`w-2.5 h-2.5 rounded-full ${activeRule.badgeColor.dot} animate-pulse`} />
                             <span className="font-extrabold text-sm text-slate-900">
-                                {activeRule.stateName}
-                            </span>
-                            <span
-                                className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                                    activeRule.isFreeDelivery
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-slate-200 text-slate-800'
-                                }`}
-                            >
-                                {activeRule.isFreeDelivery ? 'Free Delivery' : 'Customer Arranged'}
+                                {pincodeResult ? `Pincode ${pincodeResult.cleanPincode} · ${activeRule.stateName}` : activeRule.stateName}
                             </span>
                         </div>
-                        <span className="text-xs font-extrabold text-slate-900 mt-1">
-                            Estimated Delivery: <strong className="text-emerald-700 font-poppins">{activeRule.timelineText}</strong>
+
+                        {/* Shipping Fee Indicator */}
+                        <div className="mt-1.5 flex items-center gap-2">
+                            <span className="text-xs text-slate-600 font-semibold">Shipping Fee:</span>
+                            <span
+                                className={`text-xs font-black px-2.5 py-0.5 rounded-md ${
+                                    activeRule.isFreeDelivery
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-blue-100 text-blue-900 border border-blue-200'
+                                }`}
+                            >
+                                {activeRule.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Timeline Pill */}
+                    <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                            Estimated Timeline
+                        </span>
+                        <span className="text-sm font-black text-emerald-800 font-poppins block mt-0.5">
+                            ⏱️ {activeRule.timelineText}
                         </span>
                     </div>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                <p className="text-xs text-slate-700 leading-relaxed font-medium pt-1 border-t border-slate-200/50">
                     {activeRule.isFreeDelivery ? (
                         <>
-                            🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in {activeRule.timelineText} provided directly by Karthik Traders across Andhra Pradesh.
+                            🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName}.
                         </>
                     ) : (
                         <>
-                            📦 Transport responsibility is by customer in {activeRule.timelineText}. Dispatched via regional logistics (To-Pay) or customer arranged vehicle.
+                            📦 Delivery in <strong>{activeRule.timelineText}</strong>. Transport is customer responsibility (dispatched via regional/interstate carrier To-Pay or customer arranged vehicle).
                         </>
                     )}
                 </p>
@@ -170,7 +198,7 @@ export default function ProductDeliveryEstimator({
                         <span>Live Vehicle Load Transparency</span>
                     </span>
                     <p className="leading-relaxed">
-                        After goods are loaded at our facility, you can view your <strong>Vehicle Number</strong>, <strong>Vehicle Type</strong>, <strong>Driver Phone</strong>, and a <strong>Photo of the loaded vehicle</strong> directly in your customer dashboard!
+                        After goods are loaded onto the vehicle at our Nellore facility, your <strong>Vehicle Number</strong>, <strong>Driver Phone</strong>, and <strong>Photo of the loaded vehicle</strong> appear automatically in your customer dashboard!
                     </p>
                 </div>
             )}

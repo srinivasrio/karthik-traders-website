@@ -8,6 +8,12 @@ import { useCart } from '@/context/CartContext';
 import { COUPONS_STORE } from '@/data/kt-ui';
 import { validateCoupon } from '@/app/actions/validateCoupon';
 import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionControl';
+import {
+  resolveDeliveryByPincode,
+  DEFAULT_RULES,
+  StateDeliveryRule,
+  PincodeDeliveryLookupResult,
+} from '@/lib/delivery-config';
 
 export default function CartPage() {
   const { session } = useAuth();
@@ -28,6 +34,32 @@ export default function CartPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState<number>(0);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState<number>(0);
+
+  // Delivery & shipping fee by pincode lookup
+  const [deliveryRules, setDeliveryRules] = useState<StateDeliveryRule[]>(DEFAULT_RULES);
+  const [cartPincode, setCartPincode] = useState<string>('');
+  const [pincodeLookup, setPincodeLookup] = useState<PincodeDeliveryLookupResult | null>(null);
+
+  useEffect(() => {
+    fetch('/api/delivery/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.rules && data.rules.length > 0) {
+          setDeliveryRules(data.rules);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleCartPincodeChange = (val: string) => {
+    const clean = val.replace(/\D/g, '').slice(0, 6);
+    setCartPincode(clean);
+    if (clean.length >= 2) {
+      setPincodeLookup(resolveDeliveryByPincode(clean, deliveryRules));
+    } else {
+      setPincodeLookup(null);
+    }
+  };
 
   // Restore loyalty points from sessionStorage if returning to cart
   useEffect(() => {
@@ -352,6 +384,56 @@ export default function CartPage() {
                   appliedDiscount={loyaltyDiscount}
                   onApplyPoints={handleApplyLoyalty}
                 />
+              </div>
+
+              {/* Shipping Fee by Pincode Lookup */}
+              <div className="pt-2 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-[#0B1A33] uppercase tracking-wider">
+                    Shipping Fee by Pincode
+                  </span>
+                  {pincodeLookup && (
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                      pincodeLookup.isFreeDelivery ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-900'
+                    }`}>
+                      {pincodeLookup.isFreeDelivery ? '🟢 FREE (₹0)' : '🔵 Customer Arranged'}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={cartPincode}
+                    onChange={(e) => handleCartPincodeChange(e.target.value)}
+                    placeholder="Enter 6-digit Pincode (e.g. 524001)"
+                    className="flex-1 h-10 px-3 rounded-xl border border-white/60 bg-white/80 font-mono text-xs font-bold text-[#0B1A33] outline-none focus:bg-white placeholder:font-sans placeholder:font-normal placeholder:text-slate-400"
+                  />
+                  {cartPincode && (
+                    <button
+                      type="button"
+                      onClick={() => handleCartPincodeChange('')}
+                      className="px-2.5 h-10 rounded-xl bg-white/60 hover:bg-white text-xs text-slate-500 font-bold cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {pincodeLookup && (
+                  <div className="text-[11px] p-2.5 rounded-xl bg-white/70 border border-white/80 flex flex-col gap-1 text-[#0B1A33]">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold">{pincodeLookup.stateName}:</span>
+                      <span className="font-extrabold text-[#0B7A4B]">⏱️ {pincodeLookup.timelineText}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-600">
+                      {pincodeLookup.isFreeDelivery
+                        ? '100% Free Door/Pond Delivery by Karthik Traders'
+                        : 'Transport arranged by customer (To-Pay / customer vehicle)'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="h-px bg-black/10 my-1" />

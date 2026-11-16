@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     resolveDeliveryRule,
     PRESET_VEHICLE_TYPES,
+    DEFAULT_RULES,
     StateDeliveryRule
 } from '@/lib/delivery-config';
 import { updateOrderDispatchAction } from '@/app/actions/orders';
@@ -41,9 +42,26 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
     const [saving, setSaving] = useState<boolean>(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    const [rules, setRules] = useState<StateDeliveryRule[]>([]);
+    const [vehiclePresets, setVehiclePresets] = useState<string[]>(PRESET_VEHICLE_TYPES);
+
+    useEffect(() => {
+        fetch('/api/delivery/config')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.rules && data.rules.length > 0) setRules(data.rules);
+                    if (data.general?.vehiclePresets && data.general.vehiclePresets.length > 0) {
+                        setVehiclePresets(data.general.vehiclePresets);
+                    }
+                }
+            })
+            .catch(() => {});
+    }, []);
+
     const handleStateChange = (newState: string) => {
         setSelectedState(newState);
-        setRule(resolveDeliveryRule(newState));
+        setRule(resolveDeliveryRule(newState, rules.length > 0 ? rules : DEFAULT_RULES));
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,11 +191,11 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                         onChange={(e) => handleStateChange(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
                     >
-                        <option value="Andhra Pradesh">Andhra Pradesh (FREE Delivery · 3-7 Days)</option>
-                        <option value="Telangana">Telangana (Customer Responsibility · 3-7 Days)</option>
-                        <option value="Tamil Nadu">Tamil Nadu (Customer Responsibility · 3-7 Days)</option>
-                        <option value="West Bengal">West Bengal (Customer Responsibility · 10-15 Days)</option>
-                        <option value="Other States">Other States (5-10 Days)</option>
+                        {(rules.length > 0 ? rules : DEFAULT_RULES).map((r) => (
+                            <option key={r.id} value={r.stateName}>
+                                {r.stateName} ({r.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {r.timelineText})
+                            </option>
+                        ))}
                     </select>
                     <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
                         {rule.tagline}
@@ -213,7 +231,7 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                         onChange={(e) => setVehicleType(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
                     >
-                        {PRESET_VEHICLE_TYPES.map((vt) => (
+                        {vehiclePresets.map((vt) => (
                             <option key={vt} value={vt}>
                                 {vt}
                             </option>

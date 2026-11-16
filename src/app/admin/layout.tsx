@@ -17,7 +17,8 @@ import {
 
     TicketIcon,
     ArrowLeftIcon,
-    SparklesIcon
+    SparklesIcon,
+    TruckIcon
 } from '@heroicons/react/24/outline';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import HeaderLoyaltyBadge from '@/components/loyalty/HeaderLoyaltyBadge';
@@ -27,6 +28,7 @@ const navigation = [
     { name: 'Orders', href: '/admin/orders', icon: ShoppingBagIcon },
     { name: 'Products', href: '/admin/products', icon: CubeIcon },
     { name: 'Coupons', href: '/admin/coupons', icon: TicketIcon },
+    { name: 'Delivery & Timelines', href: '/admin/delivery', icon: TruckIcon },
     { name: 'Loyalty & Rewards', href: '/admin/loyalty', icon: SparklesIcon },
     { name: 'Customers', href: '/admin/customers', icon: UsersIcon },
     { name: 'Settings', href: '/admin/settings', icon: CogIcon },

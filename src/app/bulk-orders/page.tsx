@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -9,7 +9,12 @@ import { formatPrice } from '@/data/products';
 import { COUPONS_STORE } from '@/data/kt-ui';
 import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionControl';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
-import { resolveDeliveryRule } from '@/lib/delivery-config';
+import {
+  resolveDeliveryRule,
+  resolveDeliveryByPincode,
+  DEFAULT_RULES,
+  StateDeliveryRule,
+} from '@/lib/delivery-config';
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, totalPrice, finalPrice, discountAmount, coupon, applyCoupon } = useCart();
@@ -36,8 +41,27 @@ export default function CheckoutPage() {
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
 
-  // Dynamic state delivery policy
-  const deliveryRule = resolveDeliveryRule(formData.state || formData.pincode);
+  // Dynamic state delivery policy loaded from admin settings
+  const [deliveryRules, setDeliveryRules] = useState<StateDeliveryRule[]>(DEFAULT_RULES);
+
+  useEffect(() => {
+    fetch('/api/delivery/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.rules && data.rules.length > 0) {
+          setDeliveryRules(data.rules);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const deliveryRule = useMemo(() => {
+    if (formData.pincode && formData.pincode.length >= 2) {
+      const pinRes = resolveDeliveryByPincode(formData.pincode, deliveryRules);
+      return resolveDeliveryRule(pinRes.cleanPincode, deliveryRules);
+    }
+    return resolveDeliveryRule(formData.state || formData.pincode, deliveryRules);
+  }, [formData.state, formData.pincode, deliveryRules]);
 
   // Restore loyalty points selected in Cart if available
   useEffect(() => {
@@ -379,19 +403,31 @@ export default function CheckoutPage() {
                 {/* Pincode */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="co-pin" className="text-xs font-extrabold text-[#3D4A63] uppercase tracking-wider">
-                    Pincode
+                    Pincode (Auto-Detects State & Shipping Fee)
                   </label>
                   <input
                     id="co-pin"
                     type="text"
                     maxLength={6}
                     value={formData.pincode}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        pincode: e.target.value.replace(/\D/g, '').slice(0, 6),
-                      })
-                    }
+                    onChange={(e) => {
+                      const cleanPin = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      if (cleanPin.length >= 2) {
+                        const pinRes = resolveDeliveryByPincode(cleanPin, deliveryRules);
+                        if (pinRes.matchedBy === 'pincode_prefix' && pinRes.stateName) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            pincode: cleanPin,
+                            state: pinRes.stateName,
+                          }));
+                          return;
+                        }
+                      }
+                      setFormData((prev) => ({
+                        ...prev,
+                        pincode: cleanPin,
+                      }));
+                    }}
                     placeholder="524001"
                     className={`h-12 px-4 rounded-xl border bg-[#FBFBFB] font-mono text-sm font-medium text-[#0B1A33] outline-none transition-colors ${
                       errors.pincode ? 'border-[#E5355F] ring-1 ring-[#E5355F]' : 'border-[#D5DCE8] focus:border-[#4338CA]'
@@ -434,24 +470,29 @@ export default function CheckoutPage() {
 
               {/* State-wise Delivery Policy & Live Vehicle Transparency Banner */}
               <div className={`mt-4 p-4 rounded-2xl border ${deliveryRule.badgeColor.border} ${deliveryRule.badgeColor.bg} flex flex-col gap-2.5`}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${deliveryRule.badgeColor.dot}`} />
+                    <span className={`w-2.5 h-2.5 rounded-full ${deliveryRule.badgeColor.dot} animate-pulse`} />
                     <span className="font-extrabold text-sm text-[#0B1A33]">
-                      {deliveryRule.stateName} Delivery Policy
+                      {formData.pincode ? `Pincode ${formData.pincode} (${deliveryRule.stateName})` : `${deliveryRule.stateName} Delivery Policy`}
                     </span>
                   </div>
-                  <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
-                    deliveryRule.isFreeDelivery ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-800'
+                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                    deliveryRule.isFreeDelivery ? 'bg-emerald-600 text-white' : 'bg-blue-100 text-blue-900 border border-blue-200'
                   }`}>
-                    {deliveryRule.policyBadgeText}
+                    {deliveryRule.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
                   </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/50">
+                  <span className="text-[#5B6880] font-semibold">Estimated Transit Timeline:</span>
+                  <span className="font-black text-emerald-800 font-poppins">⏱️ {deliveryRule.timelineText}</span>
                 </div>
 
                 <p className="text-xs text-slate-700 leading-relaxed font-medium">
                   {deliveryRule.isFreeDelivery ? (
                     <>
-                      🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{deliveryRule.timelineText}</strong> provided directly by Karthik Traders across Andhra Pradesh.
+                      🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{deliveryRule.timelineText}</strong> provided directly by Karthik Traders across {deliveryRule.stateName}.
                     </>
                   ) : (
                     <>
@@ -561,6 +602,14 @@ export default function CheckoutPage() {
               <div className="flex justify-between">
                 <span className="text-[#5B6880]">GST Taxes</span>
                 <span className="font-extrabold text-[#0B7A4B]">Included</span>
+              </div>
+              <div className="flex justify-between items-center py-0.5">
+                <span className="text-[#5B6880]">Shipping Fee ({formData.pincode ? `Pin ${formData.pincode}` : deliveryRule.stateName})</span>
+                {deliveryRule.isFreeDelivery ? (
+                  <span className="font-extrabold text-[#0B7A4B] text-xs">FREE Delivery (₹0)</span>
+                ) : (
+                  <span className="font-bold text-[#1D4ED8] text-xs">Customer Arranged (To-Pay)</span>
+                )}
               </div>
             </div>
 
