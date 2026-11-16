@@ -11,9 +11,9 @@ import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionCon
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 import {
   resolveDeliveryRule,
-  resolveDeliveryByPincode,
   DEFAULT_RULES,
   StateDeliveryRule,
+  INDIAN_STATES_LIST,
 } from '@/lib/delivery-config';
 
 export default function CheckoutPage() {
@@ -55,13 +55,10 @@ export default function CheckoutPage() {
       .catch(() => {});
   }, []);
 
+  // Dynamic state delivery policy loaded from admin settings (strictly state-based)
   const deliveryRule = useMemo(() => {
-    if (formData.pincode && formData.pincode.length >= 2) {
-      const pinRes = resolveDeliveryByPincode(formData.pincode, deliveryRules);
-      return resolveDeliveryRule(pinRes.cleanPincode, deliveryRules);
-    }
-    return resolveDeliveryRule(formData.state || formData.pincode, deliveryRules);
-  }, [formData.state, formData.pincode, deliveryRules]);
+    return resolveDeliveryRule(formData.state, deliveryRules);
+  }, [formData.state, deliveryRules]);
 
   // Restore loyalty points selected in Cart if available
   useEffect(() => {
@@ -387,15 +384,14 @@ export default function CheckoutPage() {
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                     className="h-12 px-3.5 rounded-xl border border-[#D5DCE8] bg-[#FBFBFB] text-sm font-semibold text-[#0B1A33] outline-none focus:border-[#4338CA] transition-colors"
                   >
-                    <option value="Andhra Pradesh">Andhra Pradesh (FREE Delivery, 3-7 Days)</option>
-                    <option value="Telangana">Telangana (3-7 Days)</option>
-                    <option value="Tamil Nadu">Tamil Nadu (3-7 Days)</option>
-                    <option value="West Bengal">West Bengal (10-15 Days)</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Odisha">Odisha</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Other States">Other States</option>
+                    {INDIAN_STATES_LIST.map((st) => {
+                      const stRule = resolveDeliveryRule(st, deliveryRules);
+                      return (
+                        <option key={st} value={st}>
+                          {st} ({stRule.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {stRule.timelineText})
+                        </option>
+                      );
+                    })}
                   </select>
                   {errors.state && <span className="text-xs font-bold text-[#E5355F]">{errors.state}</span>}
                 </div>
@@ -403,31 +399,19 @@ export default function CheckoutPage() {
                 {/* Pincode */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="co-pin" className="text-xs font-extrabold text-[#3D4A63] uppercase tracking-wider">
-                    Pincode (Auto-Detects State & Shipping Fee)
+                    Pincode
                   </label>
                   <input
                     id="co-pin"
                     type="text"
                     maxLength={6}
                     value={formData.pincode}
-                    onChange={(e) => {
-                      const cleanPin = e.target.value.replace(/\D/g, '').slice(0, 6);
-                      if (cleanPin.length >= 2) {
-                        const pinRes = resolveDeliveryByPincode(cleanPin, deliveryRules);
-                        if (pinRes.matchedBy === 'pincode_prefix' && pinRes.stateName) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            pincode: cleanPin,
-                            state: pinRes.stateName,
-                          }));
-                          return;
-                        }
-                      }
-                      setFormData((prev) => ({
-                        ...prev,
-                        pincode: cleanPin,
-                      }));
-                    }}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pincode: e.target.value.replace(/\D/g, '').slice(0, 6),
+                      })
+                    }
                     placeholder="524001"
                     className={`h-12 px-4 rounded-xl border bg-[#FBFBFB] font-mono text-sm font-medium text-[#0B1A33] outline-none transition-colors ${
                       errors.pincode ? 'border-[#E5355F] ring-1 ring-[#E5355F]' : 'border-[#D5DCE8] focus:border-[#4338CA]'
@@ -474,7 +458,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${deliveryRule.badgeColor.dot} animate-pulse`} />
                     <span className="font-extrabold text-sm text-[#0B1A33]">
-                      {formData.pincode ? `Pincode ${formData.pincode} (${deliveryRule.stateName})` : `${deliveryRule.stateName} Delivery Policy`}
+                      {deliveryRule.stateName} Delivery Policy
                     </span>
                   </div>
                   <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${

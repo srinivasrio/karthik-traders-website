@@ -149,9 +149,9 @@ export async function POST(request: Request) {
             }
         }
 
-        // Resolve state delivery rule based on shipping address
-        const stateCandidate = body.deliveryState || shippingAddress?.state || shippingAddress?.city || 'Andhra Pradesh';
-        const deliveryRule = resolveDeliveryRule(stateCandidate || shippingAddress?.pincode);
+        // Resolve state delivery rule strictly based on shipping state
+        const stateCandidate = body.deliveryState || shippingAddress?.state || 'Andhra Pradesh';
+        const deliveryRule = resolveDeliveryRule(stateCandidate);
 
         // Create order directly (with customer_mobile, loyalty, referral, and delivery fields)
         const orderPayload: any = {

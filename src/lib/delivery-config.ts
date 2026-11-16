@@ -1,7 +1,7 @@
 /**
- * Dynamic State-wise & Pincode Delivery Configuration for Karthik Traders
- * Manages delivery policies, shipping fees (Free vs Customer Arranged),
- * timelines, and vehicle presets dynamically loaded from DB / JSON.
+ * State-Based Delivery Configuration for Karthik Traders
+ * Delivery fee (Free vs Customer Arranged) and timelines are determined
+ * strictly by the customer's STATE.
  */
 
 import initialSettings from '@/data/delivery-settings.json';
@@ -18,7 +18,6 @@ export interface StateDeliveryRule {
     policyBadgeText: string;
     tagline: string;
     description: string;
-    pincodePrefixes: string[];
     isActive: boolean;
     sortOrder: number;
     badgeColor: {
@@ -38,27 +37,36 @@ export interface DeliveryGeneralSettings {
     customerArrangedNotice: string;
 }
 
-export interface PincodeDeliveryLookupResult {
-    pincode: string;
-    cleanPincode: string;
-    stateName: string;
-    stateCode: string;
-    isFreeDelivery: boolean;
-    responsibility: 'karthik_traders' | 'customer';
-    shippingFeeText: string;
-    timelineText: string;
-    policyBadgeText: string;
-    tagline: string;
-    description: string;
-    matchedBy: 'pincode_prefix' | 'state_name' | 'default_fallback';
-    matchedPrefix?: string;
-    badgeColor: {
-        bg: string;
-        border: string;
-        text: string;
-        dot: string;
-    };
-}
+/**
+ * Standard list of all Indian States and Union Territories for dropdown selection
+ */
+export const INDIAN_STATES_LIST = [
+    'Andhra Pradesh',
+    'Telangana',
+    'Tamil Nadu',
+    'West Bengal',
+    'Karnataka',
+    'Odisha',
+    'Kerala',
+    'Maharashtra',
+    'Gujarat',
+    'Bihar',
+    'Uttar Pradesh',
+    'Madhya Pradesh',
+    'Rajasthan',
+    'Punjab',
+    'Haryana',
+    'Assam',
+    'Chhattisgarh',
+    'Jharkhand',
+    'Goa',
+    'Uttarakhand',
+    'Himachal Pradesh',
+    'Jammu and Kashmir',
+    'Delhi',
+    'Puducherry',
+    'Other States',
+];
 
 /**
  * Helper to compute badge styling colors according to fee & responsibility
@@ -125,12 +133,6 @@ export function mapRawRuleToStateDeliveryRule(raw: any): StateDeliveryRule {
         badgeText = isFree ? 'FREE Delivery' : `Customer Responsibility (${timeline})`;
     }
 
-    const prefixes = Array.isArray(raw.pincode_prefixes)
-        ? raw.pincode_prefixes
-        : Array.isArray(raw.pincodePrefixes)
-        ? raw.pincodePrefixes
-        : [];
-
     return {
         id: raw.id || stateName.toLowerCase().replace(/[^a-z0-9]/g, '_'),
         stateName,
@@ -143,7 +145,6 @@ export function mapRawRuleToStateDeliveryRule(raw: any): StateDeliveryRule {
         policyBadgeText: badgeText,
         tagline: raw.tagline || (isFree ? `Free door & farm pond delivery in ${timeline}` : `Delivery in ${timeline} (Customer arranged transport)`),
         description: raw.description || (isFree ? `Karthik Traders provides 100% Free Door/Pond Delivery across ${stateName}.` : `Transport is customer responsibility. Dispatched from Nellore via regional carrier (To-Pay) or customer arranged vehicle.`),
-        pincodePrefixes: prefixes.map(String),
         isActive: raw.is_active ?? raw.isActive ?? true,
         sortOrder: Number(raw.sort_order ?? raw.sortOrder ?? 99),
         badgeColor: getBadgeColor(resp, isFree, stateCode),
@@ -179,108 +180,31 @@ export const DEFAULT_GENERAL_SETTINGS: DeliveryGeneralSettings = {
 export const PRESET_VEHICLE_TYPES = DEFAULT_GENERAL_SETTINGS.vehiclePresets;
 
 /**
- * Resolves delivery policy strictly by 6-digit Pincode.
- * Matches 3-digit prefix first, then 2-digit prefix, then falls back to other states.
- */
-export function resolveDeliveryByPincode(
-    pincode: string | number,
-    rules: StateDeliveryRule[] = DEFAULT_RULES
-): PincodeDeliveryLookupResult {
-    const clean = String(pincode || '').replace(/\D/g, '').slice(0, 6);
-    const activeRules = rules.filter((r) => r.isActive);
-
-    if (clean.length >= 2) {
-        // Find best match by sorting prefix length descending (e.g. 524 before 52)
-        let bestMatchRule: StateDeliveryRule | null = null;
-        let matchedPrefix = '';
-
-        for (const rule of activeRules) {
-            for (const prefix of rule.pincodePrefixes || []) {
-                const cleanPrefix = String(prefix).trim();
-                if (cleanPrefix && clean.startsWith(cleanPrefix)) {
-                    if (cleanPrefix.length > matchedPrefix.length) {
-                        matchedPrefix = cleanPrefix;
-                        bestMatchRule = rule;
-                    }
-                }
-            }
-        }
-
-        if (bestMatchRule) {
-            return {
-                pincode: String(pincode),
-                cleanPincode: clean,
-                stateName: bestMatchRule.stateName,
-                stateCode: bestMatchRule.stateCode,
-                isFreeDelivery: bestMatchRule.isFreeDelivery,
-                responsibility: bestMatchRule.responsibility,
-                shippingFeeText: bestMatchRule.isFreeDelivery ? 'FREE Delivery (₹0)' : 'Customer Arranged (To-Pay)',
-                timelineText: bestMatchRule.timelineText,
-                policyBadgeText: bestMatchRule.policyBadgeText,
-                tagline: bestMatchRule.tagline,
-                description: bestMatchRule.description,
-                matchedBy: 'pincode_prefix',
-                matchedPrefix,
-                badgeColor: bestMatchRule.badgeColor,
-            };
-        }
-    }
-
-    // Default fallback rule (e.g. other_states)
-    const fallbackRule =
-        activeRules.find((r) => r.id === 'other_states' || r.stateCode === 'OTHER') ||
-        activeRules[activeRules.length - 1] ||
-        DEFAULT_RULES[DEFAULT_RULES.length - 1];
-
-    return {
-        pincode: String(pincode),
-        cleanPincode: clean,
-        stateName: fallbackRule.stateName,
-        stateCode: fallbackRule.stateCode,
-        isFreeDelivery: fallbackRule.isFreeDelivery,
-        responsibility: fallbackRule.responsibility,
-        shippingFeeText: fallbackRule.isFreeDelivery ? 'FREE Delivery (₹0)' : 'Customer Arranged (To-Pay)',
-        timelineText: fallbackRule.timelineText,
-        policyBadgeText: fallbackRule.policyBadgeText,
-        tagline: fallbackRule.tagline,
-        description: fallbackRule.description,
-        matchedBy: 'default_fallback',
-        badgeColor: fallbackRule.badgeColor,
-    };
-}
-
-/**
- * Universal resolver: checks pincode first if numeric or 6 digits;
- * otherwise resolves by State Name / Code.
+ * Resolves delivery policy strictly based on STATE (State Name or State Code).
+ * Checks exact match, then normalized match, then falls back to other states.
  */
 export function resolveDeliveryRule(
-    stateOrPincode?: string,
+    stateInput?: string,
     rules: StateDeliveryRule[] = DEFAULT_RULES
 ): StateDeliveryRule {
     const activeRules = rules.filter((r) => r.isActive);
     const apDefault = activeRules.find((r) => r.stateCode === 'AP') || DEFAULT_RULES[0];
-    const otherDefault = activeRules.find((r) => r.stateCode === 'OTHER') || DEFAULT_RULES[DEFAULT_RULES.length - 1];
+    const otherDefault = activeRules.find((r) => r.stateCode === 'OTHER' || r.id === 'other_states') || DEFAULT_RULES[DEFAULT_RULES.length - 1];
 
-    if (!stateOrPincode) return apDefault;
+    if (!stateInput) return apDefault;
 
-    const trimmed = String(stateOrPincode).trim();
+    const trimmed = String(stateInput).trim();
+    if (!trimmed) return apDefault;
 
-    // 1. If numeric or looks like a pincode, resolve by pincode
-    const numericOnly = trimmed.replace(/\D/g, '');
-    if (numericOnly.length >= 2 && (/^\d+$/.test(trimmed) || numericOnly.length === 6)) {
-        const pinResult = resolveDeliveryByPincode(numericOnly, activeRules);
-        const matched = activeRules.find((r) => r.stateCode === pinResult.stateCode);
-        if (matched) return matched;
-    }
-
-    // 2. Resolve by State Name / Code
     const normalized = trimmed.toLowerCase().replace(/[^a-z\s]/g, '').trim();
 
-    // Exact state name match
-    const exact = activeRules.find((r) => r.stateName.toLowerCase() === normalized || r.stateCode.toLowerCase() === normalized);
+    // 1. Exact match on stateName or stateCode
+    const exact = activeRules.find(
+        (r) => r.stateName.toLowerCase() === normalized || r.stateCode.toLowerCase() === normalized
+    );
     if (exact) return exact;
 
-    // Fuzzy state matches
+    // 2. Fuzzy matches for common state names
     if (normalized.includes('andhra') || normalized === 'ap') {
         return activeRules.find((r) => r.stateCode === 'AP') || apDefault;
     }
@@ -293,9 +217,55 @@ export function resolveDeliveryRule(
     if (normalized.includes('bengal') || normalized.includes('kolkata') || normalized === 'wb') {
         return activeRules.find((r) => r.stateCode === 'WB') || activeRules[3] || otherDefault;
     }
+    if (normalized.includes('karnataka') || normalized === 'ka') {
+        const ka = activeRules.find((r) => r.stateCode === 'KA' || r.stateName.toLowerCase().includes('karnataka'));
+        if (ka) return ka;
+    }
+    if (normalized.includes('odisha') || normalized.includes('orissa') || normalized === 'or') {
+        const od = activeRules.find((r) => r.stateCode === 'OR' || r.stateName.toLowerCase().includes('odisha'));
+        if (od) return od;
+    }
+    if (normalized.includes('kerala') || normalized === 'kl') {
+        const kl = activeRules.find((r) => r.stateCode === 'KL' || r.stateName.toLowerCase().includes('kerala'));
+        if (kl) return kl;
+    }
+    if (normalized.includes('maharashtra') || normalized === 'mh') {
+        const mh = activeRules.find((r) => r.stateCode === 'MH' || r.stateName.toLowerCase().includes('maharashtra'));
+        if (mh) return mh;
+    }
+    if (normalized.includes('gujarat') || normalized === 'gj') {
+        const gj = activeRules.find((r) => r.stateCode === 'GJ' || r.stateName.toLowerCase().includes('gujarat'));
+        if (gj) return gj;
+    }
+
+    // 3. Substring match against any configured state
+    const subMatch = activeRules.find((r) => r.stateName.toLowerCase().includes(normalized));
+    if (subMatch) return subMatch;
 
     return otherDefault;
 }
+
+/**
+ * Backward compatibility alias for resolveDeliveryRule
+ */
+export const resolveDeliveryByPincode = (stateOrPin: string | number, rules?: StateDeliveryRule[]) => {
+    const rule = resolveDeliveryRule(String(stateOrPin), rules);
+    return {
+        pincode: String(stateOrPin),
+        cleanPincode: String(stateOrPin),
+        stateName: rule.stateName,
+        stateCode: rule.stateCode,
+        isFreeDelivery: rule.isFreeDelivery,
+        responsibility: rule.responsibility,
+        shippingFeeText: rule.isFreeDelivery ? 'FREE Delivery (₹0)' : 'Customer Arranged (To-Pay)',
+        timelineText: rule.timelineText,
+        policyBadgeText: rule.policyBadgeText,
+        tagline: rule.tagline,
+        description: rule.description,
+        matchedBy: 'state_name' as const,
+        badgeColor: rule.badgeColor,
+    };
+};
 
 /**
  * Standard State Rule dictionary backward-compatible with legacy imports

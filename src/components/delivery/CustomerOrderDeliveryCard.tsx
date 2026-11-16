@@ -27,15 +27,13 @@ interface CustomerOrderDeliveryCardProps {
 export default function CustomerOrderDeliveryCard({ order }: CustomerOrderDeliveryCardProps) {
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-    // Resolve state and corresponding rule
-    const destinationTarget =
+    // Resolve state and corresponding rule strictly based on State
+    const destinationState =
         order.delivery_state ||
-        (typeof order.shipping_address === 'object'
-            ? order.shipping_address?.pincode || order.shipping_address?.state
-            : null) ||
+        (typeof order.shipping_address === 'object' ? order.shipping_address?.state : null) ||
         'Andhra Pradesh';
 
-    const rule = resolveDeliveryRule(destinationTarget);
+    const rule = resolveDeliveryRule(destinationState);
 
     const hasDispatchInfo = Boolean(
         order.vehicle_number ||

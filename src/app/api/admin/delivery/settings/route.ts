@@ -38,7 +38,6 @@ function syncLocalSettingsFile(rules: StateDeliveryRule[], general: DeliveryGene
                 policy_badge_text: r.policyBadgeText,
                 tagline: r.tagline,
                 description: r.description,
-                pincode_prefixes: r.pincodePrefixes,
                 is_active: r.isActive,
                 sort_order: r.sortOrder,
             })),
@@ -132,7 +131,7 @@ export async function POST(request: Request) {
                 .upsert({ id: 1, ...generalUpdate }, { onConflict: 'id' });
         }
 
-        // 2. Update / upsert rules if provided
+        // 2. Update / upsert state rules if provided
         let processedRules: StateDeliveryRule[] = [];
         if (Array.isArray(rules)) {
             for (let i = 0; i < rules.length; i++) {
@@ -156,11 +155,6 @@ export async function POST(request: Request) {
                     policy_badge_text: r.policyBadgeText || (isFree ? 'FREE Delivery' : `Customer Responsibility (${timeline})`),
                     tagline: r.tagline || (isFree ? `Free door & farm pond delivery in ${timeline}` : `Delivery in ${timeline} (Customer arranged transport)`),
                     description: r.description || '',
-                    pincode_prefixes: Array.isArray(r.pincodePrefixes)
-                        ? r.pincodePrefixes.map(String).map((s: string) => s.trim()).filter(Boolean)
-                        : typeof r.pincodePrefixes === 'string'
-                        ? r.pincodePrefixes.split(',').map((s: string) => s.trim()).filter(Boolean)
-                        : [],
                     is_active: r.isActive !== false,
                     sort_order: r.sortOrder ?? i + 1,
                     updated_at: new Date().toISOString(),
@@ -183,7 +177,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            message: 'Delivery timelines and shipping fee policies saved successfully!',
+            message: 'State delivery timelines and shipping fee policies saved successfully!',
             rules: processedRules,
         });
     } catch (err: any) {
@@ -220,7 +214,7 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ success: false, error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, message: 'Custom delivery rule deleted successfully' });
+        return NextResponse.json({ success: true, message: 'Custom state delivery rule deleted successfully' });
     } catch (err: any) {
         console.error('Error deleting delivery rule:', err);
         return NextResponse.json({ success: false, error: err.message }, { status: 500 });

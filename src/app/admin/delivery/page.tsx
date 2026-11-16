@@ -4,15 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
     TruckIcon,
-    MapPinIcon,
     PlusIcon,
     TrashIcon,
     CheckCircleIcon,
     ArrowPathIcon,
-    MagnifyingGlassIcon,
-    ShieldCheckIcon,
-    InformationCircleIcon,
-    PhoneIcon,
     BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 import {
@@ -20,7 +15,8 @@ import {
     DeliveryGeneralSettings,
     DEFAULT_RULES,
     DEFAULT_GENERAL_SETTINGS,
-    resolveDeliveryByPincode,
+    INDIAN_STATES_LIST,
+    resolveDeliveryRule,
 } from '@/lib/delivery-config';
 
 export default function AdminDeliveryPage() {
@@ -31,22 +27,21 @@ export default function AdminDeliveryPage() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Live Pincode Tester State
-    const [testPincodeInput, setTestPincodeInput] = useState<string>('524001');
+    // Live State Simulator State
+    const [testStateInput, setTestStateInput] = useState<string>('Andhra Pradesh');
 
-    // New Zone Modal State
+    // New State Modal State
     const [newZoneModalOpen, setNewZoneModalOpen] = useState(false);
     const [newZone, setNewZone] = useState({
-        stateName: '',
-        stateCode: '',
+        stateName: 'Karnataka',
+        stateCode: 'KA',
         isFreeDelivery: false,
         estimatedDaysMin: 3,
         estimatedDaysMax: 7,
         timelineText: '3 to 7 Days',
         policyBadgeText: 'Customer Responsibility (3-7 Days)',
         tagline: 'Delivery in 3 to 7 days (Customer arranged transport)',
-        description: 'Transport is customer responsibility. Dispatched via regional logistics or customer arranged vehicle.',
-        pincodePrefixes: '',
+        description: 'Transport is customer responsibility. Dispatched from Nellore via regional carrier (To-Pay) or customer arranged vehicle.',
     });
 
     // New Vehicle Type Input
@@ -87,7 +82,7 @@ export default function AdminDeliveryPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setMessage({ type: 'success', text: 'Delivery timelines & shipping fee policies saved successfully!' });
+                setMessage({ type: 'success', text: 'State delivery timelines & shipping fee policies saved successfully!' });
                 if (data.rules && data.rules.length > 0) {
                     setRules(data.rules);
                 }
@@ -107,7 +102,6 @@ export default function AdminDeliveryPage() {
             const updated = [...prev];
             const rule = { ...updated[index], [field]: value };
 
-            // Automatic timeline text & responsibility syncing when fee/days change
             if (field === 'isFreeDelivery') {
                 rule.responsibility = value ? 'karthik_traders' : 'customer';
                 rule.policyBadgeText = value
@@ -132,15 +126,11 @@ export default function AdminDeliveryPage() {
 
     const handleAddZone = () => {
         if (!newZone.stateName.trim()) {
-            alert('Please enter a State Name');
+            alert('Please select or enter a State Name');
             return;
         }
 
         const id = newZone.stateName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        const prefixes = newZone.pincodePrefixes
-            .split(',')
-            .map((s) => s.trim().replace(/\D/g, ''))
-            .filter(Boolean);
 
         const newRule: StateDeliveryRule = {
             id,
@@ -154,7 +144,6 @@ export default function AdminDeliveryPage() {
             policyBadgeText: newZone.isFreeDelivery ? 'FREE Delivery' : newZone.policyBadgeText,
             tagline: newZone.tagline,
             description: newZone.description,
-            pincodePrefixes: prefixes,
             isActive: true,
             sortOrder: rules.length + 1,
             badgeColor: {
@@ -167,18 +156,6 @@ export default function AdminDeliveryPage() {
 
         setRules((prev) => [...prev, newRule]);
         setNewZoneModalOpen(false);
-        setNewZone({
-            stateName: '',
-            stateCode: '',
-            isFreeDelivery: false,
-            estimatedDaysMin: 3,
-            estimatedDaysMax: 7,
-            timelineText: '3 to 7 Days',
-            policyBadgeText: 'Customer Responsibility (3-7 Days)',
-            tagline: 'Delivery in 3 to 7 days (Customer arranged transport)',
-            description: 'Transport is customer responsibility. Dispatched via regional logistics or customer arranged vehicle.',
-            pincodePrefixes: '',
-        });
     };
 
     const handleDeleteZone = async (ruleId: string, index: number) => {
@@ -188,22 +165,22 @@ export default function AdminDeliveryPage() {
             return;
         }
 
-        if (!confirm('Are you sure you want to delete this custom delivery zone?')) return;
+        if (!confirm('Are you sure you want to delete this state delivery rule?')) return;
 
         try {
             await fetch(`/api/admin/delivery/settings?id=${ruleId}`, { method: 'DELETE' });
             setRules((prev) => prev.filter((_, idx) => idx !== index));
         } catch (err: any) {
-            console.error('Error deleting zone:', err);
+            console.error('Error deleting rule:', err);
         }
     };
 
-    // Live Pincode test evaluation
+    // Live State test evaluation
     const liveTestResult = useMemo(() => {
-        return resolveDeliveryByPincode(testPincodeInput, rules);
-    }, [testPincodeInput, rules]);
+        return resolveDeliveryRule(testStateInput, rules);
+    }, [testStateInput, rules]);
 
-    // Add Vehicle Preset
+    // Vehicle Presets handlers
     const handleAddVehiclePreset = () => {
         if (!newVehicleInput.trim()) return;
         if (general.vehiclePresets.includes(newVehicleInput.trim())) return;
@@ -243,10 +220,10 @@ export default function AdminDeliveryPage() {
                         </span>
                         <div>
                             <h1 className="text-xl sm:text-2xl font-black text-slate-900 font-poppins">
-                                Delivery Timelines & Shipping Fee Manager
+                                State Delivery Timelines & Shipping Fee Manager
                             </h1>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                Manage state delivery timelines, free delivery vs customer arranged transport, and automatic pincode resolution
+                                Delivery fees and transit timelines are calculated strictly based on customer&apos;s state
                             </p>
                         </div>
                     </div>
@@ -259,7 +236,7 @@ export default function AdminDeliveryPage() {
                         className="h-10 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                     >
                         <PlusIcon className="w-4 h-4" />
-                        <span>Add New State / Zone</span>
+                        <span>Add State</span>
                     </button>
 
                     <button
@@ -303,91 +280,62 @@ export default function AdminDeliveryPage() {
                 </div>
             )}
 
-            {/* Interactive Live Pincode Simulator Card */}
+            {/* Interactive Live State Simulator Card */}
             <div className="mb-8 rounded-2xl border-2 border-blue-200 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-sky-50/60 p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-3 border-b border-blue-200/60 pb-2.5">
                     <div className="flex items-center gap-2">
-                        <span className="text-base">🔍</span>
+                        <span className="text-base">📍</span>
                         <h2 className="text-sm font-extrabold text-blue-950 font-poppins">
-                            Live Pincode Simulator (Test Customer Experience)
+                            Live State Delivery Preview (Customer Experience)
                         </h2>
                     </div>
                     <span className="text-[11px] font-bold text-blue-700 bg-white/80 px-2.5 py-0.5 rounded-full border border-blue-200">
-                        Real-Time Evaluation
+                        State-Based Resolution
                     </span>
                 </div>
 
                 <p className="text-xs text-slate-600 mb-4">
-                    Type any Indian 6-digit Pincode to test how the website detects destination state, delivery timeline, and whether shipping fee is <strong>FREE</strong> or <strong>Customer Arranged</strong>.
+                    Select any destination State to preview the exact shipping fee (<strong>FREE Delivery</strong> vs <strong>Customer Arranged</strong>) and transit timeline shown to customers.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                     <div>
                         <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                            Enter Test Pincode
+                            Choose Test State
                         </label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                maxLength={6}
-                                value={testPincodeInput}
-                                onChange={(e) => setTestPincodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                placeholder="524001"
-                                className="w-full h-11 px-3.5 rounded-xl border border-blue-300 bg-white font-mono text-base font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
-                            />
-                            <span className="absolute right-3 top-3 text-xs text-slate-400">
-                                {testPincodeInput.length}/6
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-slate-500">
-                            <span>Try:</span>
-                            <button
-                                type="button"
-                                onClick={() => setTestPincodeInput('524001')}
-                                className="underline text-blue-600 hover:text-blue-800"
-                            >
-                                524001 (AP)
-                            </button>
-                            <span>·</span>
-                            <button
-                                type="button"
-                                onClick={() => setTestPincodeInput('500001')}
-                                className="underline text-blue-600 hover:text-blue-800"
-                            >
-                                500001 (TS)
-                            </button>
-                            <span>·</span>
-                            <button
-                                type="button"
-                                onClick={() => setTestPincodeInput('600001')}
-                                className="underline text-blue-600 hover:text-blue-800"
-                            >
-                                600001 (TN)
-                            </button>
-                            <span>·</span>
-                            <button
-                                type="button"
-                                onClick={() => setTestPincodeInput('700001')}
-                                className="underline text-blue-600 hover:text-blue-800"
-                            >
-                                700001 (WB)
-                            </button>
+                        <select
+                            value={testStateInput}
+                            onChange={(e) => setTestStateInput(e.target.value)}
+                            className="w-full h-11 px-3.5 rounded-xl border border-blue-300 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                        >
+                            {rules.map((r) => (
+                                <option key={r.id} value={r.stateName}>
+                                    {r.stateName}
+                                </option>
+                            ))}
+                        </select>
+
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] font-bold">
+                            <span className="text-slate-500">Quick:</span>
+                            {['Andhra Pradesh', 'Telangana', 'Tamil Nadu', 'West Bengal'].map((sName) => (
+                                <button
+                                    key={sName}
+                                    type="button"
+                                    onClick={() => setTestStateInput(sName)}
+                                    className="px-2 py-0.5 rounded bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 cursor-pointer"
+                                >
+                                    {sName.split(' ')[0]}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     {/* Result Box */}
-                    <div className="md:col-span-2 p-3.5 rounded-xl bg-white border border-blue-200 shadow-2xs flex flex-col gap-2">
+                    <div className="md:col-span-2 p-4 rounded-xl bg-white border border-blue-200 shadow-2xs flex flex-col gap-2.5">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-xs text-slate-900">
-                                    Detected: {liveTestResult.stateName}
-                                </span>
-                                {liveTestResult.matchedPrefix && (
-                                    <span className="text-[10px] font-mono font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md">
-                                        Prefix &apos;{liveTestResult.matchedPrefix}&apos;
-                                    </span>
-                                )}
-                            </div>
+                            <span className="font-extrabold text-sm text-slate-900">
+                                {liveTestResult.stateName}
+                            </span>
 
                             <span
                                 className={`text-xs font-black px-3 py-1 rounded-full border ${
@@ -415,13 +363,13 @@ export default function AdminDeliveryPage() {
                                 </span>
                                 <span className="font-semibold text-slate-800">
                                     {liveTestResult.responsibility === 'karthik_traders'
-                                        ? 'Karthik Traders Pays & Arranges'
+                                        ? 'Karthik Traders Pays & Delivers'
                                         : 'Customer Responsibility (To-Pay)'}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg leading-relaxed">
+                        <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-lg leading-relaxed">
                             {liveTestResult.description}
                         </div>
                     </div>
@@ -433,10 +381,10 @@ export default function AdminDeliveryPage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-base sm:text-lg font-black text-slate-900 font-poppins">
-                            State Delivery Rules & Timelines ({rules.length})
+                            Configured State Delivery Rules ({rules.length})
                         </h2>
                         <p className="text-xs text-slate-500">
-                            Configure transit days and whether shipping fee is Free or Customer Arranged for each state
+                            Configure transit timeline and fee policy for each destination state
                         </p>
                     </div>
                 </div>
@@ -583,26 +531,6 @@ export default function AdminDeliveryPage() {
                                         />
                                     </div>
 
-                                    {/* Pincode Prefixes (Comma-separated) */}
-                                    <div className="lg:col-span-4">
-                                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            Matching Pincode Prefixes (Comma-separated 2 or 3-digit prefixes)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={Array.isArray(rule.pincodePrefixes) ? rule.pincodePrefixes.join(', ') : ''}
-                                            onChange={(e) => {
-                                                const parts = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
-                                                updateRuleField(index, 'pincodePrefixes', parts);
-                                            }}
-                                            placeholder="e.g. 51, 52, 53, 524"
-                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-mono text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        <p className="text-[10px] text-slate-400 mt-1">
-                                            When customer enters a 6-digit pincode starting with any of these prefixes, this rule will be applied automatically.
-                                        </p>
-                                    </div>
-
                                     {/* Tagline & Description */}
                                     <div className="lg:col-span-2">
                                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -618,7 +546,7 @@ export default function AdminDeliveryPage() {
 
                                     <div className="lg:col-span-2">
                                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            Customer Notice / Description
+                                            Customer Description Note
                                         </label>
                                         <input
                                             type="text"
@@ -747,7 +675,7 @@ export default function AdminDeliveryPage() {
                 </button>
             </div>
 
-            {/* Add Custom Zone Modal */}
+            {/* Add Custom State Modal */}
             {newZoneModalOpen && (
                 <div
                     className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
@@ -758,19 +686,30 @@ export default function AdminDeliveryPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h3 className="text-lg font-black text-slate-900 font-poppins">
-                            Add New State / Delivery Zone
+                            Add State Delivery Rule
                         </h3>
 
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="col-span-2">
-                                <label className="block font-bold text-slate-700 uppercase mb-1">State Name *</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Karnataka"
+                                <label className="block font-bold text-slate-700 uppercase mb-1">Select State *</label>
+                                <select
                                     value={newZone.stateName}
-                                    onChange={(e) => setNewZone({ ...newZone, stateName: e.target.value })}
+                                    onChange={(e) => {
+                                        const s = e.target.value;
+                                        setNewZone({
+                                            ...newZone,
+                                            stateName: s,
+                                            stateCode: s.slice(0, 2).toUpperCase(),
+                                        });
+                                    }}
                                     className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold"
-                                />
+                                >
+                                    {INDIAN_STATES_LIST.map((st) => (
+                                        <option key={st} value={st}>
+                                            {st}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
@@ -817,19 +756,6 @@ export default function AdminDeliveryPage() {
                                     className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold"
                                 />
                             </div>
-
-                            <div className="col-span-2">
-                                <label className="block font-bold text-slate-700 uppercase mb-1">
-                                    Pincode Prefixes (Comma-separated)
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. 56, 57, 58, 59"
-                                    value={newZone.pincodePrefixes}
-                                    onChange={(e) => setNewZone({ ...newZone, pincodePrefixes: e.target.value })}
-                                    className="w-full h-10 px-3 rounded-xl border border-slate-300 font-mono"
-                                />
-                            </div>
                         </div>
 
                         <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
@@ -845,7 +771,7 @@ export default function AdminDeliveryPage() {
                                 onClick={handleAddZone}
                                 className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
                             >
-                                Add Zone
+                                Add Rule
                             </button>
                         </div>
                     </div>
