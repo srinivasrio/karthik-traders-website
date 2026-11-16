@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { aeratorSets, getProductBySlug } from '@/data/products';
-import { useLiveProduct } from '@/hooks/useLiveProducts';
+import { useLiveProduct, useLiveProducts } from '@/hooks/useLiveProducts';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import ProductDetailView from '@/components/products/ProductDetailView';
 
@@ -15,6 +15,7 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
   const { slug } = use(params);
   const initialProduct = getProductBySlug(slug);
   const { product, loading } = useLiveProduct(initialProduct, slug);
+  const { products: liveAerators } = useLiveProducts(aeratorSets, { skipLoading: true });
 
   if (loading) {
     return <SimpleLoadingScreen />;
@@ -41,8 +42,13 @@ export default function AeratorSetDetailPage({ params }: ProductPageProps) {
     );
   }
 
-  // Related aerator sets
-  const related = aeratorSets.filter((p) => p.slug !== product.slug);
+  // Related aerator sets: strictly only active, original aerators present in admin panel / DB
+  const related = liveAerators.filter((p) => {
+    if (p.slug === product.slug || p.id === product.id) return false;
+    if (p.isActive === false) return false;
+    const isAerator = p.category === 'aerator-set' || p.category === 'aerators';
+    return isAerator;
+  });
 
   return (
     <ProductDetailView

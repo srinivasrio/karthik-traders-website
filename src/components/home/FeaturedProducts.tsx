@@ -2,12 +2,14 @@
 
 import ProductCard from '@/components/products/ProductCard';
 import { aeratorSets } from '@/data/products';
+import { useLiveProducts } from '@/hooks/useLiveProducts';
 import Link from 'next/link';
 
 export default function FeaturedProducts() {
+    const { products: liveAerators } = useLiveProducts(aeratorSets, { skipLoading: true });
     // Get 4 featured products (2 from each brand)
-    const aqualionProducts = aeratorSets.filter(p => p.brand === 'aqualion').slice(0, 2);
-    const seabossProducts = aeratorSets.filter(p => p.brand === 'seaboss').slice(0, 2);
+    const aqualionProducts = liveAerators.filter(p => p.brand === 'aqualion' && p.isActive !== false).slice(0, 2);
+    const seabossProducts = liveAerators.filter(p => p.brand === 'seaboss' && p.isActive !== false).slice(0, 2);
     const featured = [...aqualionProducts, ...seabossProducts];
 
     return (

@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { allProducts, getProductBySlug } from '@/data/products';
-import { useLiveProduct } from '@/hooks/useLiveProducts';
+import { useLiveProduct, useLiveProducts } from '@/hooks/useLiveProducts';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import ProductDetailView from '@/components/products/ProductDetailView';
 
@@ -15,6 +15,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
   const { slug } = use(params);
   const initialProduct = getProductBySlug(slug);
   const { product, loading } = useLiveProduct(initialProduct, slug);
+  const { products: liveProducts } = useLiveProducts(allProducts, { skipLoading: true });
 
   if (loading) {
     return <SimpleLoadingScreen />;
@@ -41,9 +42,11 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     );
   }
 
-  const related = allProducts.filter(
+  const related = liveProducts.filter(
     (p) =>
       p.slug !== product.slug &&
+      p.id !== product.id &&
+      p.isActive !== false &&
       ['motor', 'motors', 'worm-gearbox', 'bevel-gearbox', 'gearboxes'].includes(
         p.category as string
       )

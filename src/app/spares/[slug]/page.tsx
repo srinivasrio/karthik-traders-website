@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { allSpares, getProductBySlug } from '@/data/products';
-import { useLiveProduct } from '@/hooks/useLiveProducts';
+import { useLiveProduct, useLiveProducts } from '@/hooks/useLiveProducts';
 import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import ProductDetailView from '@/components/products/ProductDetailView';
 
@@ -15,6 +15,7 @@ export default function SpareDetailPage({ params }: ProductPageProps) {
   const { slug } = use(params);
   const initialProduct = getProductBySlug(slug);
   const { product, loading } = useLiveProduct(initialProduct, slug);
+  const { products: liveSpares } = useLiveProducts(allSpares, { skipLoading: true });
 
   if (loading) {
     return <SimpleLoadingScreen />;
@@ -41,7 +42,7 @@ export default function SpareDetailPage({ params }: ProductPageProps) {
     );
   }
 
-  const related = allSpares.filter((p) => p.slug !== product.slug);
+  const related = liveSpares.filter((p) => p.slug !== product.slug && p.id !== product.id && p.isActive !== false);
 
   return (
     <ProductDetailView

@@ -651,26 +651,46 @@ export default function ProductDetailView({
         </div>
 
         {/* Related Products Section */}
-        {relatedProducts.length > 0 && (
-          <section className="pt-16 sm:pt-24">
-            <div className="flex items-end justify-between gap-4 mb-6">
-              <div>
-                <div className="text-xs font-extrabold tracking-widest text-[#4338CA] uppercase mb-1">
-                  RECOMMENDED
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B1A33] font-poppins">
-                  Related {categoryTitle}
-                </h2>
-              </div>
-            </div>
+        {(() => {
+          // Filter relatedProducts so old / inactive aerators are NEVER displayed in RECOMMENDED
+          const activeRelated = relatedProducts.filter((p) => {
+            if (p.slug === product.slug || p.id === product.id) return false;
+            if (p.isActive === false) return false;
+            // Exclude deprecated aerator slugs not present in admin panel or website
+            if (
+              p.slug === 'aqualion-2hp-4-paddle-pr20b' ||
+              p.slug === 'aqualion-2hp-4-paddle-pr20cmb' ||
+              p.slug === 'aqualion-2hp-4-paddle-hv20b' ||
+              p.slug === 'aqua-lion-2hp-4-paddle-wheel-aerator-set-hv-20-b'
+            ) {
+              return false;
+            }
+            return true;
+          });
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
-              {relatedProducts.slice(0, 4).map((rel) => (
-                <ProductCard key={rel.id} product={rel} variant={isAerator ? 'aerator' : 'default'} />
-              ))}
-            </div>
-          </section>
-        )}
+          if (activeRelated.length === 0) return null;
+
+          return (
+            <section className="pt-16 sm:pt-24">
+              <div className="flex items-end justify-between gap-4 mb-6">
+                <div>
+                  <div className="text-xs font-extrabold tracking-widest text-[#4338CA] uppercase mb-1">
+                    RECOMMENDED
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B1A33] font-poppins">
+                    Related {categoryTitle}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+                {activeRelated.slice(0, 4).map((rel) => (
+                  <ProductCard key={rel.id} product={rel} variant={isAerator ? 'aerator' : 'default'} />
+                ))}
+              </div>
+            </section>
+          );
+        })()}
       </main>
 
       {/* Fullscreen Zoom Lightbox Modal */}

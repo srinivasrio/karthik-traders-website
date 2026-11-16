@@ -15,7 +15,7 @@ export default function ComparePromo() {
   }, [liveAerators]);
 
   // Default to Aqualion 2HP 4-Paddle PR 20 B and Sea Boss 2HP 4-Paddle HV-13-B
-  const [slugA, setSlugA] = useState<string>('aqualion-2hp-4-paddle-pr20b');
+  const [slugA, setSlugA] = useState<string>('aqua-lion-2hp-4-paddle-wheel-aerator-set-pr-20-n-t');
   const [slugB, setSlugB] = useState<string>('seaboss-2hp-4-paddle-hv13b');
   const [selectorSlot, setSelectorSlot] = useState<'A' | 'B' | null>(null);
   const [selectorBrand, setSelectorBrand] = useState<'all' | 'seaboss' | 'aqualion'>('all');

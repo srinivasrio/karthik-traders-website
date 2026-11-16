@@ -136,7 +136,10 @@ export function useLiveProduct(staticProduct: Product | null | undefined, slugFa
 
     useEffect(() => {
         let isMounted = true;
-        const targetSlug = staticProduct?.slug || slugFallback;
+        let targetSlug = staticProduct?.slug || slugFallback;
+        if (targetSlug === 'aqualion-2hp-4-paddle-pr20b') {
+            targetSlug = 'aqua-lion-2hp-4-paddle-wheel-aerator-set-pr-20-n-t';
+        }
         if (!targetSlug) {
             setLoading(false);
             return;
