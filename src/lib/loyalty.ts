@@ -41,6 +41,11 @@ export const DEFAULT_LOYALTY_SETTINGS = {
     max_redemption_percentage: 20, // Max 20% of eligible subtotal can be paid with points
     max_points_per_order: 2000,  // Max 2,000 points redeemable per order (₹500 discount cap)
     expiry_days: 365,            // Points expire after 365 days
+    referral_enabled: true,
+    referral_earning_percentage: 1.0, // 1% commission in loyalty points for referrer on delivered orders
+    referral_discount_rupees: 500,     // ₹500 discount for referred friend on first order
+    referral_bonus_points: 1000,       // Fallback bonus points
+    referral_min_order_rupees: 5000,   // Minimum order required to qualify
 };
 
 export interface LoyaltySettings {
@@ -55,6 +60,11 @@ export interface LoyaltySettings {
     max_redemption_percentage: number;
     max_points_per_order: number;
     expiry_days: number;
+    referral_enabled?: boolean;
+    referral_earning_percentage?: number;
+    referral_discount_rupees?: number;
+    referral_bonus_points?: number;
+    referral_min_order_rupees?: number;
     updated_at?: string;
     updated_by?: string;
 }

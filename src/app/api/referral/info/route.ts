@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         // 2. Fetch loyalty settings for referral configuration
         const { data: settings } = await supabase
             .from('loyalty_settings')
-            .select('referral_enabled, referral_discount_rupees, referral_bonus_points, referral_min_order_rupees, paise_per_point')
+            .select('referral_enabled, referral_discount_rupees, referral_bonus_points, referral_min_order_rupees, referral_earning_percentage, paise_per_point')
             .limit(1)
             .maybeSingle();
 
@@ -67,6 +67,9 @@ export async function GET(request: Request) {
         const discountRupees = settings?.referral_discount_rupees ?? 500;
         const bonusPoints = settings?.referral_bonus_points ?? 1000;
         const minOrderRupees = settings?.referral_min_order_rupees ?? 5000;
+        const referralEarningPercentage = settings?.referral_earning_percentage !== undefined && settings?.referral_earning_percentage !== null
+            ? Number(settings.referral_earning_percentage)
+            : 1.0;
         const paisePerPoint = settings?.paise_per_point ?? 25;
 
         // 3. Fetch referrals where this user is the referrer
@@ -125,6 +128,7 @@ export async function GET(request: Request) {
             discount_rupees: discountRupees,
             bonus_points: bonusPoints,
             min_order_rupees: minOrderRupees,
+            referral_earning_percentage: referralEarningPercentage,
             is_enabled: isEnabled,
             referrals,
         };

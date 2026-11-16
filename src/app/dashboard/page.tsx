@@ -464,14 +464,14 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-100 flex items-center gap-1.5 font-poppins">
                   <span>🎁</span>
-                  <span>Refer & Earn ₹500</span>
+                  <span>Refer & Earn 1% Credit</span>
                 </span>
                 <span className="text-[10px] font-mono font-bold bg-white/20 px-2 py-0.5 rounded-full">
                   Farmer Referral
                 </span>
               </div>
               <p className="text-xs text-sky-100 leading-relaxed">
-                Give farmers ₹500 off their first order. You earn 1,000 Loyalty Points (₹500 value) when delivered!
+                Give fellow farmers ₹500 off their first order. You earn 1% of their delivered order value in Loyalty Points credit!
               </p>
               <button
                 type="button"

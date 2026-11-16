@@ -1,15 +1,20 @@
 {
   "id": 1,
   "is_enabled": true,
-  "signup_bonus_points": 500,
+  "signup_bonus_points": 50,
   "earning_percentage": 1,
   "rupees_spent_per_point": 100,
-  "paise_per_point": 100,
+  "paise_per_point": 25,
   "min_cart_subtotal_paise": 500000,
   "min_points_to_redeem": 50,
   "max_redemption_percentage": 20,
   "max_points_per_order": 2000,
   "expiry_days": 365,
-  "updated_at": "2026-11-07T12:20:20.053Z",
+  "referral_enabled": true,
+  "referral_earning_percentage": 1.0,
+  "referral_discount_rupees": 500,
+  "referral_bonus_points": 1000,
+  "referral_min_order_rupees": 5000,
+  "updated_at": "2026-11-16T08:00:00.000Z",
   "updated_by": "50db9da9-0238-4242-8c55-6f574bea0432"
 }

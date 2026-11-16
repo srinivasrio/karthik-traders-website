@@ -22,6 +22,7 @@ export interface ReferralDashboardData {
     discount_rupees: number;
     bonus_points: number;
     min_order_rupees: number;
+    referral_earning_percentage?: number;
     is_enabled: boolean;
     referrals: ReferralItem[];
 }

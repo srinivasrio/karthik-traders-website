@@ -99,6 +99,7 @@ export default function ReferralDashboardView({ onTabSwitch }: ReferralDashboard
     const discountRupees = data?.discount_rupees || 500;
     const bonusPoints = data?.bonus_points || 1000;
     const minOrderRupees = data?.min_order_rupees || 5000;
+    const earningPercentage = data?.referral_earning_percentage ?? 1.0;
 
     // Craft pre-filled WhatsApp share text (Telugu + English)
     const whatsappMessage = encodeURIComponent(
@@ -130,10 +131,10 @@ export default function ReferralDashboardView({ onTabSwitch }: ReferralDashboard
 
                     <div className="flex flex-col gap-1">
                         <h2 className="text-2xl sm:text-4xl font-extrabold font-poppins tracking-tight">
-                            Refer a Farmer, Earn <span className="text-yellow-300">{bonusPoints.toLocaleString()} Points</span>
+                            Refer a Farmer, Earn <span className="text-yellow-300">{earningPercentage}% Credit in Points</span>
                         </h2>
                         <p className="text-xs sm:text-sm text-emerald-100 max-w-xl font-medium leading-relaxed">
-                            Share Karthik Traders with fellow aqua farmers. They get <strong className="text-white font-bold">₹{discountRupees.toLocaleString()} OFF</strong> on their first equipment purchase (₹{minOrderRupees.toLocaleString()}+), and you get <strong className="text-white font-bold">{bonusPoints.toLocaleString()} Points (₹{(bonusPoints * 0.25).toLocaleString()} value)</strong> added to your wallet!
+                            Share Karthik Traders with fellow aqua farmers. They get <strong className="text-white font-bold">₹{discountRupees.toLocaleString()} OFF</strong> on their first equipment purchase (₹{minOrderRupees.toLocaleString()}+), and you get <strong className="text-white font-bold">{earningPercentage}% of their delivered order value in Loyalty Points credit</strong> directly in your wallet!
                         </p>
                     </div>
 
@@ -268,9 +269,9 @@ export default function ReferralDashboardView({ onTabSwitch }: ReferralDashboard
                         <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center">
                             3
                         </div>
-                        <h4 className="text-sm font-bold text-[#0B1A33]">You Earn {bonusPoints} Points</h4>
+                        <h4 className="text-sm font-bold text-[#0B1A33]">You Earn {earningPercentage}% in Credit</h4>
                         <p className="text-xs text-[#5B6880] leading-relaxed">
-                            As soon as their order is delivered, {bonusPoints} Points are automatically added to your rewards wallet!
+                            As soon as their order is delivered, {earningPercentage}% of their order value is automatically credited to your rewards wallet as Loyalty Points!
                         </p>
                     </div>
                 </div>

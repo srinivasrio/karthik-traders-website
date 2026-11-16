@@ -17,11 +17,12 @@ import {
     PlusIcon,
     TrashIcon,
     MagnifyingGlassIcon,
+    GiftIcon,
 } from '@heroicons/react/24/outline';
 
 export default function AdminLoyaltyPage() {
     const { session } = useAuth();
-    const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'wallets' | 'promotions' | 'transactions' | 'audit'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'referrals' | 'wallets' | 'promotions' | 'transactions' | 'audit'>('overview');
     const [loading, setLoading] = useState(true);
 
     // Settings state
@@ -36,9 +37,19 @@ export default function AdminLoyaltyPage() {
         max_redemption_percentage: 20,
         max_points_per_order: 2000,
         expiry_days: 365,
+        referral_enabled: true,
+        referral_earning_percentage: 1.0,
+        referral_discount_rupees: 500,
+        referral_bonus_points: 1000,
+        referral_min_order_rupees: 5000,
     });
     const [confirmSaveModal, setConfirmSaveModal] = useState(false);
     const [savingSettings, setSavingSettings] = useState(false);
+
+    // Referrals state
+    const [referrals, setReferrals] = useState<any[]>([]);
+    const [referralsSearch, setReferralsSearch] = useState('');
+    const [referralStatusFilter, setReferralStatusFilter] = useState<'all' | 'completed' | 'pending' | 'cancelled'>('all');
 
     // Wallets state
     const [wallets, setWallets] = useState<any[]>([]);
@@ -101,7 +112,14 @@ export default function AdminLoyaltyPage() {
                 if (sData.settings) setSettings(sData.settings);
             }
 
-            // 2. Fetch wallets
+            // 2. Fetch referrals
+            const refRes = await fetch('/api/admin/loyalty/referrals', { headers: getAuthHeaders() });
+            if (refRes.ok) {
+                const rData = await refRes.json();
+                setReferrals(rData.referrals || []);
+            }
+
+            // 3. Fetch wallets
             const walletsRes = await fetch('/api/admin/loyalty/wallets?limit=50', { headers: getAuthHeaders() });
             if (walletsRes.ok) {
                 const wData = await walletsRes.json();
@@ -316,6 +334,32 @@ export default function AdminLoyaltyPage() {
         return t.transaction_type === txFilterType;
     });
 
+    // Filter referrals
+    const completedReferrals = referrals.filter(r => r.status === 'completed');
+    const pendingReferrals = referrals.filter(r => r.status === 'pending');
+    const totalReferralPointsAwarded = completedReferrals.reduce((sum, r) => sum + (r.points_awarded || 0), 0);
+    const totalReferralRupeesValue = Math.round((totalReferralPointsAwarded * (settings.paise_per_point || 25)) / 100);
+
+    const filteredReferrals = referrals.filter(r => {
+        if (referralStatusFilter !== 'all' && r.status !== referralStatusFilter) return false;
+        if (!referralsSearch.trim()) return true;
+        const q = referralsSearch.toLowerCase();
+        const referrerName = (r.referrer?.full_name || '').toLowerCase();
+        const referrerPhone = (r.referrer?.mobile || '').toLowerCase();
+        const referredName = (r.referred?.full_name || '').toLowerCase();
+        const referredPhone = (r.referred?.mobile || '').toLowerCase();
+        const code = (r.referral_code || '').toLowerCase();
+        const orderNum = (r.order?.order_number || '').toString();
+        return (
+            referrerName.includes(q) ||
+            referrerPhone.includes(q) ||
+            referredName.includes(q) ||
+            referredPhone.includes(q) ||
+            code.includes(q) ||
+            orderNum.includes(q)
+        );
+    });
+
     // Aggregate stats
     const totalCirculatingPoints = wallets.reduce((sum, w) => sum + (w.pointsBalance || 0), 0);
     const totalRedeemedPoints = wallets.reduce((sum, w) => sum + (w.lifetimeRedeemed || 0), 0);
@@ -395,6 +439,7 @@ export default function AdminLoyaltyPage() {
                 {[
                     { id: 'overview', label: 'Overview', icon: SparklesIcon },
                     { id: 'settings', label: 'Configuration', icon: Cog6ToothIcon },
+                    { id: 'referrals', label: `Referral Program (${referrals.length})`, icon: GiftIcon },
                     { id: 'wallets', label: `Customer Wallets (${wallets.length})`, icon: UsersIcon },
                     { id: 'promotions', label: `Promotions (${promotions.length})`, icon: TicketIcon },
                     { id: 'transactions', label: 'Ledger', icon: ClipboardDocumentListIcon },
@@ -486,37 +531,53 @@ export default function AdminLoyaltyPage() {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
                                 <span className="text-slate-500 font-medium">Signup Bonus</span>
                                 <span className="text-base font-extrabold text-slate-900 font-poppins">
                                     {settings.signup_bonus_points || 0} pts
                                 </span>
-                                <span className="text-[11px] text-slate-400">Awarded on verified signup</span>
+                                <span className="text-[10px] text-slate-400">On verified signup</span>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
-                                <span className="text-slate-500 font-medium">Purchase Earning Rate</span>
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
+                                <span className="text-slate-500 font-medium">Purchase Reward</span>
                                 <span className="text-base font-extrabold text-slate-900 font-poppins">
-                                    {settings.earning_percentage ?? 1.0}% of order
+                                    {settings.earning_percentage ?? 1.0}%
                                 </span>
-                                <span className="text-[11px] text-slate-400">On fulfilled product subtotal</span>
+                                <span className="text-[10px] text-slate-400">On product subtotal</span>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
-                                <span className="text-slate-500 font-medium">Redemption Conversion</span>
+                            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 flex flex-col gap-1">
+                                <span className="text-amber-800 font-bold">Referral Comm.</span>
+                                <span className="text-base font-extrabold text-amber-900 font-poppins">
+                                    {settings.referral_earning_percentage ?? 1.0}%
+                                </span>
+                                <span className="text-[10px] text-amber-700">On delivered orders</span>
+                            </div>
+
+                            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 flex flex-col gap-1">
+                                <span className="text-amber-800 font-bold">Friend Discount</span>
+                                <span className="text-base font-extrabold text-amber-900 font-poppins">
+                                    ₹{settings.referral_discount_rupees || 500} OFF
+                                </span>
+                                <span className="text-[10px] text-amber-700">Min order ₹{settings.referral_min_order_rupees || 5000}</span>
+                            </div>
+
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
+                                <span className="text-slate-500 font-medium">Conversion Value</span>
                                 <span className="text-base font-extrabold text-slate-900 font-poppins">
                                     1 pt = ₹{((settings.paise_per_point || 25) / 100).toFixed(2)}
                                 </span>
-                                <span className="text-[11px] text-slate-400">({settings.paise_per_point} paise per point)</span>
+                                <span className="text-[10px] text-slate-400">{settings.paise_per_point} paise/point</span>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
-                                <span className="text-slate-500 font-medium">Min Cart for Redemption</span>
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-1">
+                                <span className="text-slate-500 font-medium">Min Cart Redeem</span>
                                 <span className="text-base font-extrabold text-slate-900 font-poppins">
                                     {formatPrice((settings.min_cart_subtotal_paise || 500000) / 100)}
                                 </span>
-                                <span className="text-[11px] text-slate-400">Excludes freight delivery</span>
+                                <span className="text-[10px] text-slate-400">Excludes freight</span>
                             </div>
                         </div>
                     </div>
@@ -716,6 +777,112 @@ export default function AdminLoyaltyPage() {
                             </div>
                         </div>
 
+                        {/* Customer Referral Commission & Rewards Settings */}
+                        <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+                                        <GiftIcon className="w-5 h-5" />
+                                    </span>
+                                    <div>
+                                        <h3 className="font-extrabold text-slate-900 text-sm">Customer Referral Commission & Rewards Settings</h3>
+                                        <p className="text-xs text-slate-500">Reward referrers when their invited farmers' orders are delivered.</p>
+                                    </div>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.referral_enabled ?? true}
+                                        onChange={(e) => setSettings({ ...settings, referral_enabled: e.target.checked })}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                                </label>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                                {/* Commission Percentage */}
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                                        Referrer Reward (% of Delivered Order)
+                                    </label>
+                                    <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-300 bg-white">
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            min={0}
+                                            max={100}
+                                            value={settings.referral_earning_percentage !== undefined ? settings.referral_earning_percentage : 1.0}
+                                            onChange={(e) => setSettings({ ...settings, referral_earning_percentage: parseFloat(e.target.value || '1.0') })}
+                                            className="w-full text-slate-900 font-mono text-sm outline-none border-0"
+                                        />
+                                        <span className="text-slate-600 font-bold text-sm ml-2">%</span>
+                                    </div>
+                                    <span className="text-[11px] text-slate-500 font-semibold">
+                                        Credited in points when friend's order is Delivered.
+                                    </span>
+                                </div>
+
+                                {/* Friend Discount (₹) */}
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                                        Friend First Order Discount (₹)
+                                    </label>
+                                    <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-300 bg-white">
+                                        <span className="text-slate-500 font-bold mr-1">₹</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={settings.referral_discount_rupees !== undefined ? settings.referral_discount_rupees : 500}
+                                            onChange={(e) => setSettings({ ...settings, referral_discount_rupees: parseInt(e.target.value || '500', 10) })}
+                                            className="w-full text-slate-900 font-mono text-sm outline-none border-0"
+                                        />
+                                    </div>
+                                    <span className="text-[11px] text-slate-500 font-semibold">
+                                        Instant discount applied at checkout.
+                                    </span>
+                                </div>
+
+                                {/* Minimum Order Value (₹) */}
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                                        Minimum Order Required (₹)
+                                    </label>
+                                    <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-300 bg-white">
+                                        <span className="text-slate-500 font-bold mr-1">₹</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={settings.referral_min_order_rupees !== undefined ? settings.referral_min_order_rupees : 5000}
+                                            onChange={(e) => setSettings({ ...settings, referral_min_order_rupees: parseInt(e.target.value || '5000', 10) })}
+                                            className="w-full text-slate-900 font-mono text-sm outline-none border-0"
+                                        />
+                                    </div>
+                                    <span className="text-[11px] text-slate-500 font-semibold">
+                                        Cart subtotal required to qualify.
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Dynamic Calculation Live Preview */}
+                            <div className="p-3 bg-white rounded-xl border border-amber-200 text-xs text-slate-700 flex flex-col gap-1">
+                                <span className="font-extrabold text-amber-900 flex items-center gap-1">
+                                    💡 Referral Reward Preview ({settings.referral_earning_percentage ?? 1.0}% on Delivered Order):
+                                </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1 font-mono text-[11px]">
+                                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                        ₹10,000 order → <strong>₹{((10000 * (settings.referral_earning_percentage ?? 1)) / 100).toFixed(0)} credit</strong> ({Math.floor((10000 * (settings.referral_earning_percentage ?? 1) * 100) / (settings.paise_per_point || 25)).toLocaleString()} pts)
+                                    </div>
+                                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                        ₹30,000 order → <strong>₹{((30000 * (settings.referral_earning_percentage ?? 1)) / 100).toFixed(0)} credit</strong> ({Math.floor((30000 * (settings.referral_earning_percentage ?? 1) * 100) / (settings.paise_per_point || 25)).toLocaleString()} pts)
+                                    </div>
+                                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                        ₹50,000 order → <strong>₹{((50000 * (settings.referral_earning_percentage ?? 1)) / 100).toFixed(0)} credit</strong> ({Math.floor((50000 * (settings.referral_earning_percentage ?? 1) * 100) / (settings.paise_per_point || 25)).toLocaleString()} pts)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="pt-4 border-t border-slate-200 flex justify-end">
                             <button
                                 type="submit"
@@ -725,6 +892,310 @@ export default function AdminLoyaltyPage() {
                             </button>
                         </div>
                     </form>
+                </div>
+            )}
+
+            {/* TAB: REFERRAL PROGRAM & COMMISSIONS */}
+            {activeTab === 'referrals' && (
+                <div className="flex flex-col gap-6">
+                    {/* Direct Referral Settings Bar */}
+                    <div className="rounded-2xl bg-white border border-amber-200/80 p-6 shadow-xs flex flex-col gap-5">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                                    <GiftIcon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-extrabold text-slate-900 font-poppins">
+                                        Referral Program Commission & Rules
+                                    </h2>
+                                    <p className="text-xs text-slate-500">
+                                        Customize the referral percentage awarded to referring farmers upon product delivery.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-slate-700">Program Status:</span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.referral_enabled ?? true}
+                                        onChange={(e) => setSettings({ ...settings, referral_enabled: e.target.checked })}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            {/* Referrer Reward % */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>Referrer Reward Percentage</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold">Delivered Order %</span>
+                                </label>
+                                <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-300 bg-white focus-within:border-amber-600 transition-colors">
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min={0}
+                                        max={100}
+                                        value={settings.referral_earning_percentage !== undefined ? settings.referral_earning_percentage : 1.0}
+                                        onChange={(e) => setSettings({ ...settings, referral_earning_percentage: parseFloat(e.target.value || '1.0') })}
+                                        className="w-full text-slate-900 font-mono text-sm outline-none border-0"
+                                    />
+                                    <span className="text-slate-600 font-bold text-sm ml-2">%</span>
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-medium">
+                                    Credited as loyalty points when order is marked <strong>Delivered/Completed</strong>.
+                                </span>
+                            </div>
+
+                            {/* Friend Discount (₹) */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                                    Referred Friend Discount (₹)
+                                </label>
+                                <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-300 bg-white focus-within:border-amber-600 transition-colors">
+                                    <span className="text-slate-500 font-bold mr-1">₹</span>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={settings.referral_discount_rupees !== undefined ? settings.referral_discount_rupees : 500}
+                                        onChange={(e) => setSettings({ ...settings, referral_discount_rupees: parseInt(e.target.value || '500', 10) })}
+                                        className="w-full text-slate-900 font-mono text-sm outline-none border-0"
+                                    />
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-medium">
+                                    First order discount applied at checkout.
+                                </span>
+                            </div>
+
+                            {/* Min Order Required (₹) */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                                    Min Order Requirement (₹)
+                                </label>
+                                <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-300 bg-white focus-within:border-amber-600 transition-colors">
+                                    <span className="text-slate-500 font-bold mr-1">₹</span>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={settings.referral_min_order_rupees !== undefined ? settings.referral_min_order_rupees : 5000}
+                                        onChange={(e) => setSettings({ ...settings, referral_min_order_rupees: parseInt(e.target.value || '5000', 10) })}
+                                        className="w-full text-slate-900 font-mono text-sm outline-none border-0"
+                                    />
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-medium">
+                                    Minimum product subtotal required for discount.
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Live Calculation Preview */}
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-amber-900 flex items-center gap-1.5">
+                                    <SparklesIcon className="w-4 h-4 text-amber-600" />
+                                    <span>Dynamic Credit Preview ({settings.referral_earning_percentage ?? 1.0}% on Delivered Order):</span>
+                                </span>
+                                <span className="text-[11px] text-amber-800 font-mono">1 pt = ₹{((settings.paise_per_point || 25) / 100).toFixed(2)}</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 font-mono text-xs">
+                                <div className="p-2.5 bg-white rounded-lg border border-amber-200 text-slate-800">
+                                    <span className="text-slate-500 text-[10px] block font-sans">₹10,000 Delivered Order:</span>
+                                    <strong className="text-emerald-700 text-sm">₹{((10000 * (settings.referral_earning_percentage ?? 1)) / 100).toFixed(0)} credit</strong>
+                                    <span className="text-[11px] text-slate-500 block">({Math.floor((10000 * (settings.referral_earning_percentage ?? 1) * 100) / (settings.paise_per_point || 25)).toLocaleString()} pts)</span>
+                                </div>
+                                <div className="p-2.5 bg-white rounded-lg border border-amber-200 text-slate-800">
+                                    <span className="text-slate-500 text-[10px] block font-sans">₹30,000 Delivered Order:</span>
+                                    <strong className="text-emerald-700 text-sm">₹{((30000 * (settings.referral_earning_percentage ?? 1)) / 100).toFixed(0)} credit</strong>
+                                    <span className="text-[11px] text-slate-500 block">({Math.floor((30000 * (settings.referral_earning_percentage ?? 1) * 100) / (settings.paise_per_point || 25)).toLocaleString()} pts)</span>
+                                </div>
+                                <div className="p-2.5 bg-white rounded-lg border border-amber-200 text-slate-800">
+                                    <span className="text-slate-500 text-[10px] block font-sans">₹50,000 Delivered Order:</span>
+                                    <strong className="text-emerald-700 text-sm">₹{((50000 * (settings.referral_earning_percentage ?? 1)) / 100).toFixed(0)} credit</strong>
+                                    <span className="text-[11px] text-slate-500 block">({Math.floor((50000 * (settings.referral_earning_percentage ?? 1) * 100) / (settings.paise_per_point || 25)).toLocaleString()} pts)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                            <button
+                                type="button"
+                                onClick={() => handleSaveSettings()}
+                                disabled={savingSettings}
+                                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
+                            >
+                                {savingSettings ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <CheckCircleIcon className="w-4 h-4" />}
+                                <span>{savingSettings ? 'Saving...' : 'Save Referral Configuration'}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col gap-2">
+                            <span className="text-xs font-bold text-slate-500">Total Referrals</span>
+                            <span className="text-3xl font-extrabold text-slate-900 font-poppins">{referrals.length}</span>
+                            <span className="text-[11px] text-slate-400">Total invited customer records</span>
+                        </div>
+                        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col gap-2">
+                            <span className="text-xs font-bold text-emerald-600">Completed & Rewarded</span>
+                            <span className="text-3xl font-extrabold text-emerald-600 font-poppins">{completedReferrals.length}</span>
+                            <span className="text-[11px] text-slate-400">Orders delivered with reward paid</span>
+                        </div>
+                        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col gap-2">
+                            <span className="text-xs font-bold text-blue-600">Pending Delivery</span>
+                            <span className="text-3xl font-extrabold text-blue-600 font-poppins">{pendingReferrals.length}</span>
+                            <span className="text-[11px] text-slate-400">Awaiting order delivery</span>
+                        </div>
+                        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col gap-2">
+                            <span className="text-xs font-bold text-amber-600">Total Referral Points Paid</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-extrabold text-amber-600 font-poppins">{totalReferralPointsAwarded.toLocaleString()}</span>
+                                <span className="text-xs font-bold text-slate-500">pts</span>
+                            </div>
+                            <span className="text-[11px] text-slate-500">Value: <strong>{formatPrice(totalReferralRupeesValue)}</strong></span>
+                        </div>
+                    </div>
+
+                    {/* Table Controls */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="relative w-full sm:w-80">
+                            <MagnifyingGlassIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                            <input
+                                type="text"
+                                value={referralsSearch}
+                                onChange={(e) => setReferralsSearch(e.target.value)}
+                                placeholder="Search referrer, friend, code, order..."
+                                className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-300 bg-white text-xs font-medium text-slate-800 outline-none focus:border-amber-600"
+                            />
+                        </div>
+                        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
+                            {(['all', 'completed', 'pending', 'cancelled'] as const).map((filter) => (
+                                <button
+                                    key={filter}
+                                    type="button"
+                                    onClick={() => setReferralStatusFilter(filter)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors cursor-pointer ${
+                                        referralStatusFilter === filter
+                                            ? 'bg-amber-600 text-white'
+                                            : 'text-slate-600 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    {filter}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Referrals Table */}
+                    <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-2xs">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead>
+                                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-extrabold uppercase tracking-wider text-[10px]">
+                                        <th className="py-3 px-4">Referrer Customer</th>
+                                        <th className="py-3 px-4">Referred Customer</th>
+                                        <th className="py-3 px-4">Referral Code</th>
+                                        <th className="py-3 px-4">Linked Order</th>
+                                        <th className="py-3 px-4 text-right">Commission Points</th>
+                                        <th className="py-3 px-4 text-center">Reward Status</th>
+                                        <th className="py-3 px-4 text-right">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                    {filteredReferrals.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
+                                                No referral records found matching your filter
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredReferrals.map((r) => {
+                                            const orderVal = Number(r.order?.total_amount || 0);
+                                            const pts = r.points_awarded || 0;
+                                            const ptsRupees = Math.round((pts * (settings.paise_per_point || 25)) / 100);
+
+                                            return (
+                                                <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                                                    <td className="py-3.5 px-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-extrabold text-slate-900">
+                                                                {r.referrer?.full_name || 'Aqua Farmer'}
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-400 font-mono">
+                                                                {r.referrer?.mobile || '-'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-slate-800">
+                                                                {r.referred?.full_name || 'Customer'}
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-400 font-mono">
+                                                                {r.referred?.mobile || '-'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3.5 px-4 font-mono font-bold text-amber-700">
+                                                        {r.referral_code}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        {r.order ? (
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-indigo-600">
+                                                                    Order #{r.order.order_number || r.order_id?.slice(0, 8)}
+                                                                </span>
+                                                                <span className="text-[11px] text-slate-500 font-mono">
+                                                                    {formatPrice(orderVal)} • <span className="capitalize">{r.order.status}</span>
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-slate-400 italic">No order yet</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-right">
+                                                        {pts > 0 ? (
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="font-bold font-mono text-emerald-600">
+                                                                    +{pts.toLocaleString()} pts
+                                                                </span>
+                                                                <span className="text-[10px] text-slate-400">
+                                                                    (₹{ptsRupees.toLocaleString()})
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-slate-400 font-mono">0 pts</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-center">
+                                                        <span
+                                                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                                                                r.status === 'completed'
+                                                                    ? 'bg-emerald-100 text-emerald-800'
+                                                                    : r.status === 'pending'
+                                                                    ? 'bg-amber-100 text-amber-800'
+                                                                    : 'bg-rose-100 text-rose-800'
+                                                            }`}
+                                                        >
+                                                            {r.status === 'completed' ? 'Delivered & Awarded' : r.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-right text-slate-500 font-mono text-[11px]">
+                                                        {new Date(r.created_at).toLocaleDateString()}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             )}
 

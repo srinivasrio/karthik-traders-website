@@ -101,7 +101,8 @@ ALTER TABLE public.loyalty_settings
     ADD COLUMN IF NOT EXISTS referral_enabled BOOLEAN NOT NULL DEFAULT true,
     ADD COLUMN IF NOT EXISTS referral_discount_rupees INT NOT NULL DEFAULT 500,
     ADD COLUMN IF NOT EXISTS referral_bonus_points INT NOT NULL DEFAULT 1000,
-    ADD COLUMN IF NOT EXISTS referral_min_order_rupees INT NOT NULL DEFAULT 5000;
+    ADD COLUMN IF NOT EXISTS referral_min_order_rupees INT NOT NULL DEFAULT 5000,
+    ADD COLUMN IF NOT EXISTS referral_earning_percentage NUMERIC(5,2) NOT NULL DEFAULT 1.0;
 
 -- 7. UPDATE LOYALTY TRANSACTIONS CHECK CONSTRAINT FOR 'referral_bonus'
 ALTER TABLE public.loyalty_transactions DROP CONSTRAINT IF EXISTS loyalty_transactions_transaction_type_check;
@@ -161,14 +162,17 @@ DECLARE
     v_order RECORD;
     v_settings RECORD;
     v_referrer_wallet RECORD;
-    v_points_to_award INT;
-    v_new_balance INT;
-    v_paise_value INT;
-    v_paise_rate INT;
+    v_eligible_subtotal NUMERIC := 0;
+    v_earning_pct NUMERIC := 1.0;
+    v_points_to_award INT := 0;
+    v_new_balance INT := 0;
+    v_paise_value INT := 0;
+    v_paise_rate INT := 25;
     v_tx_id UUID;
+    v_expires_at TIMESTAMPTZ;
 BEGIN
     -- 1. Fetch order details
-    SELECT id, order_number, user_id, customer_name, customer_mobile, total_amount, status, referred_by, referral_code, referral_reward_status
+    SELECT id, order_number, user_id, customer_name, customer_mobile, total_amount, status, referred_by, referral_code, referral_reward_status, referral_discount_amount
     INTO v_order
     FROM public.orders
     WHERE id = p_order_id;
@@ -192,7 +196,7 @@ BEGIN
     END IF;
 
     -- 2. Fetch loyalty settings
-    SELECT referral_enabled, referral_bonus_points, paise_per_point
+    SELECT referral_enabled, referral_bonus_points, paise_per_point, referral_earning_percentage, expiry_days
     INTO v_settings
     FROM public.loyalty_settings
     LIMIT 1;
@@ -201,8 +205,30 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Referral system is currently disabled');
     END IF;
 
-    v_points_to_award := COALESCE(v_settings.referral_bonus_points, 1000);
+    -- Calculate eligible product subtotal from fulfilled order items (excluding freight/delivery)
+    SELECT COALESCE(SUM(
+        price_at_purchase * COALESCE(fulfilled_quantity, quantity)
+    ), 0)
+    INTO v_eligible_subtotal
+    FROM public.order_items
+    WHERE order_id = p_order_id
+      AND COALESCE(is_available, true) = true;
+
+    -- If no order items fulfilled or items missing, fallback to order total_amount
+    IF v_eligible_subtotal <= 0 THEN
+        v_eligible_subtotal := GREATEST(0, COALESCE(v_order.total_amount, 0));
+    END IF;
+
     v_paise_rate := COALESCE(v_settings.paise_per_point, 25);
+    v_earning_pct := COALESCE(v_settings.referral_earning_percentage, 1.0);
+
+    -- Calculate points to award: 1% (or custom %) of delivered order value
+    IF v_earning_pct > 0 AND v_eligible_subtotal > 0 THEN
+        v_points_to_award := GREATEST(1, FLOOR(((v_eligible_subtotal * 100.0) * (v_earning_pct / 100.0)) / v_paise_rate));
+    ELSE
+        v_points_to_award := COALESCE(v_settings.referral_bonus_points, 1000);
+    END IF;
+
     v_paise_value := v_points_to_award * v_paise_rate;
 
     -- 3. Lock and fetch referrer wallet
@@ -254,10 +280,26 @@ BEGIN
         v_paise_value,
         v_paise_rate,
         v_order.id::TEXT,
-        'Referral reward: ' || COALESCE(v_order.customer_name, 'Farmer') || ' completed order #' || COALESCE(v_order.order_number::TEXT, v_order.id::TEXT),
+        'Referral reward (' || TRIM(TO_CHAR(v_earning_pct, 'FM999999990.00')) || '% of ₹' || TRIM(TO_CHAR(v_eligible_subtotal, 'FM999999990.00')) || '): ' || COALESCE(v_order.customer_name, 'Customer') || ' completed order #' || COALESCE(v_order.order_number::TEXT, v_order.id::TEXT),
         'ref_reward_' || v_order.id::TEXT
     )
     RETURNING id INTO v_tx_id;
+
+    -- Create point lot for expiration tracking
+    v_expires_at := NOW() + (INTERVAL '1 day' * COALESCE(v_settings.expiry_days, 365));
+    INSERT INTO public.loyalty_point_lots (
+        wallet_id,
+        transaction_id,
+        points_initial,
+        points_remaining,
+        expires_at
+    ) VALUES (
+        v_referrer_wallet.id,
+        v_tx_id,
+        v_points_to_award,
+        v_points_to_award,
+        v_expires_at
+    );
 
     -- 6. Update order referral reward status
     UPDATE public.orders
