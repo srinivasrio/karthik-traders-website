@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { auth as firebaseAuth } from '@/lib/firebase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -141,15 +142,34 @@ export default function CustomerDetailPage() {
         setDeleteError('');
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.access_token) {
+            let session = (await supabase.auth.getSession()).data.session;
+            if (!session?.access_token || (session.expires_at && session.expires_at * 1000 < Date.now() + 60000)) {
+                try {
+                    const refreshed = await supabase.auth.refreshSession();
+                    if (refreshed.data.session) {
+                        session = refreshed.data.session;
+                    }
+                } catch (e) {}
+            }
+
+            let token = session?.access_token;
+            if (!token) {
+                try {
+                    const fbUser = firebaseAuth.currentUser;
+                    if (fbUser) {
+                        token = await fbUser.getIdToken();
+                    }
+                } catch (e) {}
+            }
+
+            if (!token) {
                 throw new Error('Admin session expired. Please log in again.');
             }
 
             const response = await fetch(`/api/admin/customers/${customerId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
