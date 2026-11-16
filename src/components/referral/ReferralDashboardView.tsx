@@ -157,28 +157,37 @@ export default function ReferralDashboardView({ onTabSwitch }: ReferralDashboard
                             </div>
                         </div>
 
-                        {/* WhatsApp Share Button */}
-                        <div className="flex w-full sm:w-auto items-center gap-2">
+                        {/* Actions: Share on WhatsApp and Copy Link buttons - EXACT SAME SIZE */}
+                        <div className="grid grid-cols-2 gap-2.5 w-full sm:w-auto">
                             <a
                                 href={whatsappShareUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="h-12 px-4 sm:px-6 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] w-full sm:w-52"
                             >
-                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
                                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.176.582 4.218 1.599 5.979l-1.607 5.849 6.006-1.575c1.701.928 3.651 1.455 5.727 1.455 6.627 0 12-5.373 12-12 0-6.627-5.373-12-12-12z" />
                                 </svg>
-                                <span>Share on WhatsApp</span>
+                                <span className="truncate">Share on WhatsApp</span>
                             </a>
 
                             <button
                                 type="button"
                                 onClick={() => copyToClipboard(signupReferralLink, 'link')}
-                                className="px-3.5 py-3 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition-colors flex items-center gap-1.5"
+                                className="h-12 px-4 sm:px-6 rounded-xl bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs sm:text-sm border border-white/25 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full sm:w-52"
                                 title="Copy Referral Link"
                             >
-                                <ShareIcon className="w-4 h-4" />
-                                <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+                                {copiedLink ? (
+                                    <>
+                                        <CheckIcon className="w-5 h-5 text-yellow-300 shrink-0" />
+                                        <span>Link Copied!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShareIcon className="w-5 h-5 shrink-0" />
+                                        <span>Copy Link</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

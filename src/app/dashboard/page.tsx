@@ -54,6 +54,7 @@ export default function DashboardPage() {
   // Customer Referral Code in Profile
   const [customerReferralCode, setCustomerReferralCode] = useState<string>('');
   const [copiedReferralCode, setCopiedReferralCode] = useState(false);
+  const [copiedReferralLink, setCopiedReferralLink] = useState(false);
 
   useEffect(() => {
     if (profile?.referral_code) {
@@ -76,6 +77,22 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(customerReferralCode);
     setCopiedReferralCode(true);
     setTimeout(() => setCopiedReferralCode(false), 2000);
+  };
+
+  const referralSignupLink = customerReferralCode
+    ? `https://karthiktraders.in/login?tab=signup&ref=${customerReferralCode}`
+    : 'https://karthiktraders.in';
+
+  const profileWhatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+    `నమస్తే! నేను కార్తీక్ ట్రేడర్స్ (నెల్లూరు) నుండి రొయ్యల & చేపల చెరువుల మోటార్లు, ఏరియేటర్లు తీసుకుంటున్నాను. నా రిఫరల్ కోడ్ లేదా ఈ లింక్ ద్వారా సైన్ అప్ చేసి మీ మొదటి కొనుగోలుపై ఫ్లాట్ ₹500 డిస్కౌంట్ పొందండి:\n\n👉 రిఫరల్ కోడ్: ${customerReferralCode}\n👉 సైన్ అప్ లింక్: ${referralSignupLink}\n\nNamaste! I buy aqua pond aerators & motors from Karthik Traders. Sign up using my referral link ${referralSignupLink} (Code: ${customerReferralCode}) to get flat ₹500 OFF on your first purchase!`
+  )}`;
+
+  const copyReferralLink = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!referralSignupLink) return;
+    navigator.clipboard.writeText(referralSignupLink);
+    setCopiedReferralLink(true);
+    setTimeout(() => setCopiedReferralLink(false), 2000);
   };
 
   useEffect(() => {
@@ -272,50 +289,94 @@ export default function DashboardPage() {
 
               {/* Customer Referral Code Row in Profile Card */}
               {customerReferralCode && (
-                <div className="p-3.5 rounded-2xl bg-white/75 border border-white/80 flex flex-col gap-2 shadow-2xs">
+                <div className="p-4 rounded-2xl bg-white/80 border border-white/90 flex flex-col gap-3 shadow-2xs">
+                  {/* Referral Header */}
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#3D4A63] flex items-center gap-1.5">
-                      <span className="text-xs">🎁</span>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#3D4A63] flex items-center gap-1.5">
+                      <span className="text-sm">🎁</span>
                       <span>Your Referral Code</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setActiveTab('referral')}
-                      className="text-[10px] font-extrabold text-[#1450C8] hover:underline cursor-pointer"
+                      className="text-[11px] font-extrabold text-[#1450C8] hover:underline cursor-pointer"
                     >
                       Rewards Hub →
                     </button>
                   </div>
-                  <div className="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-[#D5DCE8]/80">
-                    <span className="font-mono text-sm sm:text-base font-black tracking-wider text-[#0B1A33]">
+
+                  {/* Referral Code Bar with Copy Code */}
+                  <div className="flex items-center justify-between bg-white rounded-xl px-3.5 py-2.5 border border-[#D5DCE8]">
+                    <span className="font-mono text-base font-black tracking-wider text-[#0B1A33]">
                       {customerReferralCode}
                     </span>
                     <button
                       type="button"
                       onClick={copyReferral}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0B1A33] text-xs font-bold transition-all cursor-pointer active:scale-95 border border-slate-300/80"
                       title="Copy Referral Code"
                     >
                       {copiedReferralCode ? (
                         <>
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                          <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
-                          <span>Copied!</span>
+                          <span className="text-emerald-700 font-extrabold">Copied!</span>
                         </>
                       ) : (
                         <>
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3.5 h-3.5 text-[#5B6880]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
-                          <span>Copy</span>
+                          <span>Copy Code</span>
                         </>
                       )}
                     </button>
                   </div>
-                  <p className="text-[10px] text-[#5B6880] leading-snug">
-                    Share with fellow farmers. They get <strong>₹500 OFF</strong> & you get <strong>1,000 Points (₹250)</strong>.
-                  </p>
+
+                  {/* Equal-Sized Action Buttons: Share on WhatsApp and Copy Link */}
+                  <div className="grid grid-cols-2 gap-2 w-full">
+                    <a
+                      href={profileWhatsappShareUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-11 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] w-full"
+                    >
+                      <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-14.416c-6.627 0-12 5.373-12 12 0 2.176.582 4.218 1.599 5.979l-1.607 5.849 6.006-1.575c1.701.928 3.651 1.455 5.727 1.455 6.627 0 12-5.373 12-12 0-6.627-5.373-12-12-12z" />
+                      </svg>
+                      <span className="truncate">Share WhatsApp</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={copyReferralLink}
+                      className="h-11 px-3 rounded-xl bg-[#0B1A33] hover:bg-[#152848] text-white font-extrabold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer w-full"
+                      title="Copy Referral Signup Link"
+                    >
+                      {copiedReferralLink ? (
+                        <>
+                          <svg className="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-emerald-300 font-extrabold">Link Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 shrink-0 text-sky-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                          </svg>
+                          <span className="truncate">Copy Link</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Reward Footnote */}
+                  <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-[#5B6880]">
+                    <span>Friend gets: <strong className="text-emerald-700 font-bold">₹500 OFF</strong></span>
+                    <span>You earn: <strong className="text-[#0B1A33] font-bold">1,000 Pts (₹250)</strong></span>
+                  </div>
                 </div>
               )}
 
@@ -335,17 +396,17 @@ export default function DashboardPage() {
                     </span>
                   </Link>
                 )}
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/complete-profile"
-                    className="flex-1 h-10 rounded-full bg-[#E8F9FF] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-white transition-colors"
+                    className="h-10 rounded-full bg-[#E8F9FF] text-[#0B1A33] font-bold text-xs flex items-center justify-center hover:bg-white transition-colors border border-sky-200/60"
                   >
                     Edit profile
                   </Link>
                   <button
                     type="button"
                     onClick={() => setShowLogoutConfirm(true)}
-                    className="flex-1 h-10 rounded-full border border-black/15 bg-transparent text-[#B4123A] font-bold text-xs flex items-center justify-center hover:bg-white/40 transition-colors cursor-pointer"
+                    className="h-10 rounded-full border border-rose-200 bg-white text-[#B4123A] font-bold text-xs flex items-center justify-center hover:bg-rose-50 transition-colors cursor-pointer"
                   >
                     Logout
                   </button>
