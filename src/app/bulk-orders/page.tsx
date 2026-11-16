@@ -11,8 +11,12 @@ import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionCon
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 import {
   resolveDeliveryRule,
+  evaluateOrderFreeDelivery,
+  isDeliveryFeatureVisible,
   DEFAULT_RULES,
+  DEFAULT_GENERAL_SETTINGS,
   StateDeliveryRule,
+  DeliveryGeneralSettings,
   INDIAN_STATES_LIST,
 } from '@/lib/delivery-config';
 
@@ -43,22 +47,27 @@ export default function CheckoutPage() {
 
   // Dynamic state delivery policy loaded from admin settings
   const [deliveryRules, setDeliveryRules] = useState<StateDeliveryRule[]>(DEFAULT_RULES);
+  const [deliveryGeneral, setDeliveryGeneral] = useState<DeliveryGeneralSettings>(DEFAULT_GENERAL_SETTINGS);
 
   useEffect(() => {
     fetch('/api/delivery/config')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.rules && data.rules.length > 0) {
-          setDeliveryRules(data.rules);
+        if (data.success) {
+          if (data.rules && data.rules.length > 0) setDeliveryRules(data.rules);
+          if (data.general) setDeliveryGeneral(data.general);
         }
       })
       .catch(() => {});
   }, []);
 
-  // Dynamic state delivery policy loaded from admin settings (strictly state-based)
-  const deliveryRule = useMemo(() => {
-    return resolveDeliveryRule(formData.state, deliveryRules);
-  }, [formData.state, deliveryRules]);
+  // Dynamic state delivery evaluation (strictly state-based & aerator sets eligibility)
+  const deliveryEvaluation = useMemo(() => {
+    return evaluateOrderFreeDelivery(cartItems, formData.state, deliveryRules, deliveryGeneral);
+  }, [cartItems, formData.state, deliveryRules, deliveryGeneral]);
+
+  const deliveryRule = deliveryEvaluation.deliveryRule;
+  const isDeliveryVisible = isDeliveryFeatureVisible(deliveryGeneral);
 
   // Restore loyalty points selected in Cart if available
   useEffect(() => {
@@ -150,7 +159,7 @@ export default function CheckoutPage() {
           loyaltyDiscount: loyaltyDiscount,
           deliveryFee: 0,
           deliveryState: deliveryRule.stateName,
-          deliveryType: deliveryRule.responsibility === 'karthik_traders' ? 'free_ap' : 'customer_arranged',
+          deliveryType: deliveryEvaluation.isFreeDelivery ? 'free_ap' : 'customer_arranged',
           deliveryEstimatedDays: deliveryRule.timelineText,
         }),
       });
@@ -452,46 +461,48 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* State-wise Delivery Policy & Live Vehicle Transparency Banner */}
-              <div className={`mt-4 p-4 rounded-2xl border ${deliveryRule.badgeColor.border} ${deliveryRule.badgeColor.bg} flex flex-col gap-2.5`}>
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${deliveryRule.badgeColor.dot} animate-pulse`} />
-                    <span className="font-extrabold text-sm text-[#0B1A33]">
-                      {deliveryRule.stateName} Delivery Policy
+              {/* State-wise Delivery Policy & Live Vehicle Transparency Banner (Visible on localhost, hidden on production until enabled) */}
+              {isDeliveryVisible && (
+                <div className={`mt-4 p-4 rounded-2xl border ${deliveryRule.badgeColor.border} ${deliveryRule.badgeColor.bg} flex flex-col gap-2.5`}>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${deliveryRule.badgeColor.dot} animate-pulse`} />
+                      <span className="font-extrabold text-sm text-[#0B1A33]">
+                        {deliveryRule.stateName} Delivery Policy
+                      </span>
+                    </div>
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                      deliveryEvaluation.isFreeDelivery ? 'bg-emerald-600 text-white' : 'bg-blue-100 text-blue-900 border border-blue-200'
+                    }`}>
+                      {deliveryEvaluation.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
                     </span>
                   </div>
-                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                    deliveryRule.isFreeDelivery ? 'bg-emerald-600 text-white' : 'bg-blue-100 text-blue-900 border border-blue-200'
-                  }`}>
-                    {deliveryRule.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
-                  </span>
-                </div>
 
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/50">
-                  <span className="text-[#5B6880] font-semibold">Estimated Transit Timeline:</span>
-                  <span className="font-black text-emerald-800 font-poppins">⏱️ {deliveryRule.timelineText}</span>
-                </div>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/50">
+                    <span className="text-[#5B6880] font-semibold">Estimated Transit Timeline:</span>
+                    <span className="font-black text-emerald-800 font-poppins">⏱️ {deliveryRule.timelineText}</span>
+                  </div>
 
-                <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                  {deliveryRule.isFreeDelivery ? (
-                    <>
-                      🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{deliveryRule.timelineText}</strong> provided directly by Karthik Traders across {deliveryRule.stateName}.
-                    </>
-                  ) : (
-                    <>
-                      📦 Delivery in <strong>{deliveryRule.timelineText}</strong>. Transport is customer responsibility (dispatched via regional logistics To-Pay or customer arranged vehicle).
-                    </>
-                  )}
-                </p>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    {deliveryEvaluation.isFreeDelivery ? (
+                      <>
+                        🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{deliveryRule.timelineText}</strong> provided directly by Karthik Traders across {deliveryRule.stateName} for this Aerator Set order.
+                      </>
+                    ) : (
+                      <>
+                        📦 Delivery in <strong>{deliveryRule.timelineText}</strong>. {deliveryEvaluation.reason}
+                      </>
+                    )}
+                  </p>
 
-                <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600 flex items-center gap-2 font-medium">
-                  <span className="text-sm">🚚</span>
-                  <span>
-                    After loading, your <strong>Vehicle Number</strong>, <strong>Driver contact</strong>, and <strong>Photo of loaded vehicle</strong> will be shown on your dashboard!
-                  </span>
+                  <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600 flex items-center gap-2 font-medium">
+                    <span className="text-sm">🚚</span>
+                    <span>
+                      After loading, your <strong>Vehicle Number</strong>, <strong>Driver contact</strong>, and <strong>Photo of loaded vehicle</strong> will be shown on your dashboard!
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </section>
 
             {/* Step 3: Terms & Payment Info */}
@@ -587,14 +598,16 @@ export default function CheckoutPage() {
                 <span className="text-[#5B6880]">GST Taxes</span>
                 <span className="font-extrabold text-[#0B7A4B]">Included</span>
               </div>
-              <div className="flex justify-between items-center py-0.5">
-                <span className="text-[#5B6880]">Shipping Fee ({formData.pincode ? `Pin ${formData.pincode}` : deliveryRule.stateName})</span>
-                {deliveryRule.isFreeDelivery ? (
-                  <span className="font-extrabold text-[#0B7A4B] text-xs">FREE Delivery (₹0)</span>
-                ) : (
-                  <span className="font-bold text-[#1D4ED8] text-xs">Customer Arranged (To-Pay)</span>
-                )}
-              </div>
+              {isDeliveryVisible && (
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-[#5B6880]">Shipping Fee ({formData.state})</span>
+                  {deliveryEvaluation.isFreeDelivery ? (
+                    <span className="font-extrabold text-[#0B7A4B] text-xs">FREE Delivery (₹0)</span>
+                  ) : (
+                    <span className="font-bold text-[#1D4ED8] text-xs">Customer Arranged (To-Pay)</span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="h-px bg-[#EEF2F8]" />

@@ -82,6 +82,9 @@ export async function GET(request: Request) {
                 vehiclePresets: dbGeneral.vehicle_presets || DEFAULT_GENERAL_SETTINGS.vehiclePresets,
                 freeShippingNotice: dbGeneral.free_shipping_notice || DEFAULT_GENERAL_SETTINGS.freeShippingNotice,
                 customerArrangedNotice: dbGeneral.customer_arranged_notice || DEFAULT_GENERAL_SETTINGS.customerArrangedNotice,
+                freeDeliveryForAeratorsOnly: dbGeneral.free_delivery_for_aerators_only ?? DEFAULT_GENERAL_SETTINGS.freeDeliveryForAeratorsOnly,
+                eligibleAeratorSlugs: dbGeneral.eligible_aerator_slugs || DEFAULT_GENERAL_SETTINGS.eligibleAeratorSlugs,
+                enabledInProduction: dbGeneral.is_delivery_feature_enabled_in_production ?? DEFAULT_GENERAL_SETTINGS.enabledInProduction,
             };
         }
 
@@ -123,6 +126,9 @@ export async function POST(request: Request) {
                 vehicle_presets: general.vehiclePresets || DEFAULT_GENERAL_SETTINGS.vehiclePresets,
                 free_shipping_notice: general.freeShippingNotice || DEFAULT_GENERAL_SETTINGS.freeShippingNotice,
                 customer_arranged_notice: general.customerArrangedNotice || DEFAULT_GENERAL_SETTINGS.customerArrangedNotice,
+                free_delivery_for_aerators_only: general.freeDeliveryForAeratorsOnly ?? true,
+                eligible_aerator_slugs: Array.isArray(general.eligibleAeratorSlugs) ? general.eligibleAeratorSlugs : [],
+                is_delivery_feature_enabled_in_production: Boolean(general.enabledInProduction),
                 updated_at: new Date().toISOString(),
             };
 

@@ -39,6 +39,9 @@ export async function GET() {
                 vehiclePresets: dbGeneral.vehicle_presets || DEFAULT_GENERAL_SETTINGS.vehiclePresets,
                 freeShippingNotice: dbGeneral.free_shipping_notice || DEFAULT_GENERAL_SETTINGS.freeShippingNotice,
                 customerArrangedNotice: dbGeneral.customer_arranged_notice || DEFAULT_GENERAL_SETTINGS.customerArrangedNotice,
+                freeDeliveryForAeratorsOnly: dbGeneral.free_delivery_for_aerators_only ?? DEFAULT_GENERAL_SETTINGS.freeDeliveryForAeratorsOnly,
+                eligibleAeratorSlugs: dbGeneral.eligible_aerator_slugs || DEFAULT_GENERAL_SETTINGS.eligibleAeratorSlugs,
+                enabledInProduction: dbGeneral.is_delivery_feature_enabled_in_production ?? DEFAULT_GENERAL_SETTINGS.enabledInProduction,
             };
         }
 

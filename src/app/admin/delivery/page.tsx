@@ -9,6 +9,10 @@ import {
     CheckCircleIcon,
     ArrowPathIcon,
     BuildingOffice2Icon,
+    ShieldCheckIcon,
+    SparklesIcon,
+    EyeSlashIcon,
+    EyeIcon,
 } from '@heroicons/react/24/outline';
 import {
     StateDeliveryRule,
@@ -17,7 +21,10 @@ import {
     DEFAULT_GENERAL_SETTINGS,
     INDIAN_STATES_LIST,
     resolveDeliveryRule,
+    evaluateOrderFreeDelivery,
+    isItemEligibleForFreeDelivery,
 } from '@/lib/delivery-config';
+import { aeratorSets } from '@/data/products';
 
 export default function AdminDeliveryPage() {
     const { session } = useAuth();
@@ -27,8 +34,9 @@ export default function AdminDeliveryPage() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Live State Simulator State
+    // Live State & Product Simulator State
     const [testStateInput, setTestStateInput] = useState<string>('Andhra Pradesh');
+    const [testProductType, setTestProductType] = useState<'aerator' | 'spares' | 'mixed'>('aerator');
 
     // New State Modal State
     const [newZoneModalOpen, setNewZoneModalOpen] = useState(false);
@@ -82,7 +90,7 @@ export default function AdminDeliveryPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setMessage({ type: 'success', text: 'State delivery timelines & shipping fee policies saved successfully!' });
+                setMessage({ type: 'success', text: 'Delivery policies, aerator eligibility & settings saved successfully!' });
                 if (data.rules && data.rules.length > 0) {
                     setRules(data.rules);
                 }
@@ -110,12 +118,15 @@ export default function AdminDeliveryPage() {
                 rule.tagline = value
                     ? `Free door & farm pond delivery in ${rule.timelineText}`
                     : `Delivery in ${rule.timelineText} (Customer arranged transport)`;
-            } else if (field === 'estimatedDaysMin' || field === 'estimatedDaysMax') {
+            }
+
+            if (field === 'estimatedDaysMin' || field === 'estimatedDaysMax') {
                 const min = field === 'estimatedDaysMin' ? Number(value) : rule.estimatedDaysMin;
                 const max = field === 'estimatedDaysMax' ? Number(value) : rule.estimatedDaysMax;
                 rule.timelineText = `${min} to ${max} Days`;
                 if (!rule.isFreeDelivery) {
                     rule.policyBadgeText = `Customer Responsibility (${rule.timelineText})`;
+                    rule.tagline = `Delivery in ${rule.timelineText} (Customer arranged transport)`;
                 }
             }
 
@@ -134,13 +145,13 @@ export default function AdminDeliveryPage() {
 
         const newRule: StateDeliveryRule = {
             id,
-            stateName: newZone.stateName.trim(),
-            stateCode: (newZone.stateCode || newZone.stateName.slice(0, 2)).toUpperCase(),
+            stateName: newZone.stateName,
+            stateCode: newZone.stateCode || newZone.stateName.slice(0, 2).toUpperCase(),
             isFreeDelivery: newZone.isFreeDelivery,
             responsibility: newZone.isFreeDelivery ? 'karthik_traders' : 'customer',
             estimatedDaysMin: Number(newZone.estimatedDaysMin),
             estimatedDaysMax: Number(newZone.estimatedDaysMax),
-            timelineText: newZone.timelineText || `${newZone.estimatedDaysMin} to ${newZone.estimatedDaysMax} Days`,
+            timelineText: newZone.timelineText,
             policyBadgeText: newZone.isFreeDelivery ? 'FREE Delivery' : newZone.policyBadgeText,
             tagline: newZone.tagline,
             description: newZone.description,
@@ -158,27 +169,68 @@ export default function AdminDeliveryPage() {
         setNewZoneModalOpen(false);
     };
 
-    const handleDeleteZone = async (ruleId: string, index: number) => {
-        const CORE_IDS = ['andhra_pradesh', 'telangana', 'tamil_nadu', 'west_bengal', 'other_states'];
-        if (CORE_IDS.includes(ruleId)) {
-            alert('Core state rules cannot be deleted. You can edit their timeline, fee policy, or toggle them.');
-            return;
-        }
-
-        if (!confirm('Are you sure you want to delete this state delivery rule?')) return;
-
-        try {
-            await fetch(`/api/admin/delivery/settings?id=${ruleId}`, { method: 'DELETE' });
-            setRules((prev) => prev.filter((_, idx) => idx !== index));
-        } catch (err: any) {
-            console.error('Error deleting rule:', err);
+    const handleDeleteZone = (id: string) => {
+        if (confirm('Are you sure you want to remove this State Rule?')) {
+            setRules((prev) => prev.filter((r) => r.id !== id));
         }
     };
 
-    // Live State test evaluation
+    // Aerator Set Selection Handlers
+    const isAeratorSelected = (slug: string) => {
+        if (!general.eligibleAeratorSlugs || general.eligibleAeratorSlugs.length === 0) {
+            return true; // Default: all aerator sets are eligible
+        }
+        return general.eligibleAeratorSlugs.includes(slug);
+    };
+
+    const handleToggleAerator = (slug: string) => {
+        const allSlugs = aeratorSets.map((p) => p.slug);
+        const currentList =
+            general.eligibleAeratorSlugs && general.eligibleAeratorSlugs.length > 0
+                ? [...general.eligibleAeratorSlugs]
+                : allSlugs;
+
+        const nextList = currentList.includes(slug)
+            ? currentList.filter((s) => s !== slug)
+            : [...currentList, slug];
+
+        setGeneral((prev) => ({
+            ...prev,
+            eligibleAeratorSlugs: nextList,
+        }));
+    };
+
+    const handleSelectAllAerators = () => {
+        setGeneral((prev) => ({
+            ...prev,
+            eligibleAeratorSlugs: aeratorSets.map((p) => p.slug),
+        }));
+    };
+
+    const handleDeselectAllAerators = () => {
+        setGeneral((prev) => ({
+            ...prev,
+            eligibleAeratorSlugs: ['none_selected'],
+        }));
+    };
+
+    // Simulator evaluation
     const liveTestResult = useMemo(() => {
-        return resolveDeliveryRule(testStateInput, rules);
-    }, [testStateInput, rules]);
+        const mockItems =
+            testProductType === 'aerator'
+                ? [{ category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle' }]
+                : testProductType === 'spares'
+                ? [
+                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan' },
+                      { category: 'float', slug: 'virgin-hdpe-float', name: 'Virgin HDPE Float' },
+                  ]
+                : [
+                      { category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle' },
+                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan' },
+                  ];
+
+        return evaluateOrderFreeDelivery(mockItems, testStateInput, rules, general);
+    }, [testStateInput, testProductType, rules, general]);
 
     // Vehicle Presets handlers
     const handleAddVehiclePreset = () => {
@@ -280,71 +332,321 @@ export default function AdminDeliveryPage() {
                 </div>
             )}
 
-            {/* Interactive Live State Simulator Card */}
+            {/* Production Staging Banner (Requirement 3: Test on localhost, hide on production for now) */}
+            <div
+                className={`mb-8 rounded-2xl border-2 p-5 transition-all shadow-xs ${
+                    general.enabledInProduction
+                        ? 'border-emerald-300 bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-emerald-50/60'
+                        : 'border-amber-300 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-amber-50/70'
+                }`}
+            >
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                                general.enabledInProduction
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : 'bg-amber-100 text-amber-800'
+                            }`}
+                        >
+                            {general.enabledInProduction ? (
+                                <EyeIcon className="w-5 h-5" />
+                            ) : (
+                                <EyeSlashIcon className="w-5 h-5" />
+                            )}
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-extrabold text-slate-900 font-poppins">
+                                    Website Staging & Production Visibility
+                                </h2>
+                                <span
+                                    className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                                        general.enabledInProduction
+                                            ? 'bg-emerald-600 text-white border-emerald-700'
+                                            : 'bg-amber-600 text-white border-amber-700'
+                                    }`}
+                                >
+                                    {general.enabledInProduction
+                                        ? '🌐 Live on Production'
+                                        : '🔒 Hidden on Production (Staging Mode)'}
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                                {general.enabledInProduction ? (
+                                    <>
+                                        Delivery timeline and state shipping options are <strong>LIVE</strong> for
+                                        all customers visiting karthiktraders.in.
+                                    </>
+                                ) : (
+                                    <>
+                                        Delivery feature is <strong>HIDDEN</strong> from live customers on the production website.
+                                        You can test and verify all delivery options on <strong>http://localhost:3000</strong>.
+                                        When you are ready to make it live for customers, toggle the switch below and save.
+                                    </>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none bg-white px-4 py-2 rounded-xl border border-slate-300 shadow-2xs">
+                            <input
+                                type="checkbox"
+                                checked={Boolean(general.enabledInProduction)}
+                                onChange={(e) =>
+                                    setGeneral({
+                                        ...general,
+                                        enabledInProduction: e.target.checked,
+                                    })
+                                }
+                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            />
+                            <span className="text-xs font-bold text-slate-800">
+                                {general.enabledInProduction
+                                    ? 'Enabled on Production'
+                                    : 'Enable on Production'}
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {/* Aerator Set Free Delivery Manager (Requirement 1 & 2: Free Delivery is for Aerator Sets Only) */}
+            <div className="mb-8 rounded-2xl border-2 border-indigo-200 bg-white p-6 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
+                    <div className="flex items-center gap-3">
+                        <span className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg">
+                            <SparklesIcon className="w-5 h-5" />
+                        </span>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-base font-extrabold text-slate-900 font-poppins">
+                                    Aerator Sets Free Delivery Eligibility
+                                </h2>
+                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                                    Free Delivery Rule
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                Configure whether Free Delivery is exclusive to Aerator Sets and select eligible models
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        {/* Toggle Free Delivery for Aerators Only */}
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none bg-indigo-50/70 border border-indigo-200 px-3.5 py-1.5 rounded-xl">
+                            <input
+                                type="checkbox"
+                                checked={general.freeDeliveryForAeratorsOnly ?? true}
+                                onChange={(e) =>
+                                    setGeneral({
+                                        ...general,
+                                        freeDeliveryForAeratorsOnly: e.target.checked,
+                                    })
+                                }
+                                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                            <span className="text-xs font-extrabold text-indigo-950">
+                                Free Delivery for Aerator Sets Only
+                            </span>
+                        </label>
+
+                        {/* Quick Select All / Deselect All */}
+                        <div className="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 text-xs font-bold">
+                            <button
+                                type="button"
+                                onClick={handleSelectAllAerators}
+                                className="px-2.5 py-1 rounded-lg text-slate-700 hover:text-indigo-600 hover:bg-white transition-colors cursor-pointer"
+                            >
+                                Select All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeselectAllAerators}
+                                className="px-2.5 py-1 rounded-lg text-slate-700 hover:text-rose-600 hover:bg-white transition-colors cursor-pointer"
+                            >
+                                Deselect All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="text-xs text-slate-600 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200/80 leading-relaxed">
+                    💡 <strong>Aquaculture Policy:</strong> In Andhra Pradesh, Karthik Traders covers 100% door & farm pond
+                    transport fees for full <strong>Aerator Sets</strong>. Individual spare parts (fans, floats, rods, motors, gearboxes)
+                    are dispatched via customer-arranged transport (To-Pay) unless ordered together with an Aerator Set.
+                </div>
+
+                {/* Aerator Models Selection Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {aeratorSets.map((product) => {
+                        const isSelected = isAeratorSelected(product.slug);
+                        const isSeaboss = product.brand === 'seaboss';
+
+                        return (
+                            <div
+                                key={product.slug}
+                                onClick={() => handleToggleAerator(product.slug)}
+                                className={`rounded-xl border-2 p-3.5 flex items-start gap-3 transition-all cursor-pointer select-none ${
+                                    isSelected
+                                        ? 'border-indigo-500 bg-indigo-50/40 shadow-2xs'
+                                        : 'border-slate-200 bg-slate-50/40 hover:border-slate-300 opacity-60'
+                                }`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => {}} // handled by parent div click
+                                    className="w-4 h-4 mt-1 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                />
+
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <span
+                                            className={`text-[10px] font-black uppercase px-2 py-0.2 rounded ${
+                                                isSeaboss
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-emerald-600 text-white'
+                                            }`}
+                                        >
+                                            {isSeaboss ? 'SEA BOSS' : 'AQUA LION'}
+                                        </span>
+                                        <span className="text-xs font-extrabold text-slate-900 truncate">
+                                            {product.model}
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 truncate">{product.name}</p>
+                                    <div className="mt-1 flex items-center justify-between text-[11px]">
+                                        <span className="font-bold text-slate-700">
+                                            ₹{product.salePrice?.toLocaleString('en-IN')}
+                                        </span>
+                                        <span
+                                            className={`text-[10px] font-bold ${
+                                                isSelected ? 'text-indigo-700' : 'text-slate-400'
+                                            }`}
+                                        >
+                                            {isSelected ? '✓ Free Delivery Eligible' : 'Excluded'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Interactive Live State & Product Simulator Card */}
             <div className="mb-8 rounded-2xl border-2 border-blue-200 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-sky-50/60 p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-3 border-b border-blue-200/60 pb-2.5">
                     <div className="flex items-center gap-2">
                         <span className="text-base">📍</span>
                         <h2 className="text-sm font-extrabold text-blue-950 font-poppins">
-                            Live State Delivery Preview (Customer Experience)
+                            Live State & Cart Delivery Preview (Simulator)
                         </h2>
                     </div>
                     <span className="text-[11px] font-bold text-blue-700 bg-white/80 px-2.5 py-0.5 rounded-full border border-blue-200">
-                        State-Based Resolution
+                        Real-Time Simulator
                     </span>
                 </div>
 
                 <p className="text-xs text-slate-600 mb-4">
-                    Select any destination State to preview the exact shipping fee (<strong>FREE Delivery</strong> vs <strong>Customer Arranged</strong>) and transit timeline shown to customers.
+                    Test how shipping fee and transit days appear for different combinations of <strong>Destination State</strong> and <strong>Cart Products</strong> (Aerator Sets vs Spares).
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                    <div>
-                        <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                            Choose Test State
-                        </label>
-                        <select
-                            value={testStateInput}
-                            onChange={(e) => setTestStateInput(e.target.value)}
-                            className="w-full h-11 px-3.5 rounded-xl border border-blue-300 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
-                        >
-                            {rules.map((r) => (
-                                <option key={r.id} value={r.stateName}>
-                                    {r.stateName}
-                                </option>
-                            ))}
-                        </select>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                                Choose Destination State
+                            </label>
+                            <select
+                                value={testStateInput}
+                                onChange={(e) => setTestStateInput(e.target.value)}
+                                className="w-full h-10 px-3 rounded-xl border border-blue-300 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                            >
+                                {rules.map((r) => (
+                                    <option key={r.id} value={r.stateName}>
+                                        {r.stateName}
+                                    </option>
+                                ))}
+                            </select>
 
-                        <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] font-bold">
-                            <span className="text-slate-500">Quick:</span>
-                            {['Andhra Pradesh', 'Telangana', 'Tamil Nadu', 'West Bengal'].map((sName) => (
-                                <button
-                                    key={sName}
-                                    type="button"
-                                    onClick={() => setTestStateInput(sName)}
-                                    className="px-2 py-0.5 rounded bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 cursor-pointer"
-                                >
-                                    {sName.split(' ')[0]}
-                                </button>
-                            ))}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] font-bold">
+                                <span className="text-slate-500">Quick:</span>
+                                {['Andhra Pradesh', 'Telangana', 'Tamil Nadu', 'West Bengal'].map((sName) => (
+                                    <button
+                                        key={sName}
+                                        type="button"
+                                        onClick={() => setTestStateInput(sName)}
+                                        className="px-2 py-0.5 rounded bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 cursor-pointer"
+                                    >
+                                        {sName.split(' ')[0]}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                                Choose Customer Cart Items
+                            </label>
+                            <div className="flex flex-col gap-1.5 text-xs font-semibold">
+                                <label className="flex items-center gap-2 p-2 rounded-lg bg-white border border-blue-200 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="testItemType"
+                                        value="aerator"
+                                        checked={testProductType === 'aerator'}
+                                        onChange={() => setTestProductType('aerator')}
+                                        className="text-blue-600"
+                                    />
+                                    <span>Aerator Set Only</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-2 rounded-lg bg-white border border-blue-200 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="testItemType"
+                                        value="spares"
+                                        checked={testProductType === 'spares'}
+                                        onChange={() => setTestProductType('spares')}
+                                        className="text-blue-600"
+                                    />
+                                    <span>Spare Parts Only (No Aerator)</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-2 rounded-lg bg-white border border-blue-200 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="testItemType"
+                                        value="mixed"
+                                        checked={testProductType === 'mixed'}
+                                        onChange={() => setTestProductType('mixed')}
+                                        className="text-blue-600"
+                                    />
+                                    <span>Combined: Aerator + Spares</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
                     {/* Result Box */}
-                    <div className="md:col-span-2 p-4 rounded-xl bg-white border border-blue-200 shadow-2xs flex flex-col gap-2.5">
+                    <div className="md:col-span-2 p-4 rounded-xl bg-white border border-blue-200 shadow-2xs flex flex-col gap-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="font-extrabold text-sm text-slate-900">
-                                {liveTestResult.stateName}
+                                {testStateInput} · {testProductType === 'aerator' ? 'Aerator Set' : testProductType === 'spares' ? 'Spares Only' : 'Aerator + Spares'}
                             </span>
 
                             <span
                                 className={`text-xs font-black px-3 py-1 rounded-full border ${
                                     liveTestResult.isFreeDelivery
                                         ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
-                                        : 'bg-sky-100 border-sky-300 text-sky-800'
+                                        : 'bg-amber-100 border-amber-300 text-amber-800'
                                 }`}
                             >
-                                {liveTestResult.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
+                                {liveTestResult.isFreeDelivery
+                                    ? '🟢 FREE Delivery (₹0)'
+                                    : '🔵 Customer Arranged (To-Pay)'}
                             </span>
                         </div>
 
@@ -354,23 +656,23 @@ export default function AdminDeliveryPage() {
                                     Transit Timeline
                                 </span>
                                 <span className="font-extrabold text-emerald-700 font-poppins">
-                                    ⏱️ {liveTestResult.timelineText}
+                                    ⏱️ {liveTestResult.deliveryRule.timelineText}
                                 </span>
                             </div>
                             <div>
                                 <span className="text-[10px] text-slate-500 uppercase font-bold block">
-                                    Responsibility
+                                    Delivery Responsibility
                                 </span>
                                 <span className="font-semibold text-slate-800">
-                                    {liveTestResult.responsibility === 'karthik_traders'
-                                        ? 'Karthik Traders Pays & Delivers'
-                                        : 'Customer Responsibility (To-Pay)'}
+                                    {liveTestResult.isFreeDelivery
+                                        ? 'Karthik Traders Pays (Free Door/Pond Delivery)'
+                                        : 'Customer Arranged Transport (To-Pay)'}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-lg leading-relaxed">
-                            {liveTestResult.description}
+                        <div className="text-[11px] text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 leading-relaxed">
+                            <strong>Policy Result:</strong> {liveTestResult.reason}
                         </div>
                     </div>
                 </div>
@@ -450,7 +752,7 @@ export default function AdminDeliveryPage() {
                                                 onClick={() => updateRuleField(index, 'isFreeDelivery', false)}
                                                 className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
                                                     !rule.isFreeDelivery
-                                                        ? 'bg-blue-700 text-white shadow-2xs'
+                                                        ? 'bg-slate-800 text-white shadow-2xs'
                                                         : 'text-slate-600 hover:text-slate-900'
                                                 }`}
                                             >
@@ -458,12 +760,25 @@ export default function AdminDeliveryPage() {
                                             </button>
                                         </div>
 
+                                        {/* Status Toggle */}
+                                        <button
+                                            type="button"
+                                            onClick={() => updateRuleField(index, 'isActive', !rule.isActive)}
+                                            className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                                                rule.isActive
+                                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                                    : 'bg-slate-100 text-slate-500 border-slate-300'
+                                            }`}
+                                        >
+                                            {rule.isActive ? 'Active' : 'Disabled'}
+                                        </button>
+
                                         {!isCore && (
                                             <button
                                                 type="button"
-                                                onClick={() => handleDeleteZone(rule.id, index)}
-                                                className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                                                title="Delete Custom Zone"
+                                                onClick={() => handleDeleteZone(rule.id)}
+                                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                                title="Delete State Rule"
                                             >
                                                 <TrashIcon className="w-4 h-4" />
                                             </button>
@@ -471,9 +786,8 @@ export default function AdminDeliveryPage() {
                                     </div>
                                 </div>
 
-                                {/* Form Fields */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                                    {/* Timeline Min Days */}
+                                {/* Rule Edit Fields */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                                     <div>
                                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                                             Min Days
@@ -481,14 +795,15 @@ export default function AdminDeliveryPage() {
                                         <input
                                             type="number"
                                             min={1}
-                                            max={60}
+                                            max={30}
                                             value={rule.estimatedDaysMin}
-                                            onChange={(e) => updateRuleField(index, 'estimatedDaysMin', e.target.value)}
-                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            onChange={(e) =>
+                                                updateRuleField(index, 'estimatedDaysMin', Number(e.target.value))
+                                            }
+                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
 
-                                    {/* Timeline Max Days */}
                                     <div>
                                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                                             Max Days
@@ -498,12 +813,13 @@ export default function AdminDeliveryPage() {
                                             min={1}
                                             max={60}
                                             value={rule.estimatedDaysMax}
-                                            onChange={(e) => updateRuleField(index, 'estimatedDaysMax', e.target.value)}
-                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            onChange={(e) =>
+                                                updateRuleField(index, 'estimatedDaysMax', Number(e.target.value))
+                                            }
+                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
 
-                                    {/* Display Timeline Text */}
                                     <div>
                                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                                             Timeline Display Text
@@ -512,29 +828,25 @@ export default function AdminDeliveryPage() {
                                             type="text"
                                             value={rule.timelineText}
                                             onChange={(e) => updateRuleField(index, 'timelineText', e.target.value)}
-                                            placeholder="e.g. 3 to 7 Days"
-                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
 
-                                    {/* Policy Badge Text */}
                                     <div>
                                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            Badge Text
+                                            Policy Badge Text
                                         </label>
                                         <input
                                             type="text"
                                             value={rule.policyBadgeText}
                                             onChange={(e) => updateRuleField(index, 'policyBadgeText', e.target.value)}
-                                            placeholder="e.g. FREE Delivery"
-                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
 
-                                    {/* Tagline & Description */}
                                     <div className="lg:col-span-2">
                                         <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            Customer Tagline
+                                            Tagline (Header / Card subtitle)
                                         </label>
                                         <input
                                             type="text"
@@ -713,46 +1025,47 @@ export default function AdminDeliveryPage() {
                             </div>
 
                             <div>
-                                <label className="block font-bold text-slate-700 uppercase mb-1">State Code</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. KA"
-                                    value={newZone.stateCode}
-                                    onChange={(e) => setNewZone({ ...newZone, stateCode: e.target.value.toUpperCase() })}
-                                    className="w-full h-10 px-3 rounded-xl border border-slate-300 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block font-bold text-slate-700 uppercase mb-1">Shipping Fee Policy</label>
-                                <select
-                                    value={newZone.isFreeDelivery ? 'free' : 'customer'}
-                                    onChange={(e) => setNewZone({ ...newZone, isFreeDelivery: e.target.value === 'free' })}
-                                    className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold"
-                                >
-                                    <option value="customer">Customer Arranged (To-Pay)</option>
-                                    <option value="free">FREE Delivery (Karthik Traders)</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block font-bold text-slate-700 uppercase mb-1">Min Days</label>
+                                <label className="block font-bold text-slate-700 uppercase mb-1">Min Transit Days</label>
                                 <input
                                     type="number"
                                     min={1}
                                     value={newZone.estimatedDaysMin}
-                                    onChange={(e) => setNewZone({ ...newZone, estimatedDaysMin: Number(e.target.value) })}
+                                    onChange={(e) => {
+                                        const val = Number(e.target.value);
+                                        setNewZone({
+                                            ...newZone,
+                                            estimatedDaysMin: val,
+                                            timelineText: `${val} to ${newZone.estimatedDaysMax} Days`,
+                                        });
+                                    }}
                                     className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold"
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-bold text-slate-700 uppercase mb-1">Max Days</label>
+                                <label className="block font-bold text-slate-700 uppercase mb-1">Max Transit Days</label>
                                 <input
                                     type="number"
                                     min={1}
                                     value={newZone.estimatedDaysMax}
-                                    onChange={(e) => setNewZone({ ...newZone, estimatedDaysMax: Number(e.target.value) })}
+                                    onChange={(e) => {
+                                        const val = Number(e.target.value);
+                                        setNewZone({
+                                            ...newZone,
+                                            estimatedDaysMax: val,
+                                            timelineText: `${newZone.estimatedDaysMin} to ${val} Days`,
+                                        });
+                                    }}
+                                    className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold"
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block font-bold text-slate-700 uppercase mb-1">Timeline Text</label>
+                                <input
+                                    type="text"
+                                    value={newZone.timelineText}
+                                    onChange={(e) => setNewZone({ ...newZone, timelineText: e.target.value })}
                                     className="w-full h-10 px-3 rounded-xl border border-slate-300 font-bold"
                                 />
                             </div>
@@ -762,7 +1075,7 @@ export default function AdminDeliveryPage() {
                             <button
                                 type="button"
                                 onClick={() => setNewZoneModalOpen(false)}
-                                className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold cursor-pointer"
                             >
                                 Cancel
                             </button>

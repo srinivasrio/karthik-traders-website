@@ -5,39 +5,67 @@ import {
     TruckIcon,
     CameraIcon,
     MapPinIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline';
 import {
     DEFAULT_RULES,
+    DEFAULT_GENERAL_SETTINGS,
     resolveDeliveryRule,
+    evaluateOrderFreeDelivery,
+    isDeliveryFeatureVisible,
     StateDeliveryRule,
+    DeliveryGeneralSettings,
     INDIAN_STATES_LIST,
+    isAeratorProduct,
+    isItemEligibleForFreeDelivery,
 } from '@/lib/delivery-config';
 
 interface ProductDeliveryEstimatorProps {
     compact?: boolean;
     className?: string;
+    product?: any;
 }
 
 export default function ProductDeliveryEstimator({
     compact = false,
     className = '',
+    product,
 }: ProductDeliveryEstimatorProps) {
     const [rules, setRules] = useState<StateDeliveryRule[]>(DEFAULT_RULES);
+    const [general, setGeneral] = useState<DeliveryGeneralSettings>(DEFAULT_GENERAL_SETTINGS);
     const [selectedState, setSelectedState] = useState<string>('Andhra Pradesh');
+    const [loaded, setLoaded] = useState(false);
 
     // Fetch dynamic rules configured by admin
     useEffect(() => {
         fetch('/api/delivery/config')
             .then((res) => res.json())
             .then((data) => {
-                if (data.success && data.rules && data.rules.length > 0) {
-                    setRules(data.rules);
+                if (data.success) {
+                    if (data.rules && data.rules.length > 0) setRules(data.rules);
+                    if (data.general) setGeneral(data.general);
                 }
+                setLoaded(true);
             })
-            .catch(() => {});
+            .catch(() => setLoaded(true));
     }, []);
 
-    const activeRule = resolveDeliveryRule(selectedState, rules);
+    // Check visibility in production (Requirement 3: hidden in production for now, test on localhost)
+    const isVisible = isDeliveryFeatureVisible(general);
+    if (loaded && !isVisible) {
+        return null;
+    }
+
+    // Evaluate delivery policy for this product and destination state
+    const evalResult = evaluateOrderFreeDelivery(
+        product ? [product] : [{ category: 'aerator-set' }],
+        selectedState,
+        rules,
+        general
+    );
+
+    const activeRule = evalResult.deliveryRule;
+    const isAerator = product ? isAeratorProduct(product) : true;
 
     const quickStates = ['Andhra Pradesh', 'Telangana', 'Tamil Nadu', 'West Bengal'];
 
@@ -62,7 +90,12 @@ export default function ProductDeliveryEstimator({
             {/* Quick State Selector Buttons */}
             <div className="flex flex-wrap gap-1.5 text-xs font-bold">
                 {quickStates.map((stName) => {
-                    const stRule = resolveDeliveryRule(stName, rules);
+                    const stEval = evaluateOrderFreeDelivery(
+                        product ? [product] : [{ category: 'aerator-set' }],
+                        stName,
+                        rules,
+                        general
+                    );
                     const isSelected = selectedState === stName;
                     return (
                         <button
@@ -76,7 +109,7 @@ export default function ProductDeliveryEstimator({
                             }`}
                         >
                             <span>{stName}</span>
-                            {stRule.isFreeDelivery && (
+                            {stEval.isFreeDelivery && (
                                 <span
                                     className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold ${
                                         isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
@@ -102,10 +135,15 @@ export default function ProductDeliveryEstimator({
                     className="flex-1 h-9 px-3 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 outline-none focus:border-blue-600 focus:bg-white transition-colors cursor-pointer"
                 >
                     {INDIAN_STATES_LIST.map((st) => {
-                        const r = resolveDeliveryRule(st, rules);
+                        const stEval = evaluateOrderFreeDelivery(
+                            product ? [product] : [{ category: 'aerator-set' }],
+                            st,
+                            rules,
+                            general
+                        );
                         return (
                             <option key={st} value={st}>
-                                {st} ({r.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {r.timelineText})
+                                {st} ({stEval.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {stEval.deliveryRule.timelineText})
                             </option>
                         );
                     })}
@@ -126,17 +164,22 @@ export default function ProductDeliveryEstimator({
                         </div>
 
                         {/* Shipping Fee Indicator */}
-                        <div className="mt-1.5 flex items-center gap-2">
+                        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-slate-600 font-semibold">Shipping Fee:</span>
                             <span
                                 className={`text-xs font-black px-2.5 py-0.5 rounded-md ${
-                                    activeRule.isFreeDelivery
+                                    evalResult.isFreeDelivery
                                         ? 'bg-emerald-600 text-white'
                                         : 'bg-blue-100 text-blue-900 border border-blue-200'
                                 }`}
                             >
-                                {activeRule.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
+                                {evalResult.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
                             </span>
+                            {evalResult.isFreeDelivery && (
+                                <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                    Aerator Set Free Delivery
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -152,13 +195,18 @@ export default function ProductDeliveryEstimator({
                 </div>
 
                 <p className="text-xs text-slate-700 leading-relaxed font-medium pt-1 border-t border-slate-200/50">
-                    {activeRule.isFreeDelivery ? (
+                    {evalResult.isFreeDelivery ? (
                         <>
-                            🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName}.
+                            🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName} for this Aerator Set.
                         </>
                     ) : (
                         <>
                             📦 Delivery in <strong>{activeRule.timelineText}</strong>. Transport is customer responsibility (dispatched via regional/interstate carrier To-Pay or customer arranged vehicle).
+                            {product && !isAerator && (
+                                <span className="block mt-1 text-[11px] text-slate-600 font-semibold">
+                                    ℹ️ Free delivery is exclusive to Aerator Sets in Andhra Pradesh. Spares are dispatched via customer arranged transport (To-Pay).
+                                </span>
+                            )}
                         </>
                     )}
                 </p>

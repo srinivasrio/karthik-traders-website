@@ -505,7 +505,7 @@ export default function ProductDetailView({
             )}
 
             {/* Farm Delivery & Dispatch Policy Estimator */}
-            <ProductDeliveryEstimator />
+            <ProductDeliveryEstimator product={product} />
 
             {/* Accordion Panels */}
             <div className="flex flex-col border-t border-[#E3E8F0]">

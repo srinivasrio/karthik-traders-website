@@ -6,7 +6,7 @@ import {
     previewRedemption,
     reservePoints,
 } from '@/lib/loyalty';
-import { resolveDeliveryRule } from '@/lib/delivery-config';
+import { resolveDeliveryRule, evaluateOrderFreeDelivery } from '@/lib/delivery-config';
 
 // Initialize Supabase Admin Client
 const supabaseAdmin = createClient(
@@ -149,9 +149,10 @@ export async function POST(request: Request) {
             }
         }
 
-        // Resolve state delivery rule strictly based on shipping state
+        // Resolve state delivery rule strictly based on shipping state & aerator eligibility
         const stateCandidate = body.deliveryState || shippingAddress?.state || 'Andhra Pradesh';
-        const deliveryRule = resolveDeliveryRule(stateCandidate);
+        const deliveryEval = evaluateOrderFreeDelivery(items, stateCandidate);
+        const deliveryRule = deliveryEval.deliveryRule;
 
         // Create order directly (with customer_mobile, loyalty, referral, and delivery fields)
         const orderPayload: any = {
@@ -166,7 +167,7 @@ export async function POST(request: Request) {
             payment_status: 'pending',
             created_by_admin: false,
             delivery_state: deliveryRule.stateName,
-            delivery_type: deliveryRule.responsibility === 'karthik_traders' ? 'free_ap' : 'customer_arranged',
+            delivery_type: deliveryEval.isFreeDelivery ? 'free_ap' : 'customer_arranged',
             delivery_estimated_days: body.deliveryEstimatedDays || deliveryRule.timelineText,
             loyalty_points_redeemed: validatedLoyaltyPoints,
             loyalty_discount_amount: loyaltyDiscountRupees,

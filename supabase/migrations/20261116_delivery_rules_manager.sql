@@ -109,6 +109,9 @@ CREATE TABLE IF NOT EXISTS public.delivery_general_settings (
     ],
     free_shipping_notice TEXT NOT NULL DEFAULT '100% Free Door/Pond Delivery across Andhra Pradesh covered by Karthik Traders.',
     customer_arranged_notice TEXT NOT NULL DEFAULT 'Transport arranged by customer (To-Pay / customer vehicle).',
+    free_delivery_for_aerators_only BOOLEAN NOT NULL DEFAULT true,
+    eligible_aerator_slugs TEXT[] NOT NULL DEFAULT '{}',
+    is_delivery_feature_enabled_in_production BOOLEAN NOT NULL DEFAULT false,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT delivery_general_settings_single_row CHECK (id = 1)
 );

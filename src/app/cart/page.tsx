@@ -10,8 +10,12 @@ import { validateCoupon } from '@/app/actions/validateCoupon';
 import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionControl';
 import {
   resolveDeliveryRule,
+  evaluateOrderFreeDelivery,
+  isDeliveryFeatureVisible,
   DEFAULT_RULES,
+  DEFAULT_GENERAL_SETTINGS,
   StateDeliveryRule,
+  DeliveryGeneralSettings,
   INDIAN_STATES_LIST,
 } from '@/lib/delivery-config';
 
@@ -37,20 +41,24 @@ export default function CartPage() {
 
   // Delivery & shipping fee by State lookup
   const [deliveryRules, setDeliveryRules] = useState<StateDeliveryRule[]>(DEFAULT_RULES);
+  const [deliveryGeneral, setDeliveryGeneral] = useState<DeliveryGeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [cartState, setCartState] = useState<string>('Andhra Pradesh');
 
   useEffect(() => {
     fetch('/api/delivery/config')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.rules && data.rules.length > 0) {
-          setDeliveryRules(data.rules);
+        if (data.success) {
+          if (data.rules && data.rules.length > 0) setDeliveryRules(data.rules);
+          if (data.general) setDeliveryGeneral(data.general);
         }
       })
       .catch(() => {});
   }, []);
 
-  const cartDeliveryRule = resolveDeliveryRule(cartState, deliveryRules);
+  const cartEval = evaluateOrderFreeDelivery(cartItems, cartState, deliveryRules, deliveryGeneral);
+  const cartDeliveryRule = cartEval.deliveryRule;
+  const isDeliveryVisible = isDeliveryFeatureVisible(deliveryGeneral);
 
   // Restore loyalty points from sessionStorage if returning to cart
   useEffect(() => {
@@ -377,46 +385,50 @@ export default function CartPage() {
                 />
               </div>
 
-              {/* Shipping Policy by State */}
-              <div className="pt-2 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-[#0B1A33] uppercase tracking-wider">
-                    Shipping Policy by State
-                  </span>
-                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                    cartDeliveryRule.isFreeDelivery ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-900'
-                  }`}>
-                    {cartDeliveryRule.isFreeDelivery ? '🟢 FREE (₹0)' : '🔵 Customer Arranged'}
-                  </span>
-                </div>
-
-                <select
-                  value={cartState}
-                  onChange={(e) => setCartState(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-white/60 bg-white/80 text-xs font-bold text-[#0B1A33] outline-none focus:bg-white cursor-pointer"
-                >
-                  {INDIAN_STATES_LIST.map((st) => {
-                    const stRule = resolveDeliveryRule(st, deliveryRules);
-                    return (
-                      <option key={st} value={st}>
-                        {st} ({stRule.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {stRule.timelineText})
-                      </option>
-                    );
-                  })}
-                </select>
-
-                <div className="text-[11px] p-2.5 rounded-xl bg-white/70 border border-white/80 flex flex-col gap-1 text-[#0B1A33]">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold">{cartDeliveryRule.stateName}:</span>
-                    <span className="font-extrabold text-[#0B7A4B]">⏱️ {cartDeliveryRule.timelineText}</span>
+              {/* Shipping Policy by State (Visible on localhost, hidden on production until enabled) */}
+              {isDeliveryVisible && (
+                <div className="pt-2 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-[#0B1A33] uppercase tracking-wider">
+                      Shipping Policy by State
+                    </span>
+                    <span
+                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                        cartEval.isFreeDelivery
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-blue-100 text-blue-900'
+                      }`}
+                    >
+                      {cartEval.isFreeDelivery ? '🟢 FREE (₹0)' : '🔵 Customer Arranged'}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-slate-600">
-                    {cartDeliveryRule.isFreeDelivery
-                      ? '100% Free Door/Pond Delivery by Karthik Traders'
-                      : 'Transport arranged by customer (To-Pay / customer vehicle)'}
-                  </span>
+
+                  <select
+                    value={cartState}
+                    onChange={(e) => setCartState(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-white/60 bg-white/80 text-xs font-bold text-[#0B1A33] outline-none focus:bg-white cursor-pointer"
+                  >
+                    {INDIAN_STATES_LIST.map((st) => {
+                      const stEval = evaluateOrderFreeDelivery(cartItems, st, deliveryRules, deliveryGeneral);
+                      return (
+                        <option key={st} value={st}>
+                          {st} ({stEval.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {stEval.deliveryRule.timelineText})
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <div className="text-[11px] p-2.5 rounded-xl bg-white/70 border border-white/80 flex flex-col gap-1 text-[#0B1A33]">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold">{cartDeliveryRule.stateName}:</span>
+                      <span className="font-extrabold text-[#0B7A4B]">⏱️ {cartDeliveryRule.timelineText}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-700 leading-snug">
+                      {cartEval.reason}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="h-px bg-black/10 my-1" />
 
