@@ -214,6 +214,17 @@ export default function CheckoutPage() {
       }
       setIsSuccessModalOpen(true);
     } catch (err: any) {
+      if (err.message && (err.message.includes('points') || err.message.includes('loyalty') || err.message.includes('redeem'))) {
+        setLoyaltyPoints(0);
+        setLoyaltyDiscount(0);
+        try {
+          sessionStorage.removeItem('kt_cart_points');
+          sessionStorage.removeItem('kt_cart_loyalty_discount');
+        } catch (e) {}
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('loyalty:refresh'));
+        }
+      }
       alert('Error placing order: ' + err.message);
     } finally {
       setLoading(false);

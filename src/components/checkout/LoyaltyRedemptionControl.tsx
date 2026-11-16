@@ -33,72 +33,105 @@ export default function LoyaltyRedemptionControl({
         }
     }, [appliedPoints]);
 
-    // Fetch wallet summary when session is present
-    useEffect(() => {
+    const fetchWallet = async () => {
         if (!session?.access_token) return;
-
-        const fetchWallet = async () => {
-            try {
-                const res = await fetch('/api/loyalty/summary', {
-                    headers: {
-                        Authorization: `Bearer ${session.access_token}`,
-                    },
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setWalletData(data);
+        try {
+            const res = await fetch('/api/loyalty/summary', {
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setWalletData(data);
+                if ((data.points_balance || 0) === 0) {
+                    setIsRedeeming(false);
+                    onApplyPoints(0, 0);
+                    try {
+                        sessionStorage.removeItem('kt_cart_points');
+                        sessionStorage.removeItem('kt_cart_loyalty_discount');
+                    } catch (e) {}
                 }
-            } catch (err) {
-                console.warn('Failed to fetch loyalty wallet:', err);
             }
-        };
+        } catch (err) {
+            console.warn('Failed to fetch loyalty wallet:', err);
+        }
+    };
 
-        fetchWallet();
-    }, [session?.access_token]);
-
-    // Preview redemption whenever cart items or wallet balance changes
-    useEffect(() => {
+    const runPreview = async () => {
         if (!session?.access_token || !items.length) {
             setPreviewData(null);
             return;
         }
+        setLoading(true);
+        setErrorMsg('');
+        try {
+            const res = await fetch('/api/loyalty/preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                    items,
+                    pointsRequested: isRedeeming ? 999999 : null,
+                }),
+            });
 
-        const runPreview = async () => {
-            setLoading(true);
-            setErrorMsg('');
-            try {
-                const res = await fetch('/api/loyalty/preview', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${session.access_token}`,
-                    },
-                    body: JSON.stringify({
-                        items,
-                        pointsRequested: isRedeeming ? 999999 : null,
-                    }),
-                });
-
-                const data = await res.json();
-                if (res.ok && data.success) {
-                    setPreviewData(data);
-                    if (isRedeeming) {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setPreviewData(data);
+                if (isRedeeming) {
+                    if (data.is_eligible && (data.max_redeemable_points || 0) > 0) {
                         const pts = data.max_redeemable_points || 0;
                         const discount = Math.round(pts * (data.paise_per_point || 25)) / 100;
                         onApplyPoints(pts, discount);
+                    } else {
+                        setIsRedeeming(false);
+                        onApplyPoints(0, 0);
+                        try {
+                            sessionStorage.removeItem('kt_cart_points');
+                            sessionStorage.removeItem('kt_cart_loyalty_discount');
+                        } catch (e) {}
                     }
-                } else {
-                    setErrorMsg(data.error || data.message || 'Unable to preview redemption');
                 }
-            } catch (err: any) {
-                console.warn('Preview error:', err);
-            } finally {
-                setLoading(false);
+            } else {
+                setErrorMsg(data.error || data.message || 'Unable to preview redemption');
+                setIsRedeeming(false);
+                onApplyPoints(0, 0);
+                try {
+                    sessionStorage.removeItem('kt_cart_points');
+                    sessionStorage.removeItem('kt_cart_loyalty_discount');
+                } catch (e) {}
             }
-        };
+        } catch (err: any) {
+            console.warn('Preview error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    // Fetch wallet summary when session is present
+    useEffect(() => {
+        fetchWallet();
+    }, [session?.access_token]);
+
+    // Preview redemption whenever cart items or redemption toggle changes
+    useEffect(() => {
         runPreview();
     }, [items, session?.access_token, isRedeeming]);
+
+    // Listen for global loyalty refresh events
+    useEffect(() => {
+        const handleRefresh = () => {
+            fetchWallet();
+            runPreview();
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('loyalty:refresh', handleRefresh);
+            return () => window.removeEventListener('loyalty:refresh', handleRefresh);
+        }
+    }, [session?.access_token, items, isRedeeming]);
 
     if (!session) {
         return (
@@ -138,6 +171,10 @@ export default function LoyaltyRedemptionControl({
     const handleRemoveRedeem = () => {
         setIsRedeeming(false);
         onApplyPoints(0, 0);
+        try {
+            sessionStorage.removeItem('kt_cart_points');
+            sessionStorage.removeItem('kt_cart_loyalty_discount');
+        } catch (e) {}
     };
 
     return (
