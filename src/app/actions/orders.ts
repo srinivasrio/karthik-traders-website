@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { resolveDeliveryRule } from '@/lib/delivery-config';
 
 // Initialize Supabase Admin Client using service role to bypass client RLS policies
 const supabaseAdmin = createSupabaseClient(
@@ -155,3 +156,75 @@ export async function updateOrderFulfillmentAction(
         return { success: false, error: err.message || 'Internal Server Error' };
     }
 }
+
+export interface OrderDispatchInput {
+    vehicle_number?: string;
+    vehicle_type?: string;
+    driver_name?: string;
+    driver_mobile?: string;
+    vehicle_photo_url?: string;
+    transport_name?: string;
+    lr_number?: string;
+    estimated_delivery_date?: string;
+    delivery_state?: string;
+    delivery_type?: string;
+    delivery_estimated_days?: string;
+    mark_shipped?: boolean;
+}
+
+export async function updateOrderDispatchAction(orderId: string, input: OrderDispatchInput) {
+    try {
+        const { data: currentOrder, error: fetchErr } = await supabaseAdmin
+            .from('orders')
+            .select('id, status, shipping_address, delivery_state, dispatched_at')
+            .eq('id', orderId)
+            .single();
+
+        if (fetchErr || !currentOrder) {
+            return { success: false, error: 'Order not found' };
+        }
+
+        const stateToUse = input.delivery_state || currentOrder.delivery_state || (typeof currentOrder.shipping_address === 'object' ? currentOrder.shipping_address?.state : null) || 'Andhra Pradesh';
+        const rule = resolveDeliveryRule(stateToUse);
+
+        const updatePayload: Record<string, any> = {
+            vehicle_number: input.vehicle_number ? String(input.vehicle_number).trim().toUpperCase() : null,
+            vehicle_type: input.vehicle_type ? String(input.vehicle_type).trim() : null,
+            driver_name: input.driver_name ? String(input.driver_name).trim() : null,
+            driver_mobile: input.driver_mobile ? String(input.driver_mobile).trim().replace(/[^\d+]/g, '') : null,
+            vehicle_photo_url: input.vehicle_photo_url ? String(input.vehicle_photo_url).trim() : null,
+            transport_name: input.transport_name ? String(input.transport_name).trim() : null,
+            lr_number: input.lr_number ? String(input.lr_number).trim() : null,
+            estimated_delivery_date: input.estimated_delivery_date || null,
+            delivery_state: rule.stateName,
+            delivery_type: rule.responsibility === 'karthik_traders' ? 'free_ap' : 'customer_arranged',
+            delivery_estimated_days: input.delivery_estimated_days || rule.timelineText,
+            updated_at: new Date().toISOString(),
+        };
+
+        if (input.mark_shipped) {
+            updatePayload.status = 'shipped';
+            if (!currentOrder.dispatched_at) {
+                updatePayload.dispatched_at = new Date().toISOString();
+            }
+        }
+
+        const { data: updatedOrder, error: updateErr } = await supabaseAdmin
+            .from('orders')
+            .update(updatePayload)
+            .eq('id', orderId)
+            .select()
+            .single();
+
+        if (updateErr) {
+            console.error('Error updating order dispatch details:', updateErr);
+            return { success: false, error: updateErr.message };
+        }
+
+        return { success: true, data: updatedOrder };
+    } catch (err: any) {
+        console.error('Update dispatch action error:', err);
+        return { success: false, error: err.message || 'Internal Server Error' };
+    }
+}
+

@@ -43,7 +43,9 @@ export async function uploadImageToStorage(file: File, category: string = ''): P
         let mappedFolder = 'spares';
         const cat = (category || '').toLowerCase().trim();
 
-        if (cat === 'aerators' || cat === 'aerator-set' || cat.includes('aerator')) {
+        if (cat === 'delivery' || cat === 'vehicle' || cat.includes('dispatch') || cat.includes('vehicle')) {
+            mappedFolder = 'delivery';
+        } else if (cat === 'aerators' || cat === 'aerator-set' || cat.includes('aerator')) {
             mappedFolder = 'aerators';
         } else if (cat === 'motors' || cat === 'motor') {
             mappedFolder = 'motors';

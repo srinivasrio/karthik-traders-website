@@ -9,6 +9,7 @@ import { formatPrice } from '@/data/products';
 import { COUPONS_STORE } from '@/data/kt-ui';
 import LoyaltyRedemptionControl from '@/components/checkout/LoyaltyRedemptionControl';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
+import { resolveDeliveryRule } from '@/lib/delivery-config';
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, totalPrice, finalPrice, discountAmount, coupon, applyCoupon } = useCart();
@@ -34,6 +35,9 @@ export default function CheckoutPage() {
   const [placedOrderData, setPlacedOrderData] = useState<any>(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
+
+  // Dynamic state delivery policy
+  const deliveryRule = resolveDeliveryRule(formData.state || formData.pincode);
 
   // Restore loyalty points selected in Cart if available
   useEffect(() => {
@@ -124,6 +128,9 @@ export default function CheckoutPage() {
           pointsToRedeem: loyaltyPoints,
           loyaltyDiscount: loyaltyDiscount,
           deliveryFee: 0,
+          deliveryState: deliveryRule.stateName,
+          deliveryType: deliveryRule.responsibility === 'karthik_traders' ? 'free_ap' : 'customer_arranged',
+          deliveryEstimatedDays: deliveryRule.timelineText,
         }),
       });
 
@@ -350,14 +357,22 @@ export default function CheckoutPage() {
                   <label htmlFor="co-state" className="text-xs font-extrabold text-[#3D4A63] uppercase tracking-wider">
                     State
                   </label>
-                  <input
+                  <select
                     id="co-state"
-                    type="text"
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    placeholder="Andhra Pradesh"
-                    className="h-12 px-4 rounded-xl border border-[#D5DCE8] bg-[#FBFBFB] text-sm font-medium text-[#0B1A33] outline-none focus:border-[#4338CA]"
-                  />
+                    className="h-12 px-3.5 rounded-xl border border-[#D5DCE8] bg-[#FBFBFB] text-sm font-semibold text-[#0B1A33] outline-none focus:border-[#4338CA] transition-colors"
+                  >
+                    <option value="Andhra Pradesh">Andhra Pradesh (FREE Delivery, 3-7 Days)</option>
+                    <option value="Telangana">Telangana (3-7 Days)</option>
+                    <option value="Tamil Nadu">Tamil Nadu (3-7 Days)</option>
+                    <option value="West Bengal">West Bengal (10-15 Days)</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Other States">Other States</option>
+                  </select>
                   {errors.state && <span className="text-xs font-bold text-[#E5355F]">{errors.state}</span>}
                 </div>
 
@@ -414,6 +429,42 @@ export default function CheckoutPage() {
                     />
                   </div>
                   {errors.mobile && <span className="text-xs font-bold text-[#E5355F]">{errors.mobile}</span>}
+                </div>
+              </div>
+
+              {/* State-wise Delivery Policy & Live Vehicle Transparency Banner */}
+              <div className={`mt-4 p-4 rounded-2xl border ${deliveryRule.badgeColor.border} ${deliveryRule.badgeColor.bg} flex flex-col gap-2.5`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${deliveryRule.badgeColor.dot}`} />
+                    <span className="font-extrabold text-sm text-[#0B1A33]">
+                      {deliveryRule.stateName} Delivery Policy
+                    </span>
+                  </div>
+                  <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
+                    deliveryRule.isFreeDelivery ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-800'
+                  }`}>
+                    {deliveryRule.policyBadgeText}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                  {deliveryRule.isFreeDelivery ? (
+                    <>
+                      🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{deliveryRule.timelineText}</strong> provided directly by Karthik Traders across Andhra Pradesh.
+                    </>
+                  ) : (
+                    <>
+                      📦 Delivery in <strong>{deliveryRule.timelineText}</strong>. Transport is customer responsibility (dispatched via regional logistics To-Pay or customer arranged vehicle).
+                    </>
+                  )}
+                </p>
+
+                <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600 flex items-center gap-2 font-medium">
+                  <span className="text-sm">🚚</span>
+                  <span>
+                    After loading, your <strong>Vehicle Number</strong>, <strong>Driver contact</strong>, and <strong>Photo of loaded vehicle</strong> will be shown on your dashboard!
+                  </span>
                 </div>
               </div>
             </section>

@@ -11,6 +11,7 @@ import SimpleLoadingScreen from '@/components/ui/SimpleLoadingScreen';
 import LoyaltyCustomerView from '@/components/dashboard/LoyaltyCustomerView';
 import ReferralDashboardView from '@/components/referral/ReferralDashboardView';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
+import CustomerOrderDeliveryCard from '@/components/delivery/CustomerOrderDeliveryCard';
 
 interface OrderItem {
   quantity: number;
@@ -37,6 +38,18 @@ interface Order {
   customer_mobile?: string;
   shipping_address?: any;
   created_by_admin?: boolean;
+  delivery_state?: string;
+  delivery_type?: string;
+  delivery_estimated_days?: string;
+  vehicle_number?: string;
+  vehicle_type?: string;
+  driver_name?: string;
+  driver_mobile?: string;
+  vehicle_photo_url?: string;
+  transport_name?: string;
+  lr_number?: string;
+  dispatched_at?: string;
+  estimated_delivery_date?: string;
   order_items?: OrderItem[];
 }
 
@@ -146,6 +159,18 @@ export default function DashboardPage() {
           customer_name, 
           customer_mobile, 
           shipping_address, 
+          delivery_state,
+          delivery_type,
+          delivery_estimated_days,
+          vehicle_number,
+          vehicle_type,
+          driver_name,
+          driver_mobile,
+          vehicle_photo_url,
+          transport_name,
+          lr_number,
+          dispatched_at,
+          estimated_delivery_date,
           order_items(product_id, quantity, price_at_purchase)
         `)
         .order('created_at', { ascending: false });
@@ -649,6 +674,9 @@ export default function DashboardPage() {
                               })}
                             </div>
                           )}
+
+                          {/* State Delivery Policy & Dispatched Vehicle Transparency Card */}
+                          <CustomerOrderDeliveryCard order={order} />
 
                           {/* Line Items Table */}
                           <div className="rounded-xl border border-[#EEF2F8] overflow-hidden divide-y divide-[#EEF2F8] text-xs sm:text-sm">

@@ -10,6 +10,7 @@ import { updateOrderStatus, updatePaymentStatus } from '@/lib/orders-actions';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 import InvoiceViewer from '@/components/invoice/InvoiceViewer';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import OrderDispatchCard from '@/components/admin/OrderDispatchCard';
 
 import { allProducts } from '@/data/products';
 
@@ -490,6 +491,12 @@ export default function OrderDetailPage() {
                     </div>
                 )}
             </div>
+
+            {/* Dispatch & Vehicle Load Transparency Card */}
+            <OrderDispatchCard
+                order={order}
+                onOrderUpdated={(updated) => setOrder((prev: any) => ({ ...prev, ...updated }))}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>

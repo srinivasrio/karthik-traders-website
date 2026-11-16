@@ -6,6 +6,7 @@ import {
     previewRedemption,
     reservePoints,
 } from '@/lib/loyalty';
+import { resolveDeliveryRule } from '@/lib/delivery-config';
 
 // Initialize Supabase Admin Client
 const supabaseAdmin = createClient(
@@ -148,7 +149,11 @@ export async function POST(request: Request) {
             }
         }
 
-        // Create order directly (with customer_mobile, loyalty, and referral fields)
+        // Resolve state delivery rule based on shipping address
+        const stateCandidate = body.deliveryState || shippingAddress?.state || shippingAddress?.city || 'Andhra Pradesh';
+        const deliveryRule = resolveDeliveryRule(stateCandidate || shippingAddress?.pincode);
+
+        // Create order directly (with customer_mobile, loyalty, referral, and delivery fields)
         const orderPayload: any = {
             user_id: user.id,
             customer_mobile: normalizedMobile,
@@ -160,6 +165,9 @@ export async function POST(request: Request) {
             status: 'pending',
             payment_status: 'pending',
             created_by_admin: false,
+            delivery_state: deliveryRule.stateName,
+            delivery_type: deliveryRule.responsibility === 'karthik_traders' ? 'free_ap' : 'customer_arranged',
+            delivery_estimated_days: body.deliveryEstimatedDays || deliveryRule.timelineText,
             loyalty_points_redeemed: validatedLoyaltyPoints,
             loyalty_discount_amount: loyaltyDiscountRupees,
             loyalty_status: validatedLoyaltyPoints > 0 ? 'reserved' : 'none',

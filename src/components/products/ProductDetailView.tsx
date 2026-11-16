@@ -8,6 +8,7 @@ import { useCart } from '@/context/CartContext';
 import ImageModal from '@/components/ui/ImageModal';
 import ProductCard from '@/components/products/ProductCard';
 import CompareFloatingTray from '@/components/products/CompareFloatingTray';
+import ProductDeliveryEstimator from '@/components/delivery/ProductDeliveryEstimator';
 
 interface ProductDetailViewProps {
   product: Product;
@@ -502,6 +503,9 @@ export default function ProductDetailView({
                 </div>
               </div>
             )}
+
+            {/* Farm Delivery & Dispatch Policy Estimator */}
+            <ProductDeliveryEstimator />
 
             {/* Accordion Panels */}
             <div className="flex flex-col border-t border-[#E3E8F0]">

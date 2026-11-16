@@ -366,6 +366,11 @@ export default function AdminOrdersPage() {
                                                                 <p className="text-xs text-slate-500">
                                                                     {new Date(order.created_at).toLocaleDateString()}
                                                                 </p>
+                                                                {(order as any).vehicle_number && (
+                                                                    <span className="inline-flex items-center gap-1 text-[10px] font-mono bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-bold mt-1">
+                                                                        🚚 {(order as any).vehicle_number}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </td>
