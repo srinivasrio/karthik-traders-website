@@ -98,7 +98,7 @@ export default function CheckoutPage() {
         setFormData((prev) => ({
           ...prev,
           fullName: prev.fullName || name,
-          mobile: prev.mobile || phone.replace('+91', '').trim(),
+          mobile: prev.mobile || String(phone || '').replace('+91', '').trim(),
         }));
       }
     };
@@ -176,13 +176,13 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Failed to place order');
       }
 
-      const orderId = data.orderId || `KT-${Date.now().toString().slice(-6)}`;
+      const orderId = String(data.orderId || `KT-${Date.now().toString().slice(-6)}`);
       setPlacedOrderId(orderId);
 
       // Cache placed order payload for immediate invoice generation
       setPlacedOrderData({
         id: orderId,
-        order_number: orderId.replace(/\D/g, '').slice(-6) || Date.now().toString().slice(-6),
+        order_number: String(orderId).replace(/\D/g, '').slice(-6) || Date.now().toString().slice(-6),
         created_at: new Date().toISOString(),
         customer_name: formData.fullName,
         customer_mobile: formData.mobile,

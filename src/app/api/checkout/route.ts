@@ -79,7 +79,7 @@ export async function POST(request: Request) {
             console.log(`[Checkout] Duplicate order request detected for user ${user.id} within 15s. Returning existing order #${recentOrder.order_number}`);
             return NextResponse.json({
                 success: true,
-                orderId: recentOrder.order_number,
+                orderId: String(recentOrder.order_number),
                 loyaltyPointsRedeemed: recentOrder.loyalty_points_redeemed || 0,
                 loyaltyDiscount: recentOrder.loyalty_discount_amount || 0,
                 isDuplicate: true,
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
                     console.log(`[Checkout] Points were already consumed by recent order #${justPlacedOrder.order_number}. Returning success.`);
                     return NextResponse.json({
                         success: true,
-                        orderId: justPlacedOrder.order_number,
+                        orderId: String(justPlacedOrder.order_number),
                         loyaltyPointsRedeemed: justPlacedOrder.loyalty_points_redeemed || 0,
                         loyaltyDiscount: justPlacedOrder.loyalty_discount_amount || 0,
                         isDuplicate: true,
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
         }));
 
         // Normalize customer mobile number (digits only, no + or spaces)
-        const rawMobile = profile?.mobile || shippingAddress.mobile || '';
+        const rawMobile = String(profile?.mobile || shippingAddress.mobile || '');
         const normalizedMobile = rawMobile.replace(/\D/g, '');
 
         // Generate clean idempotency key for this order checkout
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
         let orderReferralCode: string | null = null;
         let referralDiscountAmount = 0;
 
-        const rawCandidate = ((body.referralCode || couponCode || '') as string).trim().toUpperCase();
+        const rawCandidate = String(body.referralCode || couponCode || '').trim().toUpperCase();
         const candidateCode = rawCandidate.replace(/[^A-Z0-9]/g, '');
         if (candidateCode) {
             try {
@@ -331,7 +331,7 @@ ${shippingAddress.state}, ${shippingAddress.pincode}
 
         return NextResponse.json({
             success: true,
-            orderId: order.order_number,
+            orderId: String(order.order_number),
             loyaltyPointsRedeemed: validatedLoyaltyPoints,
             loyaltyDiscount: loyaltyDiscountRupees
         });

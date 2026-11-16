@@ -102,18 +102,16 @@ export default function ProductDeliveryEstimator({
                             key={stName}
                             type="button"
                             onClick={() => setSelectedState(stName)}
-                            className={`px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
-                                isSelected
-                                    ? 'bg-[#0B1A33] border-[#0B1A33] text-white shadow-xs'
-                                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                            }`}
+                            className={`px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer flex items-center gap-1.5 ${isSelected
+                                ? 'bg-[#0B1A33] border-[#0B1A33] text-white shadow-xs'
+                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                }`}
                         >
                             <span>{stName}</span>
                             {stEval.isFreeDelivery && (
                                 <span
-                                    className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold ${
-                                        isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
-                                    }`}
+                                    className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold ${isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
+                                        }`}
                                 >
                                     FREE
                                 </span>
@@ -167,11 +165,10 @@ export default function ProductDeliveryEstimator({
                         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-slate-600 font-semibold">Shipping Fee:</span>
                             <span
-                                className={`text-xs font-black px-2.5 py-0.5 rounded-md ${
-                                    evalResult.isFreeDelivery
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-blue-100 text-blue-900 border border-blue-200'
-                                }`}
+                                className={`text-xs font-black px-2.5 py-0.5 rounded-md ${evalResult.isFreeDelivery
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-blue-100 text-blue-900 border border-blue-200'
+                                    }`}
                             >
                                 {evalResult.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
                             </span>
