@@ -64,6 +64,28 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // 1. Deduplication guard: Check if the user placed an order in the last 15 seconds
+        const fifteenSecondsAgo = new Date(Date.now() - 15000).toISOString();
+        const { data: recentOrder } = await supabaseAdmin
+            .from('orders')
+            .select('id, order_number, total_amount, loyalty_points_redeemed, loyalty_discount_amount, created_at')
+            .eq('user_id', user.id)
+            .gte('created_at', fifteenSecondsAgo)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (recentOrder) {
+            console.log(`[Checkout] Duplicate order request detected for user ${user.id} within 15s. Returning existing order #${recentOrder.order_number}`);
+            return NextResponse.json({
+                success: true,
+                orderId: recentOrder.order_number,
+                loyaltyPointsRedeemed: recentOrder.loyalty_points_redeemed || 0,
+                loyaltyDiscount: recentOrder.loyalty_discount_amount || 0,
+                isDuplicate: true,
+            });
+        }
+
         // Fetch user profile to get mobile number & referral linkage
         const { data: profile } = await supabaseAdmin
             .from('profiles')
@@ -82,6 +104,28 @@ export async function POST(request: Request) {
         if (requestedPoints > 0) {
             const preview = await previewRedemption(user.id, eligibleSubtotalPaise, requestedPoints);
             if (!preview.is_eligible) {
+                // Secondary check: Did an order just get placed for this user in the last 60 seconds that consumed points?
+                const sixtySecondsAgo = new Date(Date.now() - 60000).toISOString();
+                const { data: justPlacedOrder } = await supabaseAdmin
+                    .from('orders')
+                    .select('id, order_number, loyalty_points_redeemed, loyalty_discount_amount')
+                    .eq('user_id', user.id)
+                    .gte('created_at', sixtySecondsAgo)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (justPlacedOrder) {
+                    console.log(`[Checkout] Points were already consumed by recent order #${justPlacedOrder.order_number}. Returning success.`);
+                    return NextResponse.json({
+                        success: true,
+                        orderId: justPlacedOrder.order_number,
+                        loyaltyPointsRedeemed: justPlacedOrder.loyalty_points_redeemed || 0,
+                        loyaltyDiscount: justPlacedOrder.loyalty_discount_amount || 0,
+                        isDuplicate: true,
+                    });
+                }
+
                 return NextResponse.json({
                     error: preview.message || 'Cart does not meet loyalty points redemption requirements',
                     code: preview.reason_code,

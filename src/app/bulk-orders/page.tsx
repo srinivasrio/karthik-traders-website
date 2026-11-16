@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -25,6 +25,7 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [session, setSession] = useState<any>(null);
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
@@ -130,12 +131,18 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingRef.current || loading) {
+      console.warn('[Checkout] Order placement already in flight. Ignoring duplicate tap.');
+      return;
+    }
+
     const err = validate();
     if (Object.keys(err).length > 0) {
       setErrors(err);
       return;
     }
     setErrors({});
+    isSubmittingRef.current = true;
     setLoading(true);
 
     try {
@@ -210,6 +217,7 @@ export default function CheckoutPage() {
       alert('Error placing order: ' + err.message);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -397,7 +405,9 @@ export default function CheckoutPage() {
                       const stRule = resolveDeliveryRule(st, deliveryRules);
                       return (
                         <option key={st} value={st}>
-                          {st} ({stRule.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {stRule.timelineText})
+                          {isDeliveryVisible
+                            ? `${st} (${stRule.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · ${stRule.timelineText})`
+                            : st}
                         </option>
                       );
                     })}
@@ -623,10 +633,15 @@ export default function CheckoutPage() {
               type="button"
               disabled={loading}
               onClick={handlePlaceOrder}
-              className="h-14 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-base flex items-center justify-center gap-2 transition-colors shadow-md disabled:opacity-60 cursor-pointer"
+              className={`h-14 rounded-full bg-[#C4D9FF] hover:bg-[#24365A] hover:text-white text-[#0B1A33] font-extrabold text-base flex items-center justify-center gap-2 transition-colors shadow-md disabled:opacity-60 cursor-pointer ${
+                loading ? 'pointer-events-none opacity-60' : ''
+              }`}
             >
               {loading ? (
-                <span>Placing Order...</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 border-2 border-[#0B1A33] border-t-transparent rounded-full animate-spin" />
+                  <span>Placing Order...</span>
+                </div>
               ) : (
                 <>
                   <span>Confirm Order</span>

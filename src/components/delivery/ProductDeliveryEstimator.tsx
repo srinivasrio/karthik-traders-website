@@ -50,9 +50,9 @@ export default function ProductDeliveryEstimator({
             .catch(() => setLoaded(true));
     }, []);
 
-    // Check visibility in production (Requirement 3: hidden in production for now, test on localhost)
+    // Check visibility in production (Hidden on production for now, test on localhost)
     const isVisible = isDeliveryFeatureVisible(general);
-    if (loaded && !isVisible) {
+    if (!isVisible) {
         return null;
     }
 
