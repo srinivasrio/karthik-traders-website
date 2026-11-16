@@ -829,7 +829,7 @@ export default function DashboardPage() {
                       KARTHIK TRADERS
                     </h3>
                     <p className="text-[10.5px] font-bold text-[#1D64EC] uppercase tracking-wide mt-0.5">
-                      Aquaculture Equipment & Aeration Specialists
+                      Aquaculture aerators and spare parts
                     </p>
                     <p className="text-[11px] text-[#5B6880] leading-relaxed mt-1.5">
                       Shop No. 13, Opp. Madhura Sweets Line, Near MRF Tyres Line,<br />

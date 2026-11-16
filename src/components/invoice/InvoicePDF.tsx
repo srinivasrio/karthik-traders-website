@@ -545,7 +545,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                             <Image src="/images/logo-small.png" style={styles.topLogo} />
                             <View style={styles.nameAndTaglineCol}>
                                 <Text style={styles.brandName}>KARTHIK TRADERS</Text>
-                                <Text style={styles.brandTagline}>Aquaculture Equipment & Aeration Specialists</Text>
+                                <Text style={styles.brandTagline}>Aquaculture aerators and spare parts</Text>
                             </View>
                         </View>
 
