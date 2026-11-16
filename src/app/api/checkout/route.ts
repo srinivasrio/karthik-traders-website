@@ -63,10 +63,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Fetch user profile to get mobile number
+        // Fetch user profile to get mobile number & referral linkage
         const { data: profile } = await supabaseAdmin
             .from('profiles')
-            .select('mobile, full_name')
+            .select('mobile, full_name, referred_by')
             .eq('id', user.id)
             .single();
 
@@ -110,13 +110,14 @@ export async function POST(request: Request) {
         let orderReferralCode: string | null = null;
         let referralDiscountAmount = 0;
 
-        const candidateCode = ((body.referralCode || couponCode || '') as string).trim().toUpperCase();
+        const rawCandidate = ((body.referralCode || couponCode || '') as string).trim().toUpperCase();
+        const candidateCode = rawCandidate.replace(/[^A-Z0-9]/g, '');
         if (candidateCode) {
             try {
                 const { data: refProfile } = await supabaseAdmin
                     .from('profiles')
                     .select('id, referral_code')
-                    .eq('referral_code', candidateCode)
+                    .or(`referral_code.eq.${candidateCode},referral_code.eq.${rawCandidate}`)
                     .maybeSingle();
 
                 if (refProfile && refProfile.id !== user.id) {
@@ -126,6 +127,24 @@ export async function POST(request: Request) {
                 }
             } catch (refErr) {
                 console.warn('Referral check error during checkout:', refErr);
+            }
+        }
+
+        // If not entered at checkout, check if the customer was already referred during signup
+        if (!referredBy && profile?.referred_by) {
+            try {
+                const { data: signupReferrer } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id, referral_code')
+                    .eq('id', profile.referred_by)
+                    .maybeSingle();
+
+                if (signupReferrer && signupReferrer.id !== user.id) {
+                    referredBy = signupReferrer.id;
+                    orderReferralCode = signupReferrer.referral_code;
+                }
+            } catch (refErr) {
+                console.warn('Signup referrer lookup notice:', refErr);
             }
         }
 

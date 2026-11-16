@@ -374,6 +374,30 @@ export default function Header() {
                             </div>
                           </Link>
 
+                          {/* Personal Referral Code Box in Dropdown */}
+                          {profile?.referral_code && (
+                            <Link
+                              href="/dashboard?tab=referral"
+                              onClick={() => setIsAcctOpen(false)}
+                              className="mx-1 mb-1.5 p-2 rounded-xl bg-emerald-50/80 border border-emerald-200/80 hover:bg-emerald-100/70 transition-all flex items-center justify-between group"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">🎁</span>
+                                <div className="flex flex-col text-left">
+                                  <span className="text-[10px] uppercase font-bold text-emerald-800 leading-tight">
+                                    Referral Code
+                                  </span>
+                                  <span className="font-mono text-xs font-black text-emerald-950 tracking-wider">
+                                    {profile.referral_code.replace(/[^A-Z0-9]/g, '')}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-700 bg-white/90 px-2 py-0.5 rounded-md shadow-2xs group-hover:underline">
+                                Refer & Earn →
+                              </span>
+                            </Link>
+                          )}
+
                           <Link
                             href="/dashboard"
                             onClick={() => setIsAcctOpen(false)}
@@ -520,6 +544,28 @@ export default function Header() {
                     )}
                   </Link>
                 </div>
+
+                {/* Personal Referral Code Box in Mobile Drawer Profile */}
+                {profile?.referral_code && (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🎁</span>
+                      <div className="flex flex-col text-left">
+                        <span className="text-[10px] uppercase font-bold text-emerald-800">Your Referral Code</span>
+                        <span className="font-mono text-xs font-black text-emerald-950 tracking-wider">
+                          {profile.referral_code.replace(/[^A-Z0-9]/g, '')}
+                        </span>
+                      </div>
+                    </div>
+                    <Link
+                      href="/dashboard?tab=referral"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="text-[10px] font-bold text-emerald-700 bg-white px-2.5 py-1 rounded-md shadow-2xs hover:underline"
+                    >
+                      Refer & Earn →
+                    </Link>
+                  </div>
+                )}
 
                 {/* Structured Action Buttons */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">

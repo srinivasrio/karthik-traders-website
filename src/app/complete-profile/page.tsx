@@ -32,12 +32,19 @@ export default function CompleteProfilePage() {
         try {
             if (!user) throw new Error('No user found');
 
-            const updates = {
+            const updates: any = {
                 full_name: fullName,
-                // We might want to store email in profile too, or update auth user
-                // For now, let's just update profile metadata
                 updated_at: new Date().toISOString(),
             };
+
+            // Ensure customer has neat referral code without hyphens or spaces
+            if (!profile?.referral_code) {
+                const cleanName = (fullName || 'FARMER').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'FARMER';
+                const digits = (profile?.mobile || user.phone || '').replace(/\D/g, '').slice(-4) || '1000';
+                updates.referral_code = `KT${cleanName}${digits}`;
+            } else if (profile.referral_code.includes('-') || profile.referral_code.includes(' ')) {
+                updates.referral_code = profile.referral_code.replace(/[^A-Z0-9]/g, '');
+            }
 
             const { error: updateError } = await supabase
                 .from('profiles')

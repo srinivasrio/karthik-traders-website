@@ -51,6 +51,33 @@ export default function DashboardPage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
 
+  // Customer Referral Code in Profile
+  const [customerReferralCode, setCustomerReferralCode] = useState<string>('');
+  const [copiedReferralCode, setCopiedReferralCode] = useState(false);
+
+  useEffect(() => {
+    if (profile?.referral_code) {
+      setCustomerReferralCode(profile.referral_code.replace(/[^A-Z0-9]/g, ''));
+    } else if (user?.id) {
+      fetch('/api/referral/info')
+        .then(res => res.json())
+        .then(data => {
+          if (data?.referral_code) {
+            setCustomerReferralCode(data.referral_code.replace(/[^A-Z0-9]/g, ''));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [profile, user]);
+
+  const copyReferral = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!customerReferralCode) return;
+    navigator.clipboard.writeText(customerReferralCode);
+    setCopiedReferralCode(true);
+    setTimeout(() => setCopiedReferralCode(false), 2000);
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -242,6 +269,55 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Customer Referral Code Row in Profile Card */}
+              {customerReferralCode && (
+                <div className="p-3.5 rounded-2xl bg-white/75 border border-white/80 flex flex-col gap-2 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#3D4A63] flex items-center gap-1.5">
+                      <span className="text-xs">🎁</span>
+                      <span>Your Referral Code</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('referral')}
+                      className="text-[10px] font-extrabold text-[#1450C8] hover:underline cursor-pointer"
+                    >
+                      Rewards Hub →
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-[#D5DCE8]/80">
+                    <span className="font-mono text-sm sm:text-base font-black tracking-wider text-[#0B1A33]">
+                      {customerReferralCode}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={copyReferral}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                      title="Copy Referral Code"
+                    >
+                      {copiedReferralCode ? (
+                        <>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-[#5B6880] leading-snug">
+                    Share with fellow farmers. They get <strong>₹500 OFF</strong> & you get <strong>1,000 Points (₹250)</strong>.
+                  </p>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-2 pt-1">

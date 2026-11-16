@@ -38,12 +38,13 @@ export async function validateCoupon(code: string, cartItems: CartItemIdentifier
         .single();
 
     if (error || !coupon) {
-        // Check if input is a valid Referral Code (e.g. KT-XXXX-YYYY)
+        // Check if input is a valid Referral Code (e.g. KTRAMESH1234)
         try {
+            const cleanRefCode = normalizeCode.replace(/[^A-Z0-9]/g, '');
             const { data: referrer } = await supabase
                 .from('profiles')
                 .select('id, full_name, referral_code')
-                .eq('referral_code', normalizeCode)
+                .or(`referral_code.eq.${cleanRefCode},referral_code.eq.${normalizeCode}`)
                 .maybeSingle();
 
             if (referrer) {

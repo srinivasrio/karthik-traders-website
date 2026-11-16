@@ -4,10 +4,11 @@ import { getAuthenticatedUser, getSupabaseAdmin } from '@/lib/loyalty';
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const code = searchParams.get('code')?.trim().toUpperCase();
+        const rawCode = searchParams.get('code') || '';
+        const code = rawCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
         if (!code) {
-            return NextResponse.json({ valid: false, message: 'Referral code is required' }, { status: 400 });
+            return NextResponse.json({ valid: false, message: 'Please enter a valid referral code' }, { status: 400 });
         }
 
         const supabase = getSupabaseAdmin();

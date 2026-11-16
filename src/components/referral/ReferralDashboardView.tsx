@@ -93,15 +93,16 @@ export default function ReferralDashboardView({ onTabSwitch }: ReferralDashboard
         );
     }
 
-    const referralCode = data?.referral_code || 'KT-AQUA-0000';
-    const referralLink = data?.referral_link || `https://karthiktraders.in/?ref=${referralCode}`;
+    const referralCode = (data?.referral_code || 'KTAQUA0000').replace(/[^A-Z0-9]/g, '');
+    const signupReferralLink = `https://karthiktraders.in/login?tab=signup&ref=${referralCode}`;
+    const referralLink = data?.referral_link || signupReferralLink;
     const discountRupees = data?.discount_rupees || 500;
     const bonusPoints = data?.bonus_points || 1000;
     const minOrderRupees = data?.min_order_rupees || 5000;
 
     // Craft pre-filled WhatsApp share text (Telugu + English)
     const whatsappMessage = encodeURIComponent(
-        `నమస్తే! నేను కార్తీక్ ట్రేడర్స్ (నెల్లూరు) నుండి రొయ్యల & చేపల చెరువుల మోటార్లు, ఏరియేటర్లు తీసుకుంటున్నాను. నా రిఫరల్ కోడ్ లేదా ఈ లింక్ ఉపయోగించి మీ మొదటి కొనుగోలుపై ఫ్లాట్ ₹${discountRupees.toLocaleString()} డిస్కౌంట్ పొందండి:\n\n👉 కోడ్: ${referralCode}\n👉 లింక్: ${referralLink}\n\nNamaste! I buy aqua pond aerators & motors from Karthik Traders. Use my referral code ${referralCode} to get flat ₹${discountRupees.toLocaleString()} OFF on your first purchase!`
+        `నమస్తే! నేను కార్తీక్ ట్రేడర్స్ (నెల్లూరు) నుండి రొయ్యల & చేపల చెరువుల మోటార్లు, ఏరియేటర్లు తీసుకుంటున్నాను. నా రిఫరల్ కోడ్ లేదా ఈ లింక్ ద్వారా సైన్ అప్ చేసి మీ మొదటి కొనుగోలుపై ఫ్లాట్ ₹${discountRupees.toLocaleString()} డిస్కౌంట్ పొందండి:\n\n👉 రిఫరల్ కోడ్: ${referralCode}\n👉 సైన్ అప్ లింక్: ${signupReferralLink}\n\nNamaste! I buy aqua pond aerators & motors from Karthik Traders. Sign up using my referral link ${signupReferralLink} (Code: ${referralCode}) to get flat ₹${discountRupees.toLocaleString()} OFF on your first purchase!`
     );
     const whatsappShareUrl = `https://api.whatsapp.com/send?text=${whatsappMessage}`;
 
@@ -172,7 +173,7 @@ export default function ReferralDashboardView({ onTabSwitch }: ReferralDashboard
 
                             <button
                                 type="button"
-                                onClick={() => copyToClipboard(referralLink, 'link')}
+                                onClick={() => copyToClipboard(signupReferralLink, 'link')}
                                 className="px-3.5 py-3 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition-colors flex items-center gap-1.5"
                                 title="Copy Referral Link"
                             >

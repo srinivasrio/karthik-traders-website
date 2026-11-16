@@ -29,11 +29,87 @@ function LoginFormContent() {
   const [view, setView] = useState<ViewState>('login');
   const [signupStep, setSignupStep] = useState<SignupStep>('phone');
 
-  // Handle URL params for tab switching
+  // Referral State
+  const [referralCode, setReferralCode] = useState('');
+  const [referralValidation, setReferralValidation] = useState<{
+    valid?: boolean;
+    message?: string;
+    referrerName?: string;
+    discountRupees?: number;
+  } | null>(null);
+  const [isValidatingRef, setIsValidatingRef] = useState(false);
+
+  const validateReferralCode = async (codeToTest: string) => {
+    const clean = codeToTest.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!clean) {
+      setReferralValidation(null);
+      return;
+    }
+
+    if (clean.length < 4) {
+      setReferralValidation({ valid: false, message: 'Referral code must be at least 4 characters.' });
+      return;
+    }
+
+    setIsValidatingRef(true);
+    try {
+      const res = await fetch(`/api/referral/validate?code=${encodeURIComponent(clean)}`);
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setReferralValidation({
+          valid: true,
+          message: data.message || `Valid code! Referred by ${data.referrer_name || 'Aqua Farmer'}`,
+          referrerName: data.referrer_name,
+          discountRupees: data.discount_rupees,
+        });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('kt_referral_code', clean);
+        }
+      } else {
+        setReferralValidation({
+          valid: false,
+          message: data.message || 'Invalid referral code. Please check or leave blank.',
+        });
+      }
+    } catch (err) {
+      console.warn('Referral validation error:', err);
+    } finally {
+      setIsValidatingRef(false);
+    }
+  };
+
+  const handleReferralChange = (val: string) => {
+    // Strip special characters and spaces automatically as user types
+    const clean = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    setReferralCode(clean);
+    if (!clean) {
+      setReferralValidation(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kt_referral_code');
+      }
+    } else {
+      validateReferralCode(clean);
+    }
+  };
+
+  // Handle URL params for tab switching & referral detection
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'signup') {
+    const refParam = searchParams.get('ref');
+    if (tab === 'signup' || refParam) {
       setView('signup');
+    }
+
+    // Auto-detect referral code from URL search param or localStorage
+    let activeRef = refParam || '';
+    if (!activeRef && typeof window !== 'undefined') {
+      activeRef = localStorage.getItem('kt_referral_code') || '';
+    }
+
+    if (activeRef) {
+      const clean = activeRef.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      setReferralCode(clean);
+      validateReferralCode(clean);
     }
   }, [searchParams]);
 
@@ -333,6 +409,7 @@ function LoginFormContent() {
           idToken,
           password,
           fullName: fullName.trim(),
+          referralCode: referralCode.trim() || undefined,
         }),
       });
 
@@ -536,6 +613,21 @@ function LoginFormContent() {
               {/* STEP 1: Enter Phone Number */}
               {signupStep === 'phone' && (
                 <form onSubmit={handleSignupSendOTP} className="flex flex-col gap-4">
+                  {/* Referral invitation notification if referral applied from link */}
+                  {referralValidation?.valid && (
+                    <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3 text-xs text-emerald-900 shadow-2xs">
+                      <span className="text-xl shrink-0">🎁</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-extrabold text-emerald-800">
+                          Referral Invitation Applied!
+                        </span>
+                        <p className="text-[11px] text-emerald-700 leading-snug">
+                          Invited by <strong className="text-emerald-900 font-bold">{referralValidation.referrerName || 'Aqua Farmer'}</strong>. You will receive <strong className="text-emerald-900 font-bold">₹{referralValidation.discountRupees || 500} OFF</strong> on your first order!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="signup-phone" className="text-xs font-extrabold text-[#3D4A63] uppercase tracking-wider">
                       Mobile Number
@@ -657,6 +749,59 @@ function LoginFormContent() {
                       placeholder="e.g. Ramesh Reddy"
                       className="h-12 px-4 rounded-xl border border-[#D5DCE8] bg-[#FBFBFB] text-sm font-medium text-[#0B1A33] outline-none focus:border-[#0B1A33] focus:bg-white transition-colors"
                     />
+                  </div>
+
+                  {/* Referral Code (Optional) */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="signup-ref" className="text-xs font-extrabold text-[#3D4A63] uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Referral Code</span>
+                        <span className="text-[10px] font-normal text-[#8D9CAE] normal-case">(Optional)</span>
+                      </label>
+                      {isValidatingRef ? (
+                        <span className="text-[10px] font-bold text-sky-600 animate-pulse">Checking code...</span>
+                      ) : referralValidation?.valid ? (
+                        <span className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Applied
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center h-12 px-3.5 rounded-xl border border-[#D5DCE8] bg-[#FBFBFB] focus-within:border-[#0B1A33] focus-within:bg-white transition-colors">
+                      <span className="text-sm mr-2 select-none">🎁</span>
+                      <input
+                        id="signup-ref"
+                        type="text"
+                        value={referralCode}
+                        onChange={(e) => handleReferralChange(e.target.value)}
+                        placeholder="e.g. KTRAMESH1234"
+                        maxLength={20}
+                        className="flex-1 min-w-0 border-0 outline-none bg-transparent font-mono text-sm font-bold uppercase text-[#0B1A33] placeholder:font-sans placeholder:font-normal placeholder:normal-case placeholder:text-[#8D9CAE]"
+                      />
+                      {referralCode && (
+                        <button
+                          type="button"
+                          onClick={() => handleReferralChange('')}
+                          className="text-xs text-[#8D9CAE] hover:text-[#0B1A33] p-1 font-bold cursor-pointer"
+                          title="Clear"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    {/* Validation Feedback Banner */}
+                    {referralValidation && (
+                      <div className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                        referralValidation.valid
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                      }`}>
+                        <span>{referralValidation.valid ? '✓' : '⚠️'}</span>
+                        <span className="leading-snug">{referralValidation.message}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Set Password */}

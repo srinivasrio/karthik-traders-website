@@ -10,9 +10,11 @@ export default function ReferralTracker() {
         try {
             const refParam = searchParams.get('ref');
             if (refParam && refParam.trim()) {
-                const cleanCode = refParam.trim().toUpperCase();
-                localStorage.setItem('kt_referral_code', cleanCode);
-                window.dispatchEvent(new CustomEvent('kt_referral_detected', { detail: cleanCode }));
+                const cleanCode = refParam.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (cleanCode) {
+                    localStorage.setItem('kt_referral_code', cleanCode);
+                    window.dispatchEvent(new CustomEvent('kt_referral_detected', { detail: cleanCode }));
+                }
             }
         } catch (e) {
             // Ignore storage errors in restricted iframe

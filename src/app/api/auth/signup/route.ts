@@ -14,8 +14,8 @@ export async function POST(request: Request) {
     console.log('[Signup API] Request Received');
     try {
         const body = await request.json();
-        const { idToken, password, fullName } = body;
-        console.log('[Signup API] Payload parsed. Has Token:', !!idToken, 'Has Password:', !!password);
+        const { idToken, password, fullName, referralCode } = body;
+        console.log('[Signup API] Payload parsed. Has Token:', !!idToken, 'Has Password:', !!password, 'ReferralCode:', referralCode || 'none');
 
         if (!idToken || !password || !fullName) {
             console.error('[Signup API] Missing required fields');
@@ -103,16 +103,81 @@ export async function POST(request: Request) {
             console.log('[Signup API] User Created:', newUser.user.id);
             userId = newUser.user.id;
 
-            // Ensure profile exists for the new user
+            // Check if a referral code was provided
+            let referrer: { id: string; full_name: string; mobile: string; referral_code: string } | null = null;
+            const cleanRefCode = referralCode ? String(referralCode).trim().toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+
+            if (cleanRefCode) {
+                try {
+                    const { data: refData } = await supabaseAdmin
+                        .from('profiles')
+                        .select('id, full_name, mobile, referral_code')
+                        .or(`referral_code.eq.${cleanRefCode},referral_code.ilike.${cleanRefCode}`)
+                        .maybeSingle();
+
+                    // Check that referrer is found and not the same mobile number
+                    if (refData && refData.mobile !== phone) {
+                        referrer = refData;
+                        console.log('[Signup API] Referrer identified:', referrer.id, referrer.referral_code);
+                    }
+                } catch (refErr) {
+                    console.warn('[Signup API] Referrer check error:', refErr);
+                }
+            }
+
+            // Generate neat personal referral code: KT + cleanName + 4Digits (no hyphens, no special characters, no spaces)
+            const cleanName = (fullName || 'FARMER')
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')
+                .slice(0, 6) || 'FARMER';
+            const phoneDigits = phone.replace(/\D/g, '').slice(-4) || '1000';
+            let newReferralCode = `KT${cleanName}${phoneDigits}`;
+
+            try {
+                const { data: codeConflict } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id')
+                    .eq('referral_code', newReferralCode)
+                    .maybeSingle();
+
+                if (codeConflict) {
+                    newReferralCode = `KT${cleanName}${Math.floor(1000 + Math.random() * 9000)}`;
+                }
+            } catch (confErr) {
+                console.warn('[Signup API] Referral code collision check warning:', confErr);
+            }
+
+            // Ensure profile exists for the new user with neat referral code and referrer linkage
             try {
                 await supabaseAdmin.from('profiles').upsert({
                     id: userId,
                     mobile: phone,
                     full_name: fullName,
-                    role: 'customer'
+                    role: 'customer',
+                    referral_code: newReferralCode,
+                    referred_by: referrer ? referrer.id : null,
+                    referral_count: 0
                 }, { onConflict: 'id' });
+                console.log('[Signup API] Profile created with referral code:', newReferralCode);
             } catch (err) {
                 console.error('[Signup API] Profile upsert error:', err);
+            }
+
+            // Record referral ledger entry if referred by someone
+            if (referrer) {
+                try {
+                    await supabaseAdmin.from('referrals').insert({
+                        referrer_id: referrer.id,
+                        referred_id: userId,
+                        referral_code: referrer.referral_code,
+                        status: 'pending',
+                        points_awarded: 0,
+                        discount_given: 0
+                    });
+                    console.log('[Signup API] Recorded pending referral in referrals ledger for referrer:', referrer.id);
+                } catch (refInsertErr) {
+                    console.warn('[Signup API] Referral ledger insert error:', refInsertErr);
+                }
             }
 
             // Automatically initialize loyalty wallet and award signup bonus points

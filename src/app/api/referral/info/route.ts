@@ -32,14 +32,14 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
         }
 
-        // If user doesn't have a referral code yet, generate one
+        // If user doesn't have a referral code yet, generate one (neat alphanumeric, no special chars, no spaces)
         if (!profile.referral_code) {
             const cleanName = (profile.full_name || 'FARMER')
                 .toUpperCase()
                 .replace(/[^A-Z0-9]/g, '')
                 .slice(0, 6) || 'FARMER';
             const digits = (profile.mobile || '').replace(/\D/g, '').slice(-4) || '1000';
-            const generatedCode = `KT-${cleanName}-${digits}`;
+            const generatedCode = `KT${cleanName}${digits}`;
 
             await supabase
                 .from('profiles')
@@ -47,6 +47,13 @@ export async function GET(request: Request) {
                 .eq('id', userId);
 
             profile.referral_code = generatedCode;
+        } else if (profile.referral_code.includes('-') || profile.referral_code.includes(' ')) {
+            const sanitized = profile.referral_code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            await supabase
+                .from('profiles')
+                .update({ referral_code: sanitized })
+                .eq('id', userId);
+            profile.referral_code = sanitized;
         }
 
         // 2. Fetch loyalty settings for referral configuration
