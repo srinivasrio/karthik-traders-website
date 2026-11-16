@@ -209,15 +209,79 @@ export function calculateEligibleSubtotalPaise(items: any[]): number {
  * Accepts both Supabase Bearer JWTs and Firebase ID Tokens via bridge.
  * Never trusts user_id supplied by client payload.
  */
+/**
+ * Robustly checks if a caller has admin privileges using role, user metadata, or recognized admin phone/email.
+ */
+export function checkIsAdmin(profile?: any, user?: any, extraPhoneOrEmail?: string): boolean {
+    if (profile?.role === 'admin') return true;
+    if (user?.role === 'admin') return true;
+    if (user?.user_metadata?.role === 'admin') return true;
+
+    const ADMIN_LAST_10 = ['8688566023', '6301183738', '9515816084'];
+
+    const candidates = [
+        profile?.mobile,
+        profile?.phone,
+        user?.phone,
+        user?.email,
+        user?.user_metadata?.mobile,
+        user?.user_metadata?.phone,
+        extraPhoneOrEmail,
+    ].filter(Boolean).map(s => String(s));
+
+    for (const str of candidates) {
+        if (str.toLowerCase().includes('admin')) return true;
+        const digits = str.replace(/\D/g, '');
+        for (const adminNum of ADMIN_LAST_10) {
+            if (digits.endsWith(adminNum) || digits.includes(adminNum)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Verifies authenticated caller securely from request headers or cookies.
+ * Accepts both Supabase Bearer JWTs and Firebase ID Tokens via bridge.
+ * Never trusts user_id supplied by client payload.
+ */
 export async function getAuthenticatedUser(request: Request): Promise<{
     user: { id: string; phone?: string; email?: string };
     profile: { id: string; role: string; mobile?: string; full_name?: string } | null;
     isAdmin: boolean;
 } | null> {
+    let token = '';
     const authHeader = request.headers.get('Authorization');
-    if (!authHeader) return null;
+    if (authHeader) {
+        token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    }
 
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    // Fallback: Check cookies for access token
+    if (!token) {
+        const cookieHeader = request.headers.get('cookie') || '';
+        const match = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/i) ||
+                      cookieHeader.match(/sb-access-token=([^;]+)/i);
+        if (match && match[1]) {
+            try {
+                const decoded = decodeURIComponent(match[1]);
+                if (decoded.startsWith('base64-')) {
+                    const jsonStr = Buffer.from(decoded.slice(7), 'base64').toString('utf8');
+                    const parsed = JSON.parse(jsonStr);
+                    token = parsed?.access_token || (Array.isArray(parsed) ? parsed[0] : '');
+                } else if (decoded.startsWith('[') || decoded.startsWith('{')) {
+                    const parsed = JSON.parse(decoded);
+                    token = parsed?.access_token || (Array.isArray(parsed) ? parsed[0] : '');
+                } else {
+                    token = decoded;
+                }
+            } catch (e) {
+                // Ignore cookie decode error
+            }
+        }
+    }
+
     if (!token) return null;
 
     const supabaseAdmin = getSupabaseAdmin();
@@ -232,15 +296,12 @@ export async function getAuthenticatedUser(request: Request): Promise<{
                 .eq('id', user.id)
                 .maybeSingle();
 
-            const isAdmin = profile?.role === 'admin' ||
-                ['+918688566023', '+916301183738', '+919515816084', '8688566023', '6301183738', '9515816084'].includes(
-                    (profile?.mobile || user.phone || '').replace(/\s+/g, '')
-                );
+            const isAdmin = checkIsAdmin(profile, user);
 
             return {
                 user: { id: user.id, phone: user.phone || profile?.mobile, email: user.email },
-                profile,
-                isAdmin: !!isAdmin,
+                profile: profile || null,
+                isAdmin,
             };
         }
     } catch (e) {
@@ -264,12 +325,13 @@ export async function getAuthenticatedUser(request: Request): Promise<{
                     const fbUser = verificationData.users[0];
                     const phone = fbUser.phoneNumber;
 
+                    let profile = null;
                     if (phone) {
                         const cleanDigits = phone.replace(/\D/g, '');
                         const last10 = cleanDigits.slice(-10);
 
                         // Match user profile by phone
-                        const { data: profile } = await supabaseAdmin
+                        const { data } = await supabaseAdmin
                             .from('profiles')
                             .select('id, role, mobile, full_name')
                             .or(`mobile.eq.${cleanDigits},mobile.eq.+91${last10},mobile.eq.${last10}`)
@@ -277,15 +339,36 @@ export async function getAuthenticatedUser(request: Request): Promise<{
                             .limit(1)
                             .maybeSingle();
 
-                        if (profile) {
-                            const isAdmin = profile.role === 'admin';
-                            return {
-                                user: { id: profile.id, phone, email: fbUser.email },
-                                profile,
-                                isAdmin,
-                            };
-                        }
+                        profile = data;
                     }
+
+                    if (!profile && fbUser.email) {
+                        const { data } = await supabaseAdmin
+                            .from('profiles')
+                            .select('id, role, mobile, full_name')
+                            .eq('email', fbUser.email)
+                            .limit(1)
+                            .maybeSingle();
+                        profile = data;
+                    }
+
+                    if (!profile && fbUser.localId) {
+                        const { data } = await supabaseAdmin
+                            .from('profiles')
+                            .select('id, role, mobile, full_name')
+                            .eq('id', fbUser.localId)
+                            .limit(1)
+                            .maybeSingle();
+                        profile = data;
+                    }
+
+                    const isAdmin = checkIsAdmin(profile, { phone, email: fbUser.email, role: profile?.role }, phone);
+
+                    return {
+                        user: { id: profile?.id || fbUser.localId, phone, email: fbUser.email },
+                        profile: profile || null,
+                        isAdmin,
+                    };
                 }
             }
         } catch (e) {

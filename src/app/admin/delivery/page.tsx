@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { auth as firebaseAuth } from '@/lib/firebase';
 import {
     TruckIcon,
     PlusIcon,
@@ -11,8 +13,6 @@ import {
     BuildingOffice2Icon,
     ShieldCheckIcon,
     SparklesIcon,
-    EyeSlashIcon,
-    EyeIcon,
 } from '@heroicons/react/24/outline';
 import {
     StateDeliveryRule,
@@ -55,14 +55,43 @@ export default function AdminDeliveryPage() {
     // New Vehicle Type Input
     const [newVehicleInput, setNewVehicleInput] = useState('');
 
+    const getAuthHeaders = async (): Promise<Record<string, string>> => {
+        let token = session?.access_token;
+        if (!token) {
+            try {
+                const { data } = await supabase.auth.getSession();
+                token = data?.session?.access_token;
+            } catch (e) {
+                // Ignore
+            }
+        }
+        if (!token) {
+            try {
+                const fbUser = firebaseAuth.currentUser;
+                if (fbUser) {
+                    token = await fbUser.getIdToken();
+                }
+            } catch (e) {
+                // Ignore
+            }
+        }
+        return {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
+    };
+
     useEffect(() => {
         fetchSettings();
-    }, []);
+    }, [session?.access_token]);
 
     const fetchSettings = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/delivery/settings');
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin/delivery/settings', {
+                headers,
+            });
             const data = await res.json();
             if (data.success) {
                 if (data.rules && data.rules.length > 0) {
@@ -71,6 +100,8 @@ export default function AdminDeliveryPage() {
                 if (data.general) {
                     setGeneral(data.general);
                 }
+            } else if (data.error) {
+                console.error('Error fetching delivery settings:', data.error);
             }
         } catch (err: any) {
             console.error('Error fetching delivery settings:', err);
@@ -83,9 +114,10 @@ export default function AdminDeliveryPage() {
         setSaving(true);
         setMessage(null);
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/delivery/settings', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ rules, general }),
             });
             const data = await res.json();
@@ -331,86 +363,6 @@ export default function AdminDeliveryPage() {
                     </button>
                 </div>
             )}
-
-            {/* Production Staging Banner (Requirement 3: Test on localhost, hide on production for now) */}
-            <div
-                className={`mb-8 rounded-2xl border-2 p-5 transition-all shadow-xs ${
-                    general.enabledInProduction
-                        ? 'border-emerald-300 bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-emerald-50/60'
-                        : 'border-amber-300 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-amber-50/70'
-                }`}
-            >
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
-                                general.enabledInProduction
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : 'bg-amber-100 text-amber-800'
-                            }`}
-                        >
-                            {general.enabledInProduction ? (
-                                <EyeIcon className="w-5 h-5" />
-                            ) : (
-                                <EyeSlashIcon className="w-5 h-5" />
-                            )}
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-sm font-extrabold text-slate-900 font-poppins">
-                                    Website Staging & Production Visibility
-                                </h2>
-                                <span
-                                    className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
-                                        general.enabledInProduction
-                                            ? 'bg-emerald-600 text-white border-emerald-700'
-                                            : 'bg-amber-600 text-white border-amber-700'
-                                    }`}
-                                >
-                                    {general.enabledInProduction
-                                        ? '🌐 Live on Production'
-                                        : '🔒 Hidden on Production (Staging Mode)'}
-                                </span>
-                            </div>
-                            <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                                {general.enabledInProduction ? (
-                                    <>
-                                        Delivery timeline and state shipping options are <strong>LIVE</strong> for
-                                        all customers visiting karthiktraders.in.
-                                    </>
-                                ) : (
-                                    <>
-                                        Delivery feature is <strong>HIDDEN</strong> from live customers on the production website.
-                                        You can test and verify all delivery options on <strong>http://localhost:3000</strong>.
-                                        When you are ready to make it live for customers, toggle the switch below and save.
-                                    </>
-                                )}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2.5 cursor-pointer select-none bg-white px-4 py-2 rounded-xl border border-slate-300 shadow-2xs">
-                            <input
-                                type="checkbox"
-                                checked={Boolean(general.enabledInProduction)}
-                                onChange={(e) =>
-                                    setGeneral({
-                                        ...general,
-                                        enabledInProduction: e.target.checked,
-                                    })
-                                }
-                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                            />
-                            <span className="text-xs font-bold text-slate-800">
-                                {general.enabledInProduction
-                                    ? 'Enabled on Production'
-                                    : 'Enable on Production'}
-                            </span>
-                        </label>
-                    </div>
-                </div>
-            </div>
 
             {/* Aerator Set Free Delivery Manager (Requirement 1 & 2: Free Delivery is for Aerator Sets Only) */}
             <div className="mb-8 rounded-2xl border-2 border-indigo-200 bg-white p-6 shadow-xs">
