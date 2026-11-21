@@ -783,7 +783,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#E3E8F0]">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="font-extrabold text-sm sm:text-base text-[#0B1A33] truncate">
-                  Tax Invoice Preview
+                  Proforma Invoice Preview
                 </span>
                 <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0A1F5C] shrink-0">
                   #KT-{invoiceOrder.order_number || invoiceOrder.id.slice(0, 6)}
@@ -854,7 +854,7 @@ export default function DashboardPage() {
                 <div className="flex flex-row sm:flex-col justify-between sm:items-end items-center bg-[#F8FAFC] sm:bg-transparent p-3 sm:p-0 rounded-xl border sm:border-0 border-slate-200 shrink-0">
                   <div className="sm:text-right">
                     <span className="inline-block px-3 py-1 bg-[#0A1F5C] text-white font-extrabold text-[10px] uppercase tracking-wider rounded-md">
-                      TAX INVOICE
+                      PROFORMA INVOICE
                     </span>
                     <span className="text-[9.5px] text-slate-500 uppercase tracking-wide block mt-0.5">
                       Original For Recipient
@@ -977,7 +977,7 @@ export default function DashboardPage() {
                     <span className="text-[6.5px] sm:text-[7px] text-emerald-700 font-extrabold mt-0.5">Official Seal</span>
                   </div>
                   <div className="text-[10px] text-slate-500 max-w-[220px] leading-relaxed">
-                    This is a computer-generated tax invoice issued by Karthik Traders, Nellore. Valid without signature.
+                    This is a computer-generated proforma invoice issued by Karthik Traders, Nellore. Valid without signature.
                   </div>
                 </div>
 

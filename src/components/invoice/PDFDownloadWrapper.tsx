@@ -13,7 +13,7 @@ export default function PDFDownloadWrapper({ order, variant }: PDFDownloadWrappe
     return (
         <PDFDownloadLink
             document={<InvoicePDF order={order} />}
-            fileName={`Invoice-${order.order_number || order.id.slice(0, 8)}.pdf`}
+            fileName={`Proforma-Invoice-${order.order_number || (typeof order.id === 'string' ? order.id.slice(0, 8) : '0000')}.pdf`}
             className={`${variant === 'admin'
                 ? 'px-3 py-1.5 bg-slate-800 text-white hover:bg-slate-700 rounded text-xs font-bold'
                 : 'px-5 py-2.5 bg-[#0B1A33] hover:bg-[#1D64EC] text-white font-extrabold rounded-full text-xs shadow-md active:scale-95'

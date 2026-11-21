@@ -123,10 +123,10 @@ const styles = StyleSheet.create({
     taxInvoicePill: {
         backgroundColor: '#0A1F5C',
         color: '#FFFFFF',
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: 'bold',
         paddingVertical: 3.5,
-        paddingHorizontal: 9,
+        paddingHorizontal: 8,
         borderRadius: 4,
         textTransform: 'uppercase',
         marginBottom: 4,
@@ -534,7 +534,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
         : (typeof order.shipping_address === 'string' ? order.shipping_address : 'Standard Farm Delivery');
 
     return (
-        <Document title={`Tax-Invoice-${invoiceNumber}`} author="Karthik Traders">
+        <Document title={`Proforma-Invoice-${invoiceNumber}`} author="Karthik Traders">
             <Page size="A4" style={styles.page}>
 
                 {/* 1. Header Bar: Logo on Top Left + Structured Company Info + Metadata on Right */}
@@ -571,7 +571,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
 
                     {/* Right: Invoice Metadata */}
                     <View style={styles.metaContainer}>
-                        <Text style={styles.taxInvoicePill}>TAX INVOICE</Text>
+                        <Text style={styles.taxInvoicePill}>PROFORMA INVOICE</Text>
                         <Text style={styles.copyType}>ORIGINAL FOR RECIPIENT</Text>
                         <Text style={styles.invNumber}>{invoiceNumber}</Text>
                         <Text style={styles.invDate}>Date: {formattedDate}</Text>
@@ -715,7 +715,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                 {/* 5. Signatory & Jurisdiction */}
                 <View style={styles.signatoryRow}>
                     <Text style={styles.jurisdictionNote}>
-                        This is a computer-generated tax invoice issued by Karthik Traders, Nellore. Valid without signature under IT Act 2000.
+                        This is a computer-generated proforma invoice issued by Karthik Traders, Nellore. Valid without signature under IT Act 2000.
                     </Text>
 
                     <View style={styles.signatoryBlock}>
