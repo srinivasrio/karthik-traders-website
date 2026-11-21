@@ -572,7 +572,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                     {/* Right: Invoice Metadata */}
                     <View style={styles.metaContainer}>
                         <Text style={styles.taxInvoicePill}>PROFORMA INVOICE</Text>
-                        <Text style={styles.copyType}>ORIGINAL FOR RECIPIENT</Text>
+                        <Text style={styles.copyType}>TAX INVOICE WILL BE PROVIDED AT DELIVERY</Text>
                         <Text style={styles.invNumber}>{invoiceNumber}</Text>
                         <Text style={styles.invDate}>Date: {formattedDate}</Text>
                         <View style={isPaid ? styles.paidBadge : styles.pendingBadge}>
@@ -666,11 +666,13 @@ export default function InvoicePDF({ order }: InvoiceProps) {
 
                         <View style={styles.termsBox}>
                             <Text style={styles.termsHeading}>Terms & Conditions:</Text>
-                            <Text style={styles.termsLine}>1. All prices are inclusive of applicable GST (CGST + SGST).</Text>
-                            <Text style={styles.termsLine}>2. Warranty on aerators, motors, and gearboxes is per manufacturer terms.</Text>
-                            <Text style={styles.termsLine}>3. Goods once delivered in good condition cannot be returned.</Text>
-                            <Text style={styles.termsLine}>4. Any transit damages must be notified within 24 hours of receipt.</Text>
-                            <Text style={styles.termsLine}>5. Subject to Nellore, Andhra Pradesh jurisdiction.</Text>
+                            <Text style={styles.termsLine}>1. This is a Proforma Invoice for order confirmation and transport dispatch.</Text>
+                            <Text style={styles.termsLine}>2. Official GST Tax Invoice will be handed over at the time of delivery.</Text>
+                            <Text style={styles.termsLine}>3. All prices are inclusive of applicable GST (CGST + SGST).</Text>
+                            <Text style={styles.termsLine}>4. Warranty on aerators, motors, and gearboxes is per manufacturer terms.</Text>
+                            <Text style={styles.termsLine}>5. Goods once delivered in good condition cannot be returned.</Text>
+                            <Text style={styles.termsLine}>6. Any transit damages must be notified within 24 hours of receipt.</Text>
+                            <Text style={styles.termsLine}>7. Subject to Nellore, Andhra Pradesh jurisdiction.</Text>
                         </View>
                     </View>
 
@@ -715,7 +717,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                 {/* 5. Signatory & Jurisdiction */}
                 <View style={styles.signatoryRow}>
                     <Text style={styles.jurisdictionNote}>
-                        This is a computer-generated proforma invoice issued by Karthik Traders, Nellore. Valid without signature under IT Act 2000.
+                        This is a computer-generated proforma invoice issued by Karthik Traders, Nellore. Official GST Tax Invoice will be provided at the time of delivery. Valid without signature under IT Act 2000.
                     </Text>
 
                     <View style={styles.signatoryBlock}>

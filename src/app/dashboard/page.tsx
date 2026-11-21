@@ -857,7 +857,7 @@ export default function DashboardPage() {
                       PROFORMA INVOICE
                     </span>
                     <span className="text-[9.5px] text-slate-500 uppercase tracking-wide block mt-0.5">
-                      Original For Recipient
+                      Tax invoice will be given during delivery
                     </span>
                   </div>
                   <div className="text-right sm:mt-2">
@@ -977,7 +977,7 @@ export default function DashboardPage() {
                     <span className="text-[6.5px] sm:text-[7px] text-emerald-700 font-extrabold mt-0.5">Official Seal</span>
                   </div>
                   <div className="text-[10px] text-slate-500 max-w-[220px] leading-relaxed">
-                    This is a computer-generated proforma invoice issued by Karthik Traders, Nellore. Valid without signature.
+                    This is a computer-generated proforma invoice. Official GST Tax Invoice will be given during delivery.
                   </div>
                 </div>
 

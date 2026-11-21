@@ -251,7 +251,7 @@ export default function CheckoutPage() {
     },
     {
       k: 'TAXES & GST',
-      v: 'All listed prices include GST. Official GST tax invoice issued with every dispatch for farm input credit.',
+      v: 'All listed prices include GST. Official GST tax invoice will be given during delivery for farm input credit.',
     },
     {
       k: 'DISPATCH',
