@@ -180,7 +180,7 @@ export const DEFAULT_GENERAL_SETTINGS: DeliveryGeneralSettings = {
     customerArrangedNotice: initialSettings?.general?.customer_arranged_notice || 'Transport arranged by customer (To-Pay / customer vehicle).',
     freeDeliveryForAeratorsOnly: (initialSettings?.general as any)?.free_delivery_for_aerators_only ?? true,
     eligibleAeratorSlugs: (initialSettings?.general as any)?.eligible_aerator_slugs ?? [],
-    enabledInProduction: (initialSettings?.general as any)?.is_delivery_feature_enabled_in_production ?? false,
+    enabledInProduction: (initialSettings?.general as any)?.is_delivery_feature_enabled_in_production ?? true,
 };
 
 export const PRESET_VEHICLE_TYPES = DEFAULT_GENERAL_SETTINGS.vehiclePresets;

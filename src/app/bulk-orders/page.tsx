@@ -232,6 +232,8 @@ export default function CheckoutPage() {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('loyalty:refresh'));
         }
+        alert('Your loyalty points balance was updated (0 points available). Your order total has been adjusted — please confirm your order again.');
+        return;
       }
       alert('Error placing order: ' + err.message);
     } finally {

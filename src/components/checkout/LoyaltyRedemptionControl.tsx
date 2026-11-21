@@ -57,14 +57,20 @@ export default function LoyaltyRedemptionControl({
             if (res.ok) {
                 const data = await res.json();
                 setWalletData(data);
-                const minPoints = data.settings?.min_points_to_redeem || 50;
-                if ((data.points_balance || 0) < minPoints) {
+                const minPoints = data.settings?.min_points_to_redeem || 100;
+                const pointsBalance = Number(data.points_balance) || 0;
+                if (pointsBalance < minPoints) {
                     setIsRedeeming(false);
                     onApplyPoints(0, 0);
                     try {
                         sessionStorage.removeItem('kt_cart_points');
                         sessionStorage.removeItem('kt_cart_loyalty_discount');
                     } catch (e) {}
+                } else if (appliedPoints > pointsBalance) {
+                    const pts = Math.min(appliedPoints, pointsBalance);
+                    const paisePerPt = data.settings?.paise_per_point || 100;
+                    const adjustedDiscount = Math.round(pts * paisePerPt) / 100;
+                    onApplyPoints(pts, adjustedDiscount);
                 }
             }
         } catch (err) {

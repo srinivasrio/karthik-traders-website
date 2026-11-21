@@ -106,12 +106,16 @@ async function main() {
     });
 
     // TEST CASE 3: State Delivery Policy & Staging Safety Guard
-    await runTestCase('TC-03: State Delivery Policy & Staging Safety Guard', async () => {
-        // Query live delivery config from database / app_settings
-        const { data: configRes } = await supabase.from('app_settings').select('value').eq('key', 'delivery_general_config').maybeSingle();
-        const enabledInProduction = configRes?.value?.enabledInProduction ?? false;
+    await runTestCase('TC-03: State Delivery Policy & Production Live Verification', async () => {
+        // Query live delivery config from database delivery_general_settings
+        const { data: generalRes } = await supabase
+            .from('delivery_general_settings')
+            .select('is_delivery_feature_enabled_in_production')
+            .eq('id', 1)
+            .single();
+        const enabledInProduction = generalRes?.is_delivery_feature_enabled_in_production ?? false;
 
-        assert(enabledInProduction === false, 'CRITICAL: Delivery transparency feature MUST be hidden on production (enabledInProduction: false)');
+        assert(enabledInProduction === true, 'CRITICAL: Delivery transparency feature MUST be LIVE on production (enabledInProduction: true)');
 
         // Test delivery rule resolution
         const rules = [
