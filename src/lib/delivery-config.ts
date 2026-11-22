@@ -38,6 +38,8 @@ export interface DeliveryGeneralSettings {
     freeDeliveryForAeratorsOnly?: boolean;
     eligibleAeratorSlugs?: string[];
     enabledInProduction?: boolean;
+    isFreeDeliveryEnabled?: boolean;
+    minAeratorQtyForFreeDelivery?: number;
 }
 
 /**
@@ -181,6 +183,8 @@ export const DEFAULT_GENERAL_SETTINGS: DeliveryGeneralSettings = {
     freeDeliveryForAeratorsOnly: (initialSettings?.general as any)?.free_delivery_for_aerators_only ?? true,
     eligibleAeratorSlugs: (initialSettings?.general as any)?.eligible_aerator_slugs ?? [],
     enabledInProduction: (initialSettings?.general as any)?.is_delivery_feature_enabled_in_production ?? true,
+    isFreeDeliveryEnabled: (initialSettings?.general as any)?.is_free_delivery_enabled ?? true,
+    minAeratorQtyForFreeDelivery: Number((initialSettings?.general as any)?.min_aerator_qty_for_free_delivery ?? 10),
 };
 
 export const PRESET_VEHICLE_TYPES = DEFAULT_GENERAL_SETTINGS.vehiclePresets;
@@ -268,7 +272,25 @@ export function evaluateOrderFreeDelivery(
 } {
     const baseRule = resolveDeliveryRule(destinationState, rules);
 
-    // If the destination state is not free delivery (e.g. Telangana, Tamil Nadu, WB)
+    // 1. Check if Free Delivery is globally enabled by admin
+    const isFreeDeliveryGloballyEnabled = generalSettings.isFreeDeliveryEnabled ?? true;
+    if (!isFreeDeliveryGloballyEnabled) {
+        return {
+            isFreeDelivery: false,
+            hasEligibleAerators: false,
+            shippingFeeText: 'Customer Arranged (To-Pay)',
+            deliveryRule: {
+                ...baseRule,
+                isFreeDelivery: false,
+                policyBadgeText: 'Customer Responsibility (To-Pay)',
+                tagline: `Delivery in ${baseRule.timelineText} (Customer arranged transport)`,
+                description: `Free delivery option is currently disabled by store administration. Dispatched via regional transport (To-Pay) or customer vehicle.`,
+            },
+            reason: `Free delivery option is currently disabled by store administration. Transport is customer arranged (To-Pay).`,
+        };
+    }
+
+    // 2. If the destination state is not free delivery (e.g. Telangana, Tamil Nadu, WB)
     if (!baseRule.isFreeDelivery) {
         return {
             isFreeDelivery: false,
@@ -279,11 +301,23 @@ export function evaluateOrderFreeDelivery(
         };
     }
 
-    // Destination state is Free Delivery (e.g. Andhra Pradesh)
+    // 3. Destination state is Free Delivery (e.g. Andhra Pradesh)
     const aeratorsOnly = generalSettings.freeDeliveryForAeratorsOnly ?? true;
+    const minAerators = Number(generalSettings.minAeratorQtyForFreeDelivery ?? 10);
+
+    // Calculate total quantity of eligible aerators in the order/cart
+    let totalEligibleAeratorQty = 0;
+    let hasAnyAerators = false;
+
+    (items || []).forEach((item) => {
+        if (isItemEligibleForFreeDelivery(item, generalSettings)) {
+            hasAnyAerators = true;
+            totalEligibleAeratorQty += Number(item.quantity || 1);
+        }
+    });
 
     if (!aeratorsOnly) {
-        // Free delivery on all items in this state
+        // Free delivery on all items in this state without aerators restriction
         return {
             isFreeDelivery: true,
             hasEligibleAerators: true,
@@ -293,42 +327,68 @@ export function evaluateOrderFreeDelivery(
         };
     }
 
-    // Check if cart/order contains any eligible aerator sets
-    const eligibleItem = (items || []).find((item) => isItemEligibleForFreeDelivery(item, generalSettings));
+    // Aerators only rule:
+    if (!hasAnyAerators) {
+        // No aerators found in items (only spares or accessories)
+        const sparesRule: StateDeliveryRule = {
+            ...baseRule,
+            isFreeDelivery: false,
+            policyBadgeText: 'Customer Responsibility (Spares)',
+            tagline: `Delivery in ${baseRule.timelineText} (Free delivery requires minimum ${minAerators} aerators)`,
+            description:
+                `Free door & pond delivery in ${baseRule.stateName} is exclusive to orders of ${minAerators} or more Aerator Sets. Spares and standalone parts are dispatched via regional transport (To-Pay) or customer vehicle.`,
+            badgeColor: {
+                bg: 'bg-amber-50',
+                border: 'border-amber-200',
+                text: 'text-amber-800',
+                dot: 'bg-amber-500',
+            },
+        };
 
-    if (eligibleItem) {
+        return {
+            isFreeDelivery: false,
+            hasEligibleAerators: false,
+            shippingFeeText: 'Customer Arranged (To-Pay)',
+            deliveryRule: sparesRule,
+            reason:
+                `Free delivery applies to orders of ${minAerators}+ Aerator Sets in ${baseRule.stateName}. For spare parts, transport is customer arranged (To-Pay).`,
+        };
+    }
+
+    // Has aerators! Check minimum quantity threshold (Default: 10 aerators)
+    if (totalEligibleAeratorQty >= minAerators) {
         return {
             isFreeDelivery: true,
             hasEligibleAerators: true,
             shippingFeeText: 'FREE Delivery (₹0)',
             deliveryRule: baseRule,
-            reason: `Order includes eligible Aerator Set(s) with 100% Free Door & Pond Delivery in ${baseRule.stateName}.`,
+            reason: `Order qualifies for 100% Free Door & Pond Delivery across ${baseRule.stateName} (Order contains ${totalEligibleAeratorQty} aerator sets; Min required: ${minAerators}).`,
         };
     }
 
-    // No aerators found in items (e.g. only spares or non-aerator products)
-    const sparesRule: StateDeliveryRule = {
+    // Has aerators, but below minimum order quantity (e.g. 1 to 9 aerators)
+    const shortfall = minAerators - totalEligibleAeratorQty;
+    const moqRule: StateDeliveryRule = {
         ...baseRule,
         isFreeDelivery: false,
-        policyBadgeText: 'Customer Responsibility (Spares)',
-        tagline: 'Delivery in 3 to 7 days (Free delivery is for aerator sets only)',
+        policyBadgeText: `Customer Responsibility (< ${minAerators} Sets)`,
+        tagline: `Delivery in ${baseRule.timelineText} (Free delivery requires minimum ${minAerators} aerator sets)`,
         description:
-            'Free delivery is exclusive to Aerator Sets in Andhra Pradesh. Spares and standalone parts are dispatched via regional transport (To-Pay) or customer vehicle.',
+            `Free door & pond delivery in ${baseRule.stateName} requires a minimum order of ${minAerators} Aerator Sets. Orders with fewer than ${minAerators} aerators are dispatched via regional transport (To-Pay) or customer vehicle.`,
         badgeColor: {
-            bg: 'bg-amber-50',
-            border: 'border-amber-200',
-            text: 'text-amber-800',
-            dot: 'bg-amber-500',
+            bg: 'bg-sky-50',
+            border: 'border-sky-200',
+            text: 'text-sky-800',
+            dot: 'bg-sky-500',
         },
     };
 
     return {
         isFreeDelivery: false,
-        hasEligibleAerators: false,
+        hasEligibleAerators: true,
         shippingFeeText: 'Customer Arranged (To-Pay)',
-        deliveryRule: sparesRule,
-        reason:
-            'Free delivery applies only to Aerator Sets in Andhra Pradesh. For spare parts, transport is customer arranged (To-Pay).',
+        deliveryRule: moqRule,
+        reason: `Free Delivery in ${baseRule.stateName} requires a minimum of ${minAerators} Aerator Sets (Cart has ${totalEligibleAeratorQty} set${totalEligibleAeratorQty > 1 ? 's' : ''}. Add ${shortfall} more set${shortfall > 1 ? 's' : ''} to unlock 100% Free Delivery).`,
     };
 }
 

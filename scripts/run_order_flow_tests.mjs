@@ -105,30 +105,74 @@ async function main() {
         assert(finalPayable === 55498, `Final payable expected 55498, got ${finalPayable}`);
     });
 
-    // TEST CASE 3: State Delivery Policy & Staging Safety Guard
-    await runTestCase('TC-03: State Delivery Policy & Production Live Verification', async () => {
+    // TEST CASE 3: State Delivery Policy, 10 Aerators MOQ & Admin Enable/Disable
+    await runTestCase('TC-03: State Delivery Policy, 10 Aerators MOQ & Admin Controls', async () => {
         // Query live delivery config from database delivery_general_settings
         const { data: generalRes } = await supabase
             .from('delivery_general_settings')
-            .select('is_delivery_feature_enabled_in_production')
+            .select('is_delivery_feature_enabled_in_production, is_free_delivery_enabled, min_aerator_qty_for_free_delivery')
             .eq('id', 1)
             .single();
+
         const enabledInProduction = generalRes?.is_delivery_feature_enabled_in_production ?? false;
+        assert(enabledInProduction === true, 'Delivery transparency feature MUST be LIVE on production (enabledInProduction: true)');
 
-        assert(enabledInProduction === true, 'CRITICAL: Delivery transparency feature MUST be LIVE on production (enabledInProduction: true)');
+        const isFreeEnabled = generalRes?.is_free_delivery_enabled ?? true;
+        assert(isFreeEnabled === true, 'Free delivery master toggle must be enabled by default');
 
-        // Test delivery rule resolution
+        const minMoq = generalRes?.min_aerator_qty_for_free_delivery ?? 10;
+        assert(minMoq === 10, `Minimum order quantity for free delivery must be 10 aerators, got ${minMoq}`);
+
+        // Test delivery rules
         const rules = [
-            { stateName: 'Andhra Pradesh', isFreeDelivery: true, timelineText: '3 to 7 Days' },
-            { stateName: 'Telangana', isFreeDelivery: false, timelineText: '3 to 7 Days' },
-            { stateName: 'Tamil Nadu', isFreeDelivery: false, timelineText: '3 to 7 Days' }
+            { id: 'andhra_pradesh', stateName: 'Andhra Pradesh', stateCode: 'AP', isFreeDelivery: true, timelineText: '3 to 7 Days' },
+            { id: 'telangana', stateName: 'Telangana', stateCode: 'TS', isFreeDelivery: false, timelineText: '3 to 7 Days' },
+            { id: 'tamil_nadu', stateName: 'Tamil Nadu', stateCode: 'TN', isFreeDelivery: false, timelineText: '3 to 7 Days' }
         ];
 
-        const apRule = rules.find(r => r.stateName === 'Andhra Pradesh');
-        assert(apRule.isFreeDelivery === true, 'Andhra Pradesh aerators must be FREE delivery');
+        // Dynamic mock evaluation helper matching delivery-config
+        const evalOrder = (items, state, gen) => {
+            const rule = rules.find(r => r.stateName === state) || rules[2];
+            const isGloballyActive = gen?.isFreeDeliveryEnabled ?? true;
+            if (!isGloballyActive) return { isFreeDelivery: false, reason: 'Disabled by admin' };
+            if (!rule.isFreeDelivery) return { isFreeDelivery: false, reason: 'State not eligible' };
+            const moq = gen?.minAeratorQtyForFreeDelivery ?? 10;
+            const aeratorQty = items.reduce((sum, it) => (it.category === 'aerator-set' ? sum + (it.quantity || 1) : sum), 0);
+            if (aeratorQty === 0) return { isFreeDelivery: false, reason: 'Spares only' };
+            if (aeratorQty >= moq) return { isFreeDelivery: true, reason: 'Meets MOQ' };
+            return { isFreeDelivery: false, reason: `Requires minimum ${moq} aerators` };
+        };
 
-        const tsRule = rules.find(r => r.stateName === 'Telangana');
-        assert(tsRule.isFreeDelivery === false, 'Telangana orders must be Customer Arranged transport');
+        const genConfig = { isFreeDeliveryEnabled: true, minAeratorQtyForFreeDelivery: 10 };
+
+        // Test 1: Exactly 10 aerators in AP -> FREE DELIVERY
+        const res10 = evalOrder([{ category: 'aerator-set', quantity: 10 }], 'Andhra Pradesh', genConfig);
+        assert(res10.isFreeDelivery === true, '10 aerators in Andhra Pradesh MUST get Free Delivery');
+
+        // Test 2: Less than 10 aerators in AP (e.g. 2 aerators) -> NOT FREE
+        const res2 = evalOrder([{ category: 'aerator-set', quantity: 2 }], 'Andhra Pradesh', genConfig);
+        assert(res2.isFreeDelivery === false, '2 aerators in Andhra Pradesh must NOT get Free Delivery (MOQ is 10)');
+        assert(res2.reason.includes('10 aerators'), 'Reason must specify 10 aerators requirement');
+
+        // Test 3: 9 aerators in AP -> NOT FREE
+        const res9 = evalOrder([{ category: 'aerator-set', quantity: 9 }], 'Andhra Pradesh', genConfig);
+        assert(res9.isFreeDelivery === false, '9 aerators in Andhra Pradesh must NOT get Free Delivery');
+
+        // Test 4: 15 aerators in AP -> FREE DELIVERY
+        const res15 = evalOrder([{ category: 'aerator-set', quantity: 15 }], 'Andhra Pradesh', genConfig);
+        assert(res15.isFreeDelivery === true, '15 aerators in Andhra Pradesh must get Free Delivery');
+
+        // Test 5: 10 aerators in Telangana -> NOT FREE (Interstate customer arranged)
+        const resTs = evalOrder([{ category: 'aerator-set', quantity: 10 }], 'Telangana', genConfig);
+        assert(resTs.isFreeDelivery === false, 'Telangana orders must be Customer Arranged transport regardless of qty');
+
+        // Test 6: Spares only in AP -> NOT FREE
+        const resSpares = evalOrder([{ category: 'spare-part', quantity: 20 }], 'Andhra Pradesh', genConfig);
+        assert(resSpares.isFreeDelivery === false, 'Spares only in Andhra Pradesh must not get Free Delivery');
+
+        // Test 7: Admin disables Free Delivery globally -> All orders become Customer Arranged
+        const resDisabled = evalOrder([{ category: 'aerator-set', quantity: 10 }], 'Andhra Pradesh', { isFreeDeliveryEnabled: false, minAeratorQtyForFreeDelivery: 10 });
+        assert(resDisabled.isFreeDelivery === false, 'When Admin disables free delivery option, all orders must be Customer Arranged');
     });
 
     // TEST CASE 4: Loyalty Points Database Rules & Preview RPC

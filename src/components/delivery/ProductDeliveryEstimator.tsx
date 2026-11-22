@@ -66,6 +66,8 @@ export default function ProductDeliveryEstimator({
 
     const activeRule = evalResult.deliveryRule;
     const isAerator = product ? isAeratorProduct(product) : true;
+    const isApState = selectedState === 'Andhra Pradesh';
+    const minMoq = general.minAeratorQtyForFreeDelivery ?? 10;
 
     const quickStates = ['Andhra Pradesh', 'Telangana', 'Tamil Nadu', 'West Bengal'];
 
@@ -90,12 +92,8 @@ export default function ProductDeliveryEstimator({
             {/* Quick State Selector Buttons */}
             <div className="flex flex-wrap gap-1.5 text-xs font-bold">
                 {quickStates.map((stName) => {
-                    const stEval = evaluateOrderFreeDelivery(
-                        product ? [product] : [{ category: 'aerator-set' }],
-                        stName,
-                        rules,
-                        general
-                    );
+                    const isAp = stName === 'Andhra Pradesh';
+                    const isFreeActive = (general.isFreeDeliveryEnabled ?? true) && isAp && isAerator;
                     const isSelected = selectedState === stName;
                     return (
                         <button
@@ -108,12 +106,12 @@ export default function ProductDeliveryEstimator({
                                 }`}
                         >
                             <span>{stName}</span>
-                            {stEval.isFreeDelivery && (
+                            {isFreeActive && (
                                 <span
                                     className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold ${isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
                                         }`}
                                 >
-                                    FREE
+                                    FREE (10+)
                                 </span>
                             )}
                         </button>
@@ -164,17 +162,18 @@ export default function ProductDeliveryEstimator({
                         {/* Shipping Fee Indicator */}
                         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-slate-600 font-semibold">Shipping Fee:</span>
-                            <span
-                                className={`text-xs font-black px-2.5 py-0.5 rounded-md ${evalResult.isFreeDelivery
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-blue-100 text-blue-900 border border-blue-200'
-                                    }`}
-                            >
-                                {evalResult.isFreeDelivery ? '🟢 FREE Delivery (₹0)' : '🔵 Customer Arranged (To-Pay)'}
-                            </span>
-                            {evalResult.isFreeDelivery && (
-                                <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                                    Aerator Set Free Delivery
+                            {isApState && isAerator && (general.isFreeDeliveryEnabled ?? true) ? (
+                                <>
+                                    <span className="text-xs font-black px-2.5 py-0.5 rounded-md bg-emerald-600 text-white">
+                                        🟢 FREE Delivery on {minMoq}+ Aerators (₹0)
+                                    </span>
+                                    <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                        Min {minMoq} Sets for Free Delivery
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-xs font-black px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-900 border border-blue-200">
+                                    🔵 Customer Arranged (To-Pay)
                                 </span>
                             )}
                         </div>
@@ -192,16 +191,21 @@ export default function ProductDeliveryEstimator({
                 </div>
 
                 <p className="text-xs text-slate-700 leading-relaxed font-medium pt-1 border-t border-slate-200/50">
-                    {evalResult.isFreeDelivery ? (
+                    {isApState && isAerator && (general.isFreeDeliveryEnabled ?? true) ? (
                         <>
-                            🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName} for this Aerator Set.
+                            🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName} for orders of <strong>{minMoq} or more Aerator Sets</strong>! (Smaller orders under {minMoq} aerators are dispatched via regional transport To-Pay).
                         </>
                     ) : (
                         <>
                             📦 Delivery in <strong>{activeRule.timelineText}</strong>. Transport is customer responsibility (dispatched via regional/interstate carrier To-Pay or customer arranged vehicle).
-                            {product && !isAerator && (
+                            {product && !isAerator && isApState && (
                                 <span className="block mt-1 text-[11px] text-slate-600 font-semibold">
-                                    ℹ️ Free delivery is exclusive to Aerator Sets in Andhra Pradesh. Spares are dispatched via customer arranged transport (To-Pay).
+                                    ℹ️ Free delivery is exclusive to orders of {minMoq}+ Aerator Sets in Andhra Pradesh. Spares are dispatched via customer arranged transport (To-Pay).
+                                </span>
+                            )}
+                            {!(general.isFreeDeliveryEnabled ?? true) && (
+                                <span className="block mt-1 text-[11px] text-slate-600 font-semibold">
+                                    ℹ️ Free delivery option is currently disabled by store administration.
                                 </span>
                             )}
                         </>

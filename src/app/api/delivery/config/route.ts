@@ -42,6 +42,8 @@ export async function GET() {
                 freeDeliveryForAeratorsOnly: dbGeneral.free_delivery_for_aerators_only ?? DEFAULT_GENERAL_SETTINGS.freeDeliveryForAeratorsOnly,
                 eligibleAeratorSlugs: dbGeneral.eligible_aerator_slugs || DEFAULT_GENERAL_SETTINGS.eligibleAeratorSlugs,
                 enabledInProduction: dbGeneral.is_delivery_feature_enabled_in_production ?? DEFAULT_GENERAL_SETTINGS.enabledInProduction,
+                isFreeDeliveryEnabled: dbGeneral.is_free_delivery_enabled ?? DEFAULT_GENERAL_SETTINGS.isFreeDeliveryEnabled,
+                minAeratorQtyForFreeDelivery: Number(dbGeneral.min_aerator_qty_for_free_delivery ?? DEFAULT_GENERAL_SETTINGS.minAeratorQtyForFreeDelivery),
             };
         }
 

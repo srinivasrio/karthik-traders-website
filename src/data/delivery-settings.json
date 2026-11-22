@@ -16,11 +16,13 @@
       "Customer Own Vehicle / Self-Pickup",
       "Other Transport Carrier"
     ],
-    "free_shipping_notice": "100% Free Door/Pond Delivery across Andhra Pradesh covered by Karthik Traders.",
+    "free_shipping_notice": "100% Free Door/Pond Delivery across Andhra Pradesh on 10+ Aerators covered by Karthik Traders.",
     "customer_arranged_notice": "Transport arranged by customer (To-Pay / customer vehicle).",
     "free_delivery_for_aerators_only": true,
     "eligible_aerator_slugs": [],
-    "is_delivery_feature_enabled_in_production": false
+    "is_delivery_feature_enabled_in_production": true,
+    "is_free_delivery_enabled": true,
+    "min_aerator_qty_for_free_delivery": 10
   },
   "rules": [
     {

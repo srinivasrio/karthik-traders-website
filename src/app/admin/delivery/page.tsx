@@ -37,6 +37,7 @@ export default function AdminDeliveryPage() {
     // Live State & Product Simulator State
     const [testStateInput, setTestStateInput] = useState<string>('Andhra Pradesh');
     const [testProductType, setTestProductType] = useState<'aerator' | 'spares' | 'mixed'>('aerator');
+    const [testAeratorQty, setTestAeratorQty] = useState<number>(10);
 
     // New State Modal State
     const [newZoneModalOpen, setNewZoneModalOpen] = useState(false);
@@ -250,19 +251,19 @@ export default function AdminDeliveryPage() {
     const liveTestResult = useMemo(() => {
         const mockItems =
             testProductType === 'aerator'
-                ? [{ category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle' }]
+                ? [{ category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle', quantity: testAeratorQty }]
                 : testProductType === 'spares'
                 ? [
-                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan' },
-                      { category: 'float', slug: 'virgin-hdpe-float', name: 'Virgin HDPE Float' },
+                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan', quantity: 1 },
+                      { category: 'float', slug: 'virgin-hdpe-float', name: 'Virgin HDPE Float', quantity: 2 },
                   ]
                 : [
-                      { category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle' },
-                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan' },
+                      { category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle', quantity: testAeratorQty },
+                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan', quantity: 1 },
                   ];
 
         return evaluateOrderFreeDelivery(mockItems, testStateInput, rules, general);
-    }, [testStateInput, testProductType, rules, general]);
+    }, [testStateInput, testProductType, testAeratorQty, rules, general]);
 
     // Vehicle Presets handlers
     const handleAddVehiclePreset = () => {
@@ -364,7 +365,163 @@ export default function AdminDeliveryPage() {
                 </div>
             )}
 
-            {/* Aerator Set Free Delivery Manager (Requirement 1 & 2: Free Delivery is for Aerator Sets Only) */}
+            {/* Master Free Delivery & Minimum Order Quantity Manager */}
+            <div className={`mb-8 rounded-2xl border-2 p-6 shadow-xs transition-all ${
+                (general.isFreeDeliveryEnabled ?? true)
+                    ? 'border-emerald-300 bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/30'
+                    : 'border-slate-300 bg-slate-50/80'
+            }`}>
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 mb-5">
+                    <div className="flex items-center gap-3">
+                        <span className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-xs ${
+                            (general.isFreeDeliveryEnabled ?? true)
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-300 text-slate-700'
+                        }`}>
+                            🚚
+                        </span>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h2 className="text-base sm:text-lg font-black text-slate-900 font-poppins">
+                                    Free Delivery Master Control & MOQ
+                                </h2>
+                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                                    (general.isFreeDeliveryEnabled ?? true)
+                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                        : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                }`}>
+                                    {(general.isFreeDeliveryEnabled ?? true) ? '🟢 FREE DELIVERY ENABLED' : '🔴 FREE DELIVERY DISABLED'}
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                Enable or disable Free Delivery on the website and configure the minimum aerator order quantity
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Master Free Delivery Toggle Switch */}
+                    <div className="flex items-center gap-3">
+                        <label className={`flex items-center gap-3 cursor-pointer select-none px-4 py-2 rounded-xl border transition-all ${
+                            (general.isFreeDeliveryEnabled ?? true)
+                                ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                        }`}>
+                            <input
+                                type="checkbox"
+                                checked={general.isFreeDeliveryEnabled ?? true}
+                                onChange={(e) =>
+                                    setGeneral({
+                                        ...general,
+                                        isFreeDeliveryEnabled: e.target.checked,
+                                    })
+                                }
+                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            />
+                            <span className="text-xs font-black">
+                                {(general.isFreeDeliveryEnabled ?? true) ? 'Free Delivery: ACTIVE' : 'Free Delivery: DISABLED'}
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                {/* Settings Grid: MOQ and Production Visibility */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Minimum Order Quantity Input */}
+                    <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between gap-3">
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                                    Minimum Aerator Quantity for Free Delivery
+                                </label>
+                                <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                    Current: {general.minAeratorQtyForFreeDelivery ?? 10} Sets
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
+                                Customer must order at least this many aerator sets in Andhra Pradesh to qualify for 100% Free Door/Pond Delivery. Smaller orders are dispatched via customer-arranged transport (To-Pay).
+                            </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <input
+                                type="number"
+                                min={1}
+                                max={100}
+                                value={general.minAeratorQtyForFreeDelivery ?? 10}
+                                onChange={(e) => {
+                                    const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                    setGeneral({
+                                        ...general,
+                                        minAeratorQtyForFreeDelivery: val,
+                                    });
+                                }}
+                                className="w-24 h-10 px-3 rounded-xl border border-slate-300 bg-slate-50 text-center font-mono font-black text-sm text-slate-900 focus:bg-white focus:border-blue-600 outline-none"
+                            />
+                            <span className="text-xs font-bold text-slate-600">Aerator Sets</span>
+
+                            <div className="flex items-center gap-1.5 ml-auto text-[11px] font-bold">
+                                {[5, 10, 15, 20].map((qty) => (
+                                    <button
+                                        key={qty}
+                                        type="button"
+                                        onClick={() =>
+                                            setGeneral({
+                                                ...general,
+                                                minAeratorQtyForFreeDelivery: qty,
+                                            })
+                                        }
+                                        className={`px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                                            (general.minAeratorQtyForFreeDelivery ?? 10) === qty
+                                                ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                        }`}
+                                    >
+                                        {qty} Sets {qty === 10 ? '★' : ''}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Production Live Visibility Toggle */}
+                    <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between gap-3">
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                                    Live Website Visibility
+                                </label>
+                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                    (general.enabledInProduction ?? true)
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                    {(general.enabledInProduction ?? true) ? 'LIVE' : 'HIDDEN'}
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
+                                Controls whether the Delivery Estimator card and state delivery policies appear on live production website (product detail pages, cart, and checkout).
+                            </p>
+                        </div>
+
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={general.enabledInProduction ?? true}
+                                onChange={(e) =>
+                                    setGeneral({
+                                        ...general,
+                                        enabledInProduction: e.target.checked,
+                                    })
+                                }
+                                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <span className="text-xs font-extrabold text-slate-800">
+                                Show delivery policies live on production (karthiktraders.in)
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
             <div className="mb-8 rounded-2xl border-2 border-indigo-200 bg-white p-6 shadow-xs">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
                     <div className="flex items-center gap-3">
@@ -579,6 +736,50 @@ export default function AdminDeliveryPage() {
                                     <span>Combined: Aerator + Spares</span>
                                 </label>
                             </div>
+
+                            {testProductType !== 'spares' && (
+                                <div className="mt-2.5 pt-2 border-t border-blue-200/60">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                                            Aerator Order Quantity
+                                        </label>
+                                        <span className={`text-[10px] font-black px-1.5 py-0.2 rounded ${
+                                            testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10)
+                                                ? 'bg-emerald-100 text-emerald-800'
+                                                : 'bg-amber-100 text-amber-800'
+                                        }`}>
+                                            {testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10) ? 'Meets MOQ' : 'Below MOQ'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={100}
+                                            value={testAeratorQty}
+                                            onChange={(e) => setTestAeratorQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                            className="w-16 h-8 px-2 rounded-lg border border-blue-300 bg-white font-mono font-bold text-center text-xs text-slate-900"
+                                        />
+                                        <span className="text-[11px] font-bold text-slate-600">Sets</span>
+                                        <div className="flex items-center gap-1 ml-auto text-[10px] font-bold">
+                                            {[1, 5, 10, 15].map((q) => (
+                                                <button
+                                                    key={q}
+                                                    type="button"
+                                                    onClick={() => setTestAeratorQty(q)}
+                                                    className={`px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                                                        testAeratorQty === q
+                                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                                            : 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50'
+                                                    }`}
+                                                >
+                                                    {q} {q === 10 ? '★' : ''}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -586,7 +787,7 @@ export default function AdminDeliveryPage() {
                     <div className="md:col-span-2 p-4 rounded-xl bg-white border border-blue-200 shadow-2xs flex flex-col gap-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="font-extrabold text-sm text-slate-900">
-                                {testStateInput} · {testProductType === 'aerator' ? 'Aerator Set' : testProductType === 'spares' ? 'Spares Only' : 'Aerator + Spares'}
+                                {testStateInput} · {testProductType === 'aerator' ? `${testAeratorQty} Aerator Set(s)` : testProductType === 'spares' ? 'Spares Only' : `${testAeratorQty} Aerator(s) + Spares`}
                             </span>
 
                             <span
