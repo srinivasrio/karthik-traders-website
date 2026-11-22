@@ -305,11 +305,8 @@ export default function AdminDeliveryPage() {
                         </span>
                         <div>
                             <h1 className="text-xl sm:text-2xl font-black text-slate-900 font-poppins">
-                                State Delivery Timelines & Shipping Fee Manager
+                                Delivery & Shipping Manager
                             </h1>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                                Delivery fees and transit timelines are calculated strictly based on customer&apos;s state
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -393,9 +390,6 @@ export default function AdminDeliveryPage() {
                                     {(general.isFreeDeliveryEnabled ?? true) ? '🟢 FREE DELIVERY ENABLED' : '🔴 FREE DELIVERY DISABLED'}
                                 </span>
                             </div>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                                Enable or disable Free Delivery on the website and configure the minimum aerator order quantity
-                            </p>
                         </div>
                     </div>
 
@@ -429,7 +423,7 @@ export default function AdminDeliveryPage() {
                     {/* Minimum Order Quantity Input */}
                     <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between gap-3">
                         <div>
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center justify-between mb-2">
                                 <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
                                     Minimum Aerator Quantity for Free Delivery
                                 </label>
@@ -437,9 +431,6 @@ export default function AdminDeliveryPage() {
                                     Current: {general.minAeratorQtyForFreeDelivery ?? 10} Sets
                                 </span>
                             </div>
-                            <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
-                                Customer must order at least this many aerator sets in Andhra Pradesh to qualify for 100% Free Door/Pond Delivery. Smaller orders are dispatched via customer-arranged transport (To-Pay).
-                            </p>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
@@ -486,7 +477,7 @@ export default function AdminDeliveryPage() {
                     {/* Production Live Visibility Toggle */}
                     <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between gap-3">
                         <div>
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center justify-between mb-2">
                                 <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
                                     Live Website Visibility
                                 </label>
@@ -498,9 +489,6 @@ export default function AdminDeliveryPage() {
                                     {(general.enabledInProduction ?? true) ? 'LIVE' : 'HIDDEN'}
                                 </span>
                             </div>
-                            <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
-                                Controls whether the Delivery Estimator card and state delivery policies appear on live production website (product detail pages, cart, and checkout).
-                            </p>
                         </div>
 
                         <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -582,12 +570,6 @@ export default function AdminDeliveryPage() {
                     </div>
                 </div>
 
-                <div className="text-xs text-slate-600 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200/80 leading-relaxed">
-                    💡 <strong>Aquaculture Policy:</strong> In Andhra Pradesh, Karthik Traders covers 100% door & farm pond
-                    transport fees for full <strong>Aerator Sets</strong>. Individual spare parts (fans, floats, rods, motors, gearboxes)
-                    are dispatched via customer-arranged transport (To-Pay) unless ordered together with an Aerator Set.
-                </div>
-
                 {/* Aerator Models Selection Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {aeratorSets.map((product) => {
@@ -648,21 +630,14 @@ export default function AdminDeliveryPage() {
 
             {/* Interactive Live State & Product Simulator Card */}
             <div className="mb-8 rounded-2xl border-2 border-blue-200 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-sky-50/60 p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-3 border-b border-blue-200/60 pb-2.5">
+                <div className="flex items-center justify-between mb-4 border-b border-blue-200/60 pb-2.5">
                     <div className="flex items-center gap-2">
                         <span className="text-base">📍</span>
                         <h2 className="text-sm font-extrabold text-blue-950 font-poppins">
-                            Live State & Cart Delivery Preview (Simulator)
+                            Live State & Cart Delivery Preview
                         </h2>
                     </div>
-                    <span className="text-[11px] font-bold text-blue-700 bg-white/80 px-2.5 py-0.5 rounded-full border border-blue-200">
-                        Real-Time Simulator
-                    </span>
                 </div>
-
-                <p className="text-xs text-slate-600 mb-4">
-                    Test how shipping fee and transit days appear for different combinations of <strong>Destination State</strong> and <strong>Cart Products</strong> (Aerator Sets vs Spares).
-                </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                     <div className="space-y-3">
@@ -838,9 +813,6 @@ export default function AdminDeliveryPage() {
                         <h2 className="text-base sm:text-lg font-black text-slate-900 font-poppins">
                             Configured State Delivery Rules ({rules.length})
                         </h2>
-                        <p className="text-xs text-slate-500">
-                            Configure transit timeline and fee policy for each destination state
-                        </p>
                     </div>
                 </div>
 
