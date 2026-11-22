@@ -380,7 +380,7 @@ export default function AdminDeliveryPage() {
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h2 className="text-base sm:text-lg font-black text-slate-900 font-poppins">
-                                    Free Delivery Master Control & MOQ
+                                    Free Delivery Master Control
                                 </h2>
                                 <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
                                     (general.isFreeDeliveryEnabled ?? true)
@@ -723,7 +723,7 @@ export default function AdminDeliveryPage() {
                                                 ? 'bg-emerald-100 text-emerald-800'
                                                 : 'bg-amber-100 text-amber-800'
                                         }`}>
-                                            {testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10) ? 'Meets MOQ' : 'Below MOQ'}
+                                            {testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10) ? 'Eligible' : 'Below Minimum'}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
