@@ -158,12 +158,35 @@ export async function POST(request: Request) {
             loyaltyDiscountRupees = preview.discount_rupees || 0;
         }
 
-        // Format items for RPC
-        const formattedItems = items.map((item: any) => ({
-            product_id: item.slug || item.id, // Use slug for DB mapping, fallback to ID
-            quantity: item.quantity,
-            price: item.salePrice || item.price || item.mrp
-        }));
+        // Query live database products to guarantee server-side price integrity against admin updates
+        const { data: dbProducts } = await supabaseAdmin
+            .from('products')
+            .select('id, slug, name, price, mrp, stock, is_active');
+
+        // Format items for RPC with verified live prices
+        const formattedItems = items.map((item: any) => {
+            const dbMatch = (dbProducts || []).find((p: any) => {
+                const cId = String(item.id || '').toLowerCase().trim();
+                const cSlug = String(item.slug || '').toLowerCase().trim();
+                const pId = String(p.id || '').toLowerCase().trim();
+                const pSlug = String(p.slug || '').toLowerCase().trim();
+                return (
+                    (cId && pId && cId === pId) ||
+                    (cSlug && pSlug && cSlug === pSlug) ||
+                    (cId && pSlug && cId === pSlug) ||
+                    (cSlug && pId && cSlug === pId)
+                );
+            });
+            const livePrice = dbMatch && typeof dbMatch.price === 'number'
+                ? Number(dbMatch.price)
+                : Number(item.salePrice || item.price || item.mrp || 0);
+
+            return {
+                product_id: item.slug || item.id, // Use slug for DB mapping, fallback to ID
+                quantity: item.quantity,
+                price: livePrice
+            };
+        });
 
         // Normalize customer mobile number (digits only, no + or spaces)
         const rawMobile = String(profile?.mobile || shippingAddress.mobile || '');

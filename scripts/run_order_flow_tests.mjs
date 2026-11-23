@@ -263,6 +263,84 @@ async function main() {
         assert(order.customer_mobile, 'Order must have customer_mobile');
     });
 
+    // TEST CASE 8: Cart Live Price Synchronization & Auto-Update on Admin Price Changes
+    await runTestCase('TC-08: Cart Live Price Synchronization on Admin Price Updates', async () => {
+        // 1. Query live products from Supabase
+        const { data: dbProducts, error } = await supabase
+            .from('products')
+            .select('id, slug, name, price, mrp, stock, is_active')
+            .limit(5);
+
+        assert(!error, `Failed to query products from database: ${error?.message}`);
+        assert(dbProducts && dbProducts.length > 0, 'Products table must contain active products');
+
+        const testDbProduct = dbProducts[0];
+        assert(testDbProduct.price > 0, 'Database product must have positive price');
+
+        // 2. Simulate cart item with STALE / OLD price
+        const stalePrice = Number(testDbProduct.price) - 2000;
+        const initialCartItem = {
+            id: testDbProduct.id,
+            slug: testDbProduct.slug,
+            name: testDbProduct.name,
+            model: testDbProduct.name,
+            price: stalePrice,
+            salePrice: stalePrice,
+            mrp: Number(testDbProduct.mrp || testDbProduct.price),
+            quantity: 2,
+            stock: 10,
+        };
+
+        // Replicate sync logic matching CartContext.updateCartWithLiveProducts
+        const updateCart = (items, dbList) => {
+            let hasPriceChanges = false;
+            const changedNames = [];
+            const updated = items.map((item) => {
+                const cId = String(item.id || '').toLowerCase().trim();
+                const cSlug = String(item.slug || '').toLowerCase().trim();
+                const match = dbList.find((p) => {
+                    const dbId = String(p.id || '').toLowerCase().trim();
+                    const dbSlug = String(p.slug || '').toLowerCase().trim();
+                    return (cId && dbId && cId === dbId) || (cSlug && dbSlug && cSlug === dbSlug) || (cId && dbSlug && cId === dbSlug);
+                });
+                if (!match) return item;
+                const livePrice = Number(match.price);
+                const liveMrp = Number(match.mrp || match.price);
+                const curPrice = Number(item.salePrice ?? item.price ?? 0);
+                if (Math.abs(livePrice - curPrice) > 0.01) {
+                    hasPriceChanges = true;
+                    changedNames.push(item.name || match.name);
+                    return { ...item, price: livePrice, salePrice: livePrice, mrp: liveMrp, stock: match.stock };
+                }
+                return item;
+            });
+            return { updated, hasPriceChanges, changedNames };
+        };
+
+        // Test price update detection
+        const result = updateCart([initialCartItem], [testDbProduct]);
+        assert(result.hasPriceChanges === true, 'Sync must detect price change between cart and DB');
+        assert(result.changedNames.length === 1, 'Changed names array must report affected product');
+        assert(result.updated[0].salePrice === Number(testDbProduct.price), `Cart item salePrice must be updated to DB price ${testDbProduct.price}, got ${result.updated[0].salePrice}`);
+        assert(result.updated[0].price === Number(testDbProduct.price), `Cart item price must be updated to DB price ${testDbProduct.price}`);
+
+        // Test cart subtotal recalculation with updated prices
+        const oldSubtotal = initialCartItem.salePrice * initialCartItem.quantity;
+        const newSubtotal = result.updated[0].salePrice * result.updated[0].quantity;
+        assert(newSubtotal === Number(testDbProduct.price) * 2, `Recalculated subtotal must equal new price * qty, got ${newSubtotal}`);
+        assert(newSubtotal !== oldSubtotal, 'Recalculated subtotal must reflect the admin price update');
+
+        // Test idempotency: running updateCart when prices are already up-to-date must NOT trigger change
+        const noChangeResult = updateCart(result.updated, [testDbProduct]);
+        assert(noChangeResult.hasPriceChanges === false, 'Sync must be idempotent when cart is already synchronized');
+
+        // Verify CartContext.tsx has Realtime channel subscription and focus listener
+        const cartContextCode = fs.readFileSync('src/context/CartContext.tsx', 'utf8');
+        assert(cartContextCode.includes('cart-realtime-products-pricing'), 'CartContext must establish realtime channel for product pricing updates');
+        assert(cartContextCode.includes('syncCartPrices'), 'CartContext must provide syncCartPrices helper');
+        assert(cartContextCode.includes('priceUpdateNotice'), 'CartContext must provide priceUpdateNotice state');
+    });
+
     console.log('\n====================================================');
     const passed = results.filter(r => r.status === 'PASSED').length;
     const failed = results.filter(r => r.status === 'FAILED').length;

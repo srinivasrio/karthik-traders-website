@@ -21,7 +21,7 @@ import {
 } from '@/lib/delivery-config';
 
 export default function CheckoutPage() {
-  const { cartItems, clearCart, totalPrice, finalPrice, discountAmount, coupon, applyCoupon } = useCart();
+  const { cartItems, clearCart, totalPrice, finalPrice, discountAmount, coupon, applyCoupon, priceUpdateNotice, dismissPriceNotice, syncCartPrices } = useCart();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -51,6 +51,7 @@ export default function CheckoutPage() {
   const [deliveryGeneral, setDeliveryGeneral] = useState<DeliveryGeneralSettings>(DEFAULT_GENERAL_SETTINGS);
 
   useEffect(() => {
+    syncCartPrices();
     fetch('/api/delivery/config')
       .then((res) => res.json())
       .then((data) => {
@@ -302,6 +303,21 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Form & Steps */}
           <div className="lg:col-span-8 flex flex-col gap-6 min-w-0">
+            {priceUpdateNotice && (
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-950 text-xs font-semibold flex items-center justify-between gap-3 shadow-2xs animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🏷️</span>
+                  <span>{priceUpdateNotice}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={dismissPriceNotice}
+                  className="text-amber-800 hover:text-amber-950 font-black text-xs px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             {/* Step 1: Account */}
             <section className="rounded-[28px] bg-white border border-[#E3E8F0] p-6 sm:p-7 shadow-xs">
               <div className="flex items-center gap-3 mb-4">

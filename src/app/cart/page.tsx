@@ -30,6 +30,9 @@ export default function CartPage() {
     coupon,
     discountAmount,
     finalPrice,
+    priceUpdateNotice,
+    dismissPriceNotice,
+    syncCartPrices,
   } = useCart();
 
   const [couponInput, setCouponInput] = useState('');
@@ -45,6 +48,7 @@ export default function CartPage() {
   const [cartState, setCartState] = useState<string>('Andhra Pradesh');
 
   useEffect(() => {
+    syncCartPrices();
     fetch('/api/delivery/config')
       .then((res) => res.json())
       .then((data) => {
@@ -213,7 +217,23 @@ export default function CartPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <>
+            {priceUpdateNotice && (
+              <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-950 text-xs font-semibold flex items-center justify-between gap-3 shadow-2xs animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🏷️</span>
+                  <span>{priceUpdateNotice}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={dismissPriceNotice}
+                  className="text-amber-800 hover:text-amber-950 font-black text-xs px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Cart Items List */}
             <div className="lg:col-span-8 flex flex-col rounded-[28px] bg-white border border-[#E3E8F0] shadow-sm overflow-hidden divide-y divide-[#EEF2F8]">
               {cartItems.map((item) => (
@@ -456,7 +476,8 @@ export default function CartPage() {
               </Link>
             </aside>
           </div>
-        )}
+        </>
+      )}
       </main>
 
       {/* Clear Cart Modal Confirmation */}
