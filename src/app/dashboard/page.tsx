@@ -412,9 +412,6 @@ export default function DashboardPage() {
                     href="/admin"
                     className="w-full h-11 rounded-2xl bg-linear-to-r from-purple-700 via-indigo-600 to-indigo-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-indigo-500/25 hover:from-purple-800 hover:to-indigo-800 transition-all cursor-pointer"
                   >
-                    <svg className="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
                     <span>Admin Panel</span>
                     <span className="text-[10px] font-mono uppercase bg-white/20 px-2 py-0.5 rounded-full">
                       Admin Access

@@ -297,11 +297,8 @@ export default function Header() {
               <Link
                 href="/admin"
                 aria-label="Navigate to Admin Panel"
-                className="hidden sm:inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-linear-to-r from-purple-700 via-indigo-600 to-indigo-700 text-white font-extrabold text-xs md:text-sm hover:from-purple-800 hover:to-indigo-800 shadow-md shadow-indigo-500/25 transition-all cursor-pointer"
+                className="hidden sm:inline-flex items-center justify-center h-10 px-4 rounded-full bg-linear-to-r from-purple-700 via-indigo-600 to-indigo-700 text-white font-extrabold text-xs md:text-sm hover:from-purple-800 hover:to-indigo-800 shadow-md shadow-indigo-500/25 transition-all cursor-pointer"
               >
-                <svg className="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
                 <span>Admin Panel</span>
               </Link>
             )}
@@ -589,11 +586,8 @@ export default function Header() {
                     <Link
                       href="/admin"
                       onClick={() => setIsMenuOpen(false)}
-                      className="col-span-2 sm:col-span-1 h-10 px-3 rounded-xl bg-linear-to-r from-purple-700 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-2xs hover:opacity-95"
+                      className="col-span-2 sm:col-span-1 h-10 px-3 rounded-xl bg-linear-to-r from-purple-700 to-indigo-700 text-white font-extrabold text-xs flex items-center justify-center shadow-2xs hover:opacity-95"
                     >
-                      <svg className="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
                       <span>Admin</span>
                     </Link>
                   )}
