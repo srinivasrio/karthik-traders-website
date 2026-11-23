@@ -184,6 +184,7 @@ async function main() {
             assert(isFreeOption === false, `State ${st} must NOT have isFreeOption when free delivery is disabled`);
             assert(!optionLabel.includes('FREE Delivery'), `State selector for ${st} must NOT contain 'FREE Delivery' when disabled by admin`);
             assert(optionLabel.includes('Customer Arranged'), `State selector for ${st} must show 'Customer Arranged' when disabled by admin`);
+            assert(!optionLabel.includes('$'), `State selector for ${st} must never contain rogue '$' symbol`);
         }
     });
 

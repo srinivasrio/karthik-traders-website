@@ -135,7 +135,7 @@ export default function ProductDeliveryEstimator({
                         const stRule = resolveDeliveryRule(st, rules, general);
                         return (
                             <option key={st} value={st}>
-                                {st} ({isFreeState ? `FREE Delivery (${minMoq}+ Sets)` : 'Customer Arranged'} · ${stRule.timelineText})
+                                {st} ({isFreeState ? `FREE Delivery (${minMoq}+ Sets)` : 'Customer Arranged'} · {stRule.timelineText})
                             </option>
                         );
                     })}

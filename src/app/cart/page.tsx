@@ -413,7 +413,7 @@ export default function CartPage() {
                       const isFreeOption = (deliveryGeneral.isFreeDeliveryEnabled ?? true) && stEval.isFreeDelivery;
                       return (
                         <option key={st} value={st}>
-                          {st} ({isFreeOption ? 'FREE Delivery' : 'Customer Arranged'} · ${stEval.deliveryRule.timelineText})
+                          {st} ({isFreeOption ? 'FREE Delivery' : 'Customer Arranged'} · {stEval.deliveryRule.timelineText})
                         </option>
                       );
                     })}
