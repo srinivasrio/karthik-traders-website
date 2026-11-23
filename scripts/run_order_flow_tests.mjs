@@ -354,8 +354,8 @@ async function main() {
         assert(dispatchCode.includes('uploadProductImageAction'), 'OrderDispatchCard must provide direct Server Action upload for mobile compatibility');
         assert(dispatchCode.includes('headers'), 'OrderDispatchCard must pass Authorization headers to upload endpoint');
         assert(dispatchCode.includes('handleDeletePhoto'), 'OrderDispatchCard must provide handleDeletePhoto to remove added image');
-        assert(dispatchCode.includes('Delete Image'), 'OrderDispatchCard must display a Delete Image button');
-        assert(dispatchCode.includes('Change / Replace Photo'), 'OrderDispatchCard must display a Change / Replace Photo button');
+        assert(dispatchCode.includes('>Delete<'), 'OrderDispatchCard must display a Delete button');
+        assert(dispatchCode.includes('Change'), 'OrderDispatchCard must display a Change button');
         assert(dispatchCode.includes('data.publicUrl || data.imageUrl'), 'OrderDispatchCard must check both publicUrl and imageUrl');
         assert(!dispatchCode.includes('capture="environment"'), 'OrderDispatchCard must not restrict file input with capture="environment" to allow DCIM gallery');
 

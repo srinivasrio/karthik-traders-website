@@ -418,25 +418,26 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                                     </h4>
                                 </div>
 
-                                {/* Prominent Action Buttons: Change Photo & Delete Photo */}
-                                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                                {/* Action Buttons: Change & Delete side by side in both mobile and desktop view */}
+                                <div className="flex flex-row items-center gap-2 pt-1 w-full max-w-xs">
                                     <button
                                         type="button"
                                         onClick={handleTriggerFileInput}
                                         disabled={uploadingImage}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow active:scale-95 disabled:opacity-50 cursor-pointer whitespace-nowrap"
                                     >
-                                        <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '🔄 Change / Replace Photo'}</span>
+                                        <span>🔄</span>
+                                        <span>{uploadingImage ? 'Compressing...' : 'Change'}</span>
                                     </button>
 
                                     <button
                                         type="button"
                                         onClick={handleDeletePhoto}
                                         disabled={uploadingImage}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold transition-all shadow-xs hover:shadow active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold transition-all shadow-xs hover:shadow active:scale-95 disabled:opacity-50 cursor-pointer whitespace-nowrap"
                                     >
                                         <span>🗑️</span>
-                                        <span>Delete Image</span>
+                                        <span>Delete</span>
                                     </button>
                                 </div>
 
@@ -468,13 +469,6 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                                 >
                                     <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '📷 Choose Photo (DCIM / Camera)'}</span>
                                 </button>
-                                <p className="text-[11px] text-slate-500">
-                                    Supports all formats (Camera, Mobile DCIM gallery, PNG, JPG). Automatically compressed to high quality PNG.
-                                </p>
-
-                                <p className="text-[11px] text-slate-500 leading-relaxed">
-                                    Upload a photo of the aerator gearboxes, motors, and floats loaded on the truck/van. The farmer can see this picture in their order tracking screen.
-                                </p>
 
                                 <div className="flex items-center gap-2 pt-1">
                                     <span className="text-[11px] text-slate-400">Or paste URL:</span>
