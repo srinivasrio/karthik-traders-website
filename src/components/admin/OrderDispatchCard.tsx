@@ -9,6 +9,8 @@ import {
 } from '@/lib/delivery-config';
 import { updateOrderDispatchAction } from '@/app/actions/orders';
 import { compressAndConvertToPng } from '@/lib/client-image-processor';
+import { uploadProductImageAction } from '@/app/actions/uploadImage';
+import { supabase } from '@/lib/supabase';
 
 interface OrderDispatchCardProps {
     order: any;
@@ -76,23 +78,60 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
             // Compress and convert to high-quality PNG (reduces size while preserving crisp clarity)
             const file = await compressAndConvertToPng(rawFile, 1600);
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('orderId', order.id);
+            let photoUrl: string | null = null;
 
-            const res = await fetch('/api/admin/orders/upload-vehicle-image', {
-                method: 'POST',
-                body: formData,
-            });
+            // Strategy 1: Server Action (bypasses mobile browser cookie/header limitations seamlessly)
+            try {
+                const actionFormData = new FormData();
+                actionFormData.append('file', file);
+                actionFormData.append('category', 'delivery');
+                const actionRes = await uploadProductImageAction(actionFormData);
+                if (actionRes.success && actionRes.publicUrl) {
+                    photoUrl = actionRes.publicUrl;
+                } else if (actionRes.error) {
+                    console.warn('Server Action upload returned unsuccessful, falling back to API route:', actionRes.error);
+                }
+            } catch (actionErr: any) {
+                console.warn('Server Action threw exception, falling back to API route:', actionErr?.message);
+            }
 
-            const data = await res.json();
-            const photoUrl = data.publicUrl || data.imageUrl;
+            // Strategy 2: Direct REST API route with Supabase Auth token
+            if (!photoUrl) {
+                let session = (await supabase.auth.getSession()).data.session;
+                if (!session?.access_token) {
+                    const refreshRes = await supabase.auth.refreshSession();
+                    session = refreshRes.data.session;
+                }
 
-            if (data.success && photoUrl) {
+                const headers: Record<string, string> = {};
+                if (session?.access_token) {
+                    headers['Authorization'] = `Bearer ${session.access_token}`;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+                if (order?.id) {
+                    formData.append('orderId', order.id);
+                }
+
+                const res = await fetch('/api/admin/orders/upload-vehicle-image', {
+                    method: 'POST',
+                    headers,
+                    body: formData,
+                });
+
+                const data = await res.json();
+                photoUrl = data.publicUrl || data.imageUrl;
+                if (!data.success && !photoUrl) {
+                    throw new Error(data.error || 'Failed to upload photo');
+                }
+            }
+
+            if (photoUrl) {
                 setVehiclePhotoUrl(photoUrl);
                 setMessage({ type: 'success', text: 'Vehicle photo uploaded & optimized successfully!' });
             } else {
-                setMessage({ type: 'error', text: data.error || 'Failed to upload photo' });
+                setMessage({ type: 'error', text: 'Failed to upload photo. Please try again.' });
             }
         } catch (err: any) {
             console.error('Photo upload error:', err);

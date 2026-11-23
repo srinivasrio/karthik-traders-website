@@ -348,9 +348,11 @@ async function main() {
         assert(processorCode.includes('compressAndConvertToPng'), 'client-image-processor must export compressAndConvertToPng');
         assert(processorCode.includes("'image/png'"), 'client-image-processor must export as image/png');
 
-        // 2. Verify OrderDispatchCard uses compressAndConvertToPng and supports imageUrl + publicUrl
+        // 2. Verify OrderDispatchCard uses compressAndConvertToPng, uploadProductImageAction, auth headers, and supports imageUrl + publicUrl
         const dispatchCode = fs.readFileSync('src/components/admin/OrderDispatchCard.tsx', 'utf8');
         assert(dispatchCode.includes('compressAndConvertToPng'), 'OrderDispatchCard must compress images before upload');
+        assert(dispatchCode.includes('uploadProductImageAction'), 'OrderDispatchCard must provide direct Server Action upload for mobile compatibility');
+        assert(dispatchCode.includes('headers'), 'OrderDispatchCard must pass Authorization headers to upload endpoint');
         assert(dispatchCode.includes('data.publicUrl || data.imageUrl'), 'OrderDispatchCard must check both publicUrl and imageUrl');
         assert(!dispatchCode.includes('capture="environment"'), 'OrderDispatchCard must not restrict file input with capture="environment" to allow DCIM gallery');
 
