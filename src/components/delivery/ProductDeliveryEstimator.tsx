@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
     TruckIcon,
-    CameraIcon,
     MapPinIcon,
-    SparklesIcon,
 } from '@heroicons/react/24/outline';
 import {
     DEFAULT_RULES,
@@ -186,41 +184,12 @@ export default function ProductDeliveryEstimator({
                     </div>
                 </div>
 
-                <p className="text-xs text-slate-700 leading-relaxed font-medium pt-1 border-t border-slate-200/50">
-                    {isApState && isAerator && (general.isFreeDeliveryEnabled ?? true) ? (
-                        <>
-                            🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName} for orders of <strong>{minMoq} or more Aerator Sets</strong>! (Smaller orders under {minMoq} aerators are dispatched via regional transport To-Pay).
-                        </>
-                    ) : (
-                        <>
-                            📦 Delivery in <strong>{activeRule.timelineText}</strong>. Transport is customer responsibility (dispatched via regional/interstate carrier To-Pay or customer arranged vehicle).
-                            {product && !isAerator && isApState && (
-                                <span className="block mt-1 text-[11px] text-slate-600 font-semibold">
-                                    ℹ️ Free delivery is exclusive to orders of {minMoq}+ Aerator Sets in Andhra Pradesh. Spares are dispatched via customer arranged transport (To-Pay).
-                                </span>
-                            )}
-                            {!(general.isFreeDeliveryEnabled ?? true) && (
-                                <span className="block mt-1 text-[11px] text-slate-600 font-semibold">
-                                    ℹ️ Free delivery option is currently disabled by store administration.
-                                </span>
-                            )}
-                        </>
-                    )}
-                </p>
-            </div>
-
-            {/* Vehicle Loading Transparency Notice */}
-            {!compact && (
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex flex-col gap-1.5">
-                    <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
-                        <CameraIcon className="w-4 h-4 text-indigo-600" />
-                        <span>Live Vehicle Load Transparency</span>
-                    </span>
-                    <p className="leading-relaxed">
-                        After goods are loaded onto the vehicle at our Nellore facility, your <strong>Vehicle Number</strong>, <strong>Driver Phone</strong>, and <strong>Photo of the loaded vehicle</strong> appear automatically in your customer dashboard!
+                {isApState && isAerator && (general.isFreeDeliveryEnabled ?? true) && (
+                    <p className="text-xs text-slate-700 leading-relaxed font-medium pt-1 border-t border-slate-200/50">
+                        🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName} for orders of <strong>{minMoq} or more Aerator Sets</strong>! (Smaller orders under {minMoq} aerators are dispatched via regional transport To-Pay).
                     </p>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
