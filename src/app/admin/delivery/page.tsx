@@ -13,6 +13,8 @@ import {
     BuildingOffice2Icon,
     ShieldCheckIcon,
     SparklesIcon,
+    MagnifyingGlassIcon,
+    XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
     StateDeliveryRule,
@@ -24,7 +26,64 @@ import {
     evaluateOrderFreeDelivery,
     isItemEligibleForFreeDelivery,
 } from '@/lib/delivery-config';
-import { aeratorSets } from '@/data/products';
+import {
+    aeratorSets,
+    motors,
+    allGearboxes,
+    allSpares,
+    longArmProducts,
+    Product,
+} from '@/data/products';
+
+export type ProductCategoryGroup = 'aerators' | 'motors' | 'gearboxes' | 'spares' | 'long-arm';
+
+export interface CatalogProductItem {
+    product: Product;
+    categoryGroup: ProductCategoryGroup;
+    groupLabel: string;
+    badgeBg: string;
+    badgeText: string;
+}
+
+const CATALOG_ITEMS: CatalogProductItem[] = [
+    ...aeratorSets.map((p) => ({
+        product: p,
+        categoryGroup: 'aerators' as const,
+        groupLabel: 'Aerator Set',
+        badgeBg: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+        badgeText: 'AERATOR',
+    })),
+    ...motors.map((p) => ({
+        product: p,
+        categoryGroup: 'motors' as const,
+        groupLabel: 'Motor',
+        badgeBg: 'bg-amber-100 text-amber-800 border-amber-200',
+        badgeText: 'MOTOR',
+    })),
+    ...allGearboxes.map((p) => ({
+        product: p,
+        categoryGroup: 'gearboxes' as const,
+        groupLabel: 'Gearbox',
+        badgeBg: 'bg-purple-100 text-purple-800 border-purple-200',
+        badgeText: 'GEARBOX',
+    })),
+    ...allSpares.map((p) => ({
+        product: p,
+        categoryGroup: 'spares' as const,
+        groupLabel: 'Spare Part',
+        badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        badgeText: 'SPARE',
+    })),
+    ...longArmProducts.map((p) => ({
+        product: p,
+        categoryGroup: 'long-arm' as const,
+        groupLabel: 'Long Arm Aerator',
+        badgeBg: 'bg-sky-100 text-sky-800 border-sky-200',
+        badgeText: 'LONG ARM',
+    })),
+];
+
+type CategoryTab = 'all' | 'aerators' | 'motors' | 'gearboxes' | 'spares' | 'long-arm';
 
 export default function AdminDeliveryPage() {
     const { session } = useAuth();
@@ -36,8 +95,14 @@ export default function AdminDeliveryPage() {
 
     // Live State & Product Simulator State
     const [testStateInput, setTestStateInput] = useState<string>('Andhra Pradesh');
-    const [testProductType, setTestProductType] = useState<'aerator' | 'spares' | 'mixed'>('aerator');
+    const [testProductType, setTestProductType] = useState<
+        'aerator' | 'motor' | 'gearbox' | 'spares' | 'long-arm' | 'mixed'
+    >('aerator');
     const [testAeratorQty, setTestAeratorQty] = useState<number>(10);
+
+    // Free Delivery Category Tabs & Search Filter
+    const [selectedCategoryTab, setSelectedCategoryTab] = useState<CategoryTab>('all');
+    const [productSearchQuery, setProductSearchQuery] = useState<string>('');
 
     // New State Modal State
     const [newZoneModalOpen, setNewZoneModalOpen] = useState(false);
@@ -208,58 +273,147 @@ export default function AdminDeliveryPage() {
         }
     };
 
-    // Aerator Set Selection Handlers
-    const isAeratorSelected = (slug: string) => {
-        if (!general.eligibleAeratorSlugs || general.eligibleAeratorSlugs.length === 0) {
-            return true; // Default: all aerator sets are eligible
+    // Free Delivery Multi-Category Product Selection Handlers
+    const currentEligibleSlugs = useMemo(() => {
+        const chosen = general.eligibleProductSlugs || general.eligibleAeratorSlugs;
+        if (!chosen || chosen.length === 0) {
+            // Default: aerator sets are eligible
+            return aeratorSets.map((p) => p.slug);
         }
-        return general.eligibleAeratorSlugs.includes(slug);
+        if (chosen.includes('none_selected') && chosen.length === 1) {
+            return [];
+        }
+        return chosen;
+    }, [general.eligibleProductSlugs, general.eligibleAeratorSlugs]);
+
+    const isProductSelected = (slug: string) => {
+        return currentEligibleSlugs.includes(slug);
     };
 
-    const handleToggleAerator = (slug: string) => {
-        const allSlugs = aeratorSets.map((p) => p.slug);
-        const currentList =
-            general.eligibleAeratorSlugs && general.eligibleAeratorSlugs.length > 0
-                ? [...general.eligibleAeratorSlugs]
-                : allSlugs;
-
-        const nextList = currentList.includes(slug)
-            ? currentList.filter((s) => s !== slug)
-            : [...currentList, slug];
-
+    const setEligibleSlugs = (slugs: string[]) => {
+        const finalSlugs = slugs.length === 0 ? ['none_selected'] : slugs;
+        const hasNonAerator = slugs.some((s) => !aeratorSets.some((a) => a.slug === s));
         setGeneral((prev) => ({
             ...prev,
-            eligibleAeratorSlugs: nextList,
+            eligibleAeratorSlugs: finalSlugs,
+            eligibleProductSlugs: finalSlugs,
+            freeDeliveryForAeratorsOnly: !hasNonAerator,
         }));
     };
 
-    const handleSelectAllAerators = () => {
-        setGeneral((prev) => ({
-            ...prev,
-            eligibleAeratorSlugs: aeratorSets.map((p) => p.slug),
-        }));
+    const handleToggleProduct = (slug: string) => {
+        const next = currentEligibleSlugs.includes(slug)
+            ? currentEligibleSlugs.filter((s) => s !== slug)
+            : [...currentEligibleSlugs, slug];
+        setEligibleSlugs(next);
     };
 
-    const handleDeselectAllAerators = () => {
-        setGeneral((prev) => ({
-            ...prev,
-            eligibleAeratorSlugs: ['none_selected'],
-        }));
+    // 1-Click Quick Presets
+    const handleSelectAeratorsOnly = () => {
+        setEligibleSlugs(aeratorSets.map((p) => p.slug));
     };
+
+    const handleSelectMotorsOnly = () => {
+        setEligibleSlugs(motors.map((p) => p.slug));
+    };
+
+    const handleSelectGearboxesOnly = () => {
+        setEligibleSlugs(allGearboxes.map((p) => p.slug));
+    };
+
+    const handleSelectSparesOnly = () => {
+        setEligibleSlugs(allSpares.map((p) => p.slug));
+    };
+
+    const handleSelectLongArmOnly = () => {
+        setEligibleSlugs(longArmProducts.map((p) => p.slug));
+    };
+
+    const handleSelectAllStoreProducts = () => {
+        setEligibleSlugs(CATALOG_ITEMS.map((item) => item.product.slug));
+    };
+
+    const handleClearAllProducts = () => {
+        setEligibleSlugs([]);
+    };
+
+    // Category group selection handlers
+    const handleSelectActiveCategoryGroup = (group: ProductCategoryGroup) => {
+        const groupSlugs = CATALOG_ITEMS.filter((item) => item.categoryGroup === group).map(
+            (item) => item.product.slug
+        );
+        const combined = Array.from(new Set([...currentEligibleSlugs, ...groupSlugs]));
+        setEligibleSlugs(combined);
+    };
+
+    const handleDeselectActiveCategoryGroup = (group: ProductCategoryGroup) => {
+        const groupSlugs = new Set(
+            CATALOG_ITEMS.filter((item) => item.categoryGroup === group).map(
+                (item) => item.product.slug
+            )
+        );
+        const remaining = currentEligibleSlugs.filter((s) => !groupSlugs.has(s));
+        setEligibleSlugs(remaining);
+    };
+
+    // Filtered products list based on category tab & search
+    const filteredCatalogItems = useMemo(() => {
+        let list = CATALOG_ITEMS;
+        if (selectedCategoryTab !== 'all') {
+            list = list.filter((item) => item.categoryGroup === selectedCategoryTab);
+        }
+        if (productSearchQuery.trim()) {
+            const q = productSearchQuery.toLowerCase().trim();
+            list = list.filter(
+                (item) =>
+                    item.product.name.toLowerCase().includes(q) ||
+                    (item.product.model && item.product.model.toLowerCase().includes(q)) ||
+                    item.product.slug.toLowerCase().includes(q) ||
+                    item.product.brand.toLowerCase().includes(q)
+            );
+        }
+        return list;
+    }, [selectedCategoryTab, productSearchQuery]);
+
+    // Live counts per category
+    const categoryStats = useMemo(() => {
+        const stats: Record<ProductCategoryGroup, { total: number; selected: number }> = {
+            aerators: { total: aeratorSets.length, selected: 0 },
+            motors: { total: motors.length, selected: 0 },
+            gearboxes: { total: allGearboxes.length, selected: 0 },
+            spares: { total: allSpares.length, selected: 0 },
+            'long-arm': { total: longArmProducts.length, selected: 0 },
+        };
+
+        CATALOG_ITEMS.forEach((item) => {
+            if (currentEligibleSlugs.includes(item.product.slug)) {
+                stats[item.categoryGroup].selected++;
+            }
+        });
+
+        return stats;
+    }, [currentEligibleSlugs]);
 
     // Simulator evaluation
     const liveTestResult = useMemo(() => {
         const mockItems =
             testProductType === 'aerator'
-                ? [{ category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle', quantity: testAeratorQty }]
+                ? [{ category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle Aerator', quantity: testAeratorQty }]
+                : testProductType === 'motor'
+                ? [{ category: 'motor', slug: 'aqualion-2hp-energy-efficient-aerator-motor', name: 'Aqua Lion 2HP Motor', quantity: testAeratorQty }]
+                : testProductType === 'gearbox'
+                ? [{ category: 'worm-gearbox', slug: 'seaboss-cast-iron-worm-gearbox-ratio-14-1', name: 'Cast Iron Worm Gearbox', quantity: testAeratorQty }]
                 : testProductType === 'spares'
                 ? [
-                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan', quantity: 1 },
+                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan', quantity: testAeratorQty },
                       { category: 'float', slug: 'virgin-hdpe-float', name: 'Virgin HDPE Float', quantity: 2 },
                   ]
+                : testProductType === 'long-arm'
+                ? [{ category: 'long-arm-gearbox', slug: 'seaboss-long-arm-gearbox-heavy-duty', name: 'Sea Boss Long Arm Aerator', quantity: testAeratorQty }]
                 : [
-                      { category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle', quantity: testAeratorQty },
-                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan', quantity: 1 },
+                      { category: 'aerator-set', slug: 'seaboss-2hp-4-paddle-pr14b', name: 'Sea Boss 2HP 4-Paddle Aerator', quantity: testAeratorQty },
+                      { category: 'motor', slug: 'aqualion-2hp-energy-efficient-aerator-motor', name: 'Aqua Lion 2HP Motor', quantity: 1 },
+                      { category: 'fan', slug: '4-paddle-fan', name: '4-Paddle Fan', quantity: 2 },
                   ];
 
         return evaluateOrderFreeDelivery(mockItems, testStateInput, rules, general);
@@ -510,30 +664,32 @@ export default function AdminDeliveryPage() {
                     </div>
                 </div>
             </div>
+            {/* Aerator Sets & Multi-Category Free Delivery Eligibility */}
             <div className="mb-8 rounded-2xl border-2 border-indigo-200 bg-white p-6 shadow-xs">
+                {/* Section Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
                     <div className="flex items-center gap-3">
                         <span className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg">
                             <SparklesIcon className="w-5 h-5" />
                         </span>
                         <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-base font-extrabold text-slate-900 font-poppins">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 font-poppins">
                                     Aerator Sets Free Delivery Eligibility
                                 </h2>
-                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
-                                    Free Delivery Rule
+                                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                    {currentEligibleSlugs.length} of {CATALOG_ITEMS.length} Products Eligible
                                 </span>
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                Configure whether Free Delivery is exclusive to Aerator Sets and select eligible models
+                                Configure Free Delivery eligibility for Aerators, Motors, Gearboxes, Spares, and Long Arm. Admin can select products for aerators only, motors only, or for all products.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 flex-wrap">
                         {/* Toggle Free Delivery for Aerators Only */}
-                        <label className="flex items-center gap-2.5 cursor-pointer select-none bg-indigo-50/70 border border-indigo-200 px-3.5 py-1.5 rounded-xl">
+                        <label className="flex items-center gap-2 cursor-pointer select-none bg-indigo-50/70 border border-indigo-200 px-3 py-1.5 rounded-xl">
                             <input
                                 type="checkbox"
                                 checked={general.freeDeliveryForAeratorsOnly ?? true}
@@ -546,85 +702,317 @@ export default function AdminDeliveryPage() {
                                 className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                             />
                             <span className="text-xs font-extrabold text-indigo-950">
-                                Free Delivery for Aerator Sets Only
+                                Aerator Sets Only Mode
                             </span>
                         </label>
-
-                        {/* Quick Select All / Deselect All */}
-                        <div className="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 text-xs font-bold">
-                            <button
-                                type="button"
-                                onClick={handleSelectAllAerators}
-                                className="px-2.5 py-1 rounded-lg text-slate-700 hover:text-indigo-600 hover:bg-white transition-colors cursor-pointer"
-                            >
-                                Select All
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleDeselectAllAerators}
-                                className="px-2.5 py-1 rounded-lg text-slate-700 hover:text-rose-600 hover:bg-white transition-colors cursor-pointer"
-                            >
-                                Deselect All
-                            </button>
-                        </div>
                     </div>
                 </div>
 
-                {/* Aerator Models Selection Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {aeratorSets.map((product) => {
-                        const isSelected = isAeratorSelected(product.slug);
-                        const isSeaboss = product.brand === 'seaboss';
+                {/* 1-Click Quick Preset Buttons Bar */}
+                <div className="mb-5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                            <span>⚡</span>
+                            <span>Quick 1-Click Presets:</span>
+                        </span>
+                        <span className="text-[11px] font-medium text-slate-500">
+                            Apply one-click product eligibility across the store
+                        </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={handleSelectAeratorsOnly}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                currentEligibleSlugs.length === aeratorSets.length &&
+                                aeratorSets.every((p) => currentEligibleSlugs.includes(p.slug))
+                                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                                    : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
+                            }`}
+                        >
+                            <span>⚡ Aerators Only</span>
+                            <span className="text-[10px] opacity-80">({aeratorSets.length})</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleSelectMotorsOnly}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                currentEligibleSlugs.length === motors.length &&
+                                motors.every((p) => currentEligibleSlugs.includes(p.slug))
+                                    ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
+                                    : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'
+                            }`}
+                        >
+                            <span>⚡ Motors Only</span>
+                            <span className="text-[10px] opacity-80">({motors.length})</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleSelectGearboxesOnly}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                currentEligibleSlugs.length === allGearboxes.length &&
+                                allGearboxes.every((p) => currentEligibleSlugs.includes(p.slug))
+                                    ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
+                                    : 'bg-white text-purple-800 border-purple-200 hover:bg-purple-50'
+                            }`}
+                        >
+                            <span>⚡ Gearboxes Only</span>
+                            <span className="text-[10px] opacity-80">({allGearboxes.length})</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleSelectSparesOnly}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                currentEligibleSlugs.length === allSpares.length &&
+                                allSpares.every((p) => currentEligibleSlugs.includes(p.slug))
+                                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                                    : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50'
+                            }`}
+                        >
+                            <span>⚡ Spares Only</span>
+                            <span className="text-[10px] opacity-80">({allSpares.length})</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleSelectLongArmOnly}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                currentEligibleSlugs.length === longArmProducts.length &&
+                                longArmProducts.every((p) => currentEligibleSlugs.includes(p.slug))
+                                    ? 'bg-sky-600 text-white border-sky-700 shadow-xs'
+                                    : 'bg-white text-sky-800 border-sky-200 hover:bg-sky-50'
+                            }`}
+                        >
+                            <span>⚡ Long Arm Only</span>
+                            <span className="text-[10px] opacity-80">({longArmProducts.length})</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleSelectAllStoreProducts}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                currentEligibleSlugs.length === CATALOG_ITEMS.length
+                                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                                    : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-100'
+                            }`}
+                        >
+                            <span>✨ For All Products</span>
+                            <span className="text-[10px] opacity-80">({CATALOG_ITEMS.length})</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleClearAllProducts}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold border border-rose-200 bg-white text-rose-700 hover:bg-rose-50 transition-all cursor-pointer ml-auto"
+                        >
+                            ✕ Clear All
+                        </button>
+                    </div>
+                </div>
+
+                {/* Category Navigation Tabs */}
+                <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-3 mb-4">
+                    {(
+                        [
+                            { id: 'all', label: 'All Products', total: CATALOG_ITEMS.length, selected: currentEligibleSlugs.length },
+                            { id: 'aerators', label: 'Aerator Sets', total: aeratorSets.length, selected: categoryStats.aerators.selected },
+                            { id: 'motors', label: 'Motors', total: motors.length, selected: categoryStats.motors.selected },
+                            { id: 'gearboxes', label: 'Gearboxes', total: allGearboxes.length, selected: categoryStats.gearboxes.selected },
+                            { id: 'spares', label: 'Spare Parts', total: allSpares.length, selected: categoryStats.spares.selected },
+                            { id: 'long-arm', label: 'Long Arm', total: longArmProducts.length, selected: categoryStats['long-arm'].selected },
+                        ] as const
+                    ).map((tab) => {
+                        const isTabActive = selectedCategoryTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setSelectedCategoryTab(tab.id as CategoryTab)}
+                                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
+                                    isTabActive
+                                        ? 'bg-[#0B1A33] text-white shadow-xs'
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                }`}
+                            >
+                                <span>{tab.label}</span>
+                                <span
+                                    className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono font-bold ${
+                                        isTabActive
+                                            ? 'bg-white/20 text-white'
+                                            : tab.selected > 0
+                                            ? 'bg-emerald-100 text-emerald-800'
+                                            : 'bg-slate-200 text-slate-600'
+                                    }`}
+                                >
+                                    {tab.selected}/{tab.total}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Search Bar & Tab Group Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div className="relative flex-1 min-w-[240px] max-w-md">
+                        <MagnifyingGlassIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                            type="text"
+                            value={productSearchQuery}
+                            onChange={(e) => setProductSearchQuery(e.target.value)}
+                            placeholder="Search products by model, name, or brand..."
+                            className="w-full h-9 pl-9 pr-8 rounded-xl border border-slate-300 bg-slate-50 text-xs font-medium text-slate-800 focus:bg-white focus:border-indigo-500 outline-none"
+                        />
+                        {productSearchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setProductSearchQuery('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                                <XMarkIcon className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Group select/deselect for currently selected category */}
+                    {selectedCategoryTab !== 'all' && (
+                        <div className="flex items-center gap-2 text-xs font-bold">
+                            <button
+                                type="button"
+                                onClick={() => handleSelectActiveCategoryGroup(selectedCategoryTab as ProductCategoryGroup)}
+                                className="px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 transition-colors cursor-pointer"
+                            >
+                                + Select All in this Category
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleDeselectActiveCategoryGroup(selectedCategoryTab as ProductCategoryGroup)}
+                                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                            >
+                                - Deselect Category
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Product Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {filteredCatalogItems.map((item) => {
+                        const isSelected = isProductSelected(item.product.slug);
+                        const isSeaboss = item.product.brand === 'seaboss';
+                        const firstImage = item.product.images?.[0];
 
                         return (
                             <div
-                                key={product.slug}
-                                onClick={() => handleToggleAerator(product.slug)}
-                                className={`rounded-xl border-2 p-3.5 flex items-start gap-3 transition-all cursor-pointer select-none ${
+                                key={item.product.slug}
+                                onClick={() => handleToggleProduct(item.product.slug)}
+                                className={`rounded-xl border-2 p-3.5 flex flex-col justify-between gap-2.5 transition-all cursor-pointer select-none ${
                                     isSelected
-                                        ? 'border-indigo-500 bg-indigo-50/40 shadow-2xs'
-                                        : 'border-slate-200 bg-slate-50/40 hover:border-slate-300 opacity-60'
+                                        ? 'border-indigo-500 bg-indigo-50/40 shadow-xs ring-1 ring-indigo-400'
+                                        : 'border-slate-200 bg-white hover:border-slate-300 opacity-70 hover:opacity-100'
                                 }`}
                             >
-                                <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => {}} // handled by parent div click
-                                    className="w-4 h-4 mt-1 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                />
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5 mb-1">
+                                {/* Top Header: Category Tag, Brand & Checkbox */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${item.badgeBg}`}>
+                                            {item.badgeText}
+                                        </span>
                                         <span
-                                            className={`text-[10px] font-black uppercase px-2 py-0.2 rounded ${
-                                                isSeaboss
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-emerald-600 text-white'
+                                            className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md text-white ${
+                                                isSeaboss ? 'bg-blue-600' : 'bg-emerald-600'
                                             }`}
                                         >
                                             {isSeaboss ? 'SEA BOSS' : 'AQUA LION'}
                                         </span>
-                                        <span className="text-xs font-extrabold text-slate-900 truncate">
-                                            {product.model}
-                                        </span>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 truncate">{product.name}</p>
-                                    <div className="mt-1 flex items-center justify-between text-[11px]">
-                                        <span className="font-bold text-slate-700">
-                                            ₹{product.salePrice?.toLocaleString('en-IN')}
-                                        </span>
-                                        <span
-                                            className={`text-[10px] font-bold ${
-                                                isSelected ? 'text-indigo-700' : 'text-slate-400'
-                                            }`}
-                                        >
-                                            {isSelected ? '✓ Free Delivery Eligible' : 'Excluded'}
-                                        </span>
+
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => {}} // handled by card click
+                                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                    />
+                                </div>
+
+                                {/* Product Info & Thumbnail */}
+                                <div className="flex items-center gap-3">
+                                    {firstImage ? (
+                                        <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                                            <img
+                                                src={firstImage}
+                                                alt={item.product.name}
+                                                className="w-full h-full object-contain"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-xl">
+                                            📦
+                                        </div>
+                                    )}
+
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-xs font-extrabold text-slate-900 truncate">
+                                            {item.product.model || item.product.name}
+                                        </h3>
+                                        <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                                            {item.product.name}
+                                        </p>
                                     </div>
+                                </div>
+
+                                {/* Price & Free Delivery Status */}
+                                <div className="mt-1 pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                                    <span className="font-extrabold text-slate-800">
+                                        ₹{item.product.salePrice?.toLocaleString('en-IN')}
+                                    </span>
+                                    <span
+                                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                                            isSelected
+                                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                                : 'bg-slate-100 text-slate-500'
+                                        }`}
+                                    >
+                                        {isSelected ? '✓ Free Delivery' : 'Excluded'}
+                                    </span>
                                 </div>
                             </div>
                         );
                     })}
+                </div>
+
+                {filteredCatalogItems.length === 0 && (
+                    <div className="p-8 text-center text-slate-500 text-xs font-bold">
+                        No products matched &quot;{productSearchQuery}&quot; in this category.
+                    </div>
+                )}
+
+                {/* Category Breakdown Counters Footer */}
+                <div className="mt-5 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <span className="font-extrabold text-slate-700">
+                        Category Eligibility Summary:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200">
+                            Aerators: {categoryStats.aerators.selected}/{categoryStats.aerators.total}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                            Motors: {categoryStats.motors.selected}/{categoryStats.motors.total}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-800 border border-purple-200">
+                            Gearboxes: {categoryStats.gearboxes.selected}/{categoryStats.gearboxes.total}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            Spares: {categoryStats.spares.selected}/{categoryStats.spares.total}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-800 border border-sky-200">
+                            Long Arm: {categoryStats['long-arm'].selected}/{categoryStats['long-arm'].total}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -692,12 +1080,45 @@ export default function AdminDeliveryPage() {
                                     <input
                                         type="radio"
                                         name="testItemType"
+                                        value="motor"
+                                        checked={testProductType === 'motor'}
+                                        onChange={() => setTestProductType('motor')}
+                                        className="text-blue-600"
+                                    />
+                                    <span>Motor Only</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-2 rounded-lg bg-white border border-blue-200 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="testItemType"
+                                        value="gearbox"
+                                        checked={testProductType === 'gearbox'}
+                                        onChange={() => setTestProductType('gearbox')}
+                                        className="text-blue-600"
+                                    />
+                                    <span>Gearbox Only</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-2 rounded-lg bg-white border border-blue-200 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="testItemType"
                                         value="spares"
                                         checked={testProductType === 'spares'}
                                         onChange={() => setTestProductType('spares')}
                                         className="text-blue-600"
                                     />
-                                    <span>Spare Parts Only (No Aerator)</span>
+                                    <span>Spare Parts Only</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-2 rounded-lg bg-white border border-blue-200 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="testItemType"
+                                        value="long-arm"
+                                        checked={testProductType === 'long-arm'}
+                                        onChange={() => setTestProductType('long-arm')}
+                                        className="text-blue-600"
+                                    />
+                                    <span>Long Arm Aerator Only</span>
                                 </label>
                                 <label className="flex items-center gap-2 p-2 rounded-lg bg-white border border-blue-200 cursor-pointer">
                                     <input
@@ -708,53 +1129,51 @@ export default function AdminDeliveryPage() {
                                         onChange={() => setTestProductType('mixed')}
                                         className="text-blue-600"
                                     />
-                                    <span>Combined: Aerator + Spares</span>
+                                    <span>Combined Mixed Cart</span>
                                 </label>
                             </div>
 
-                            {testProductType !== 'spares' && (
-                                <div className="mt-2.5 pt-2 border-t border-blue-200/60">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                                            Aerator Order Quantity
-                                        </label>
-                                        <span className={`text-[10px] font-black px-1.5 py-0.2 rounded ${
-                                            testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10)
-                                                ? 'bg-emerald-100 text-emerald-800'
-                                                : 'bg-amber-100 text-amber-800'
-                                        }`}>
-                                            {testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10) ? 'Eligible' : 'Below Minimum'}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={100}
-                                            value={testAeratorQty}
-                                            onChange={(e) => setTestAeratorQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                                            className="w-16 h-8 px-2 rounded-lg border border-blue-300 bg-white font-mono font-bold text-center text-xs text-slate-900"
-                                        />
-                                        <span className="text-[11px] font-bold text-slate-600">Sets</span>
-                                        <div className="flex items-center gap-1 ml-auto text-[10px] font-bold">
-                                            {[1, 5, 10, 15].map((q) => (
-                                                <button
-                                                    key={q}
-                                                    type="button"
-                                                    onClick={() => setTestAeratorQty(q)}
-                                                    className={`px-2 py-0.5 rounded border transition-colors cursor-pointer ${
-                                                        testAeratorQty === q
-                                                            ? 'bg-blue-600 border-blue-600 text-white'
-                                                            : 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50'
-                                                    }`}
-                                                >
-                                                    {q} {q === 10 ? '★' : ''}
-                                                </button>
-                                            ))}
-                                        </div>
+                            <div className="mt-2.5 pt-2 border-t border-blue-200/60">
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                                        Item Order Quantity
+                                    </label>
+                                    <span className={`text-[10px] font-black px-1.5 py-0.2 rounded ${
+                                        testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10)
+                                            ? 'bg-emerald-100 text-emerald-800'
+                                            : 'bg-amber-100 text-amber-800'
+                                    }`}>
+                                        {testAeratorQty >= (general.minAeratorQtyForFreeDelivery ?? 10) ? 'Eligible' : 'Below Minimum'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        value={testAeratorQty}
+                                        onChange={(e) => setTestAeratorQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                        className="w-16 h-8 px-2 rounded-lg border border-blue-300 bg-white font-mono font-bold text-center text-xs text-slate-900"
+                                    />
+                                    <span className="text-[11px] font-bold text-slate-600">Units</span>
+                                    <div className="flex items-center gap-1 ml-auto text-[10px] font-bold">
+                                        {[1, 5, 10, 15].map((q) => (
+                                            <button
+                                                key={q}
+                                                type="button"
+                                                onClick={() => setTestAeratorQty(q)}
+                                                className={`px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                                                    testAeratorQty === q
+                                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                                        : 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50'
+                                                }`}
+                                            >
+                                                {q} {q === 10 ? '★' : ''}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
 
@@ -762,7 +1181,7 @@ export default function AdminDeliveryPage() {
                     <div className="md:col-span-2 p-4 rounded-xl bg-white border border-blue-200 shadow-2xs flex flex-col gap-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="font-extrabold text-sm text-slate-900">
-                                {testStateInput} · {testProductType === 'aerator' ? `${testAeratorQty} Aerator Set(s)` : testProductType === 'spares' ? 'Spares Only' : `${testAeratorQty} Aerator(s) + Spares`}
+                                {testStateInput} · {testProductType === 'aerator' ? `${testAeratorQty} Aerator Set(s)` : testProductType === 'motor' ? `${testAeratorQty} Motor(s)` : testProductType === 'gearbox' ? `${testAeratorQty} Gearbox(es)` : testProductType === 'spares' ? `${testAeratorQty} Spare Part(s)` : testProductType === 'long-arm' ? `${testAeratorQty} Long Arm Aerator(s)` : `${testAeratorQty} Unit(s) + Mixed Cart`}
                             </span>
 
                             <span

@@ -37,6 +37,8 @@ export interface DeliveryGeneralSettings {
     customerArrangedNotice: string;
     freeDeliveryForAeratorsOnly?: boolean;
     eligibleAeratorSlugs?: string[];
+    eligibleProductSlugs?: string[];
+    eligibleCategories?: string[];
     enabledInProduction?: boolean;
     isFreeDeliveryEnabled?: boolean;
     minAeratorQtyForFreeDelivery?: number;
@@ -232,17 +234,13 @@ export function isItemEligibleForFreeDelivery(
     generalSettings: DeliveryGeneralSettings = DEFAULT_GENERAL_SETTINGS
 ): boolean {
     if (!item) return false;
-    const aeratorsOnly = generalSettings.freeDeliveryForAeratorsOnly ?? true;
 
-    // If not restricted to aerator sets, item is eligible
-    if (!aeratorsOnly) return true;
-
-    // Item must be an aerator set
-    if (!isAeratorProduct(item)) return false;
-
-    // If specific aerators are chosen by admin, check membership
-    const chosen = generalSettings.eligibleAeratorSlugs;
+    // Check admin-selected products in eligibleProductSlugs / eligibleAeratorSlugs
+    const chosen = generalSettings.eligibleProductSlugs || generalSettings.eligibleAeratorSlugs;
     if (Array.isArray(chosen) && chosen.length > 0) {
+        if (chosen.includes('none_selected') || chosen.includes('__none__')) {
+            if (chosen.length === 1) return false;
+        }
         const itemSlug = String(item.slug || '').toLowerCase();
         const itemId = String(item.id || '').toLowerCase();
         return chosen.some((slugOrId) => {
@@ -251,8 +249,11 @@ export function isItemEligibleForFreeDelivery(
         });
     }
 
-    // Default: all aerator sets are eligible
-    return true;
+    // Default fallback when no specific list is configured:
+    const aeratorsOnly = generalSettings.freeDeliveryForAeratorsOnly ?? true;
+    if (!aeratorsOnly) return true;
+
+    return isAeratorProduct(item);
 }
 
 /**
@@ -305,18 +306,18 @@ export function evaluateOrderFreeDelivery(
     const aeratorsOnly = generalSettings.freeDeliveryForAeratorsOnly ?? true;
     const minAerators = Number(generalSettings.minAeratorQtyForFreeDelivery ?? 10);
 
-    // Calculate total quantity of eligible aerators in the order/cart
-    let totalEligibleAeratorQty = 0;
-    let hasAnyAerators = false;
+    // Calculate total quantity of eligible products in the order/cart
+    let totalEligibleQty = 0;
+    let hasAnyEligibleItems = false;
 
     (items || []).forEach((item) => {
         if (isItemEligibleForFreeDelivery(item, generalSettings)) {
-            hasAnyAerators = true;
-            totalEligibleAeratorQty += Number(item.quantity || 1);
+            hasAnyEligibleItems = true;
+            totalEligibleQty += Number(item.quantity || 1);
         }
     });
 
-    if (!aeratorsOnly) {
+    if (!aeratorsOnly && !generalSettings.eligibleAeratorSlugs?.length) {
         // Free delivery on all items in this state without aerators restriction
         return {
             isFreeDelivery: true,
@@ -327,16 +328,15 @@ export function evaluateOrderFreeDelivery(
         };
     }
 
-    // Aerators only rule:
-    if (!hasAnyAerators) {
-        // No aerators found in items (only spares or accessories)
+    if (!hasAnyEligibleItems) {
+        // No eligible items found in items (only excluded items)
         const sparesRule: StateDeliveryRule = {
             ...baseRule,
             isFreeDelivery: false,
-            policyBadgeText: 'Customer Responsibility (Spares)',
-            tagline: `Delivery in ${baseRule.timelineText} (Free delivery requires minimum ${minAerators} aerators)`,
+            policyBadgeText: 'Customer Responsibility (Spares / Non-eligible)',
+            tagline: `Delivery in ${baseRule.timelineText} (Free delivery requires minimum ${minAerators} eligible items)`,
             description:
-                `Free door & pond delivery in ${baseRule.stateName} is exclusive to orders of ${minAerators} or more Aerator Sets. Spares and standalone parts are dispatched via regional transport (To-Pay) or customer vehicle.`,
+                `Free door & pond delivery in ${baseRule.stateName} is exclusive to orders of ${minAerators} or more eligible items. Non-eligible items are dispatched via regional transport (To-Pay) or customer vehicle.`,
             badgeColor: {
                 bg: 'bg-amber-50',
                 border: 'border-amber-200',
@@ -351,27 +351,27 @@ export function evaluateOrderFreeDelivery(
             shippingFeeText: 'Customer Arranged (To-Pay)',
             deliveryRule: sparesRule,
             reason:
-                `Free delivery applies to orders of ${minAerators}+ Aerator Sets in ${baseRule.stateName}. For spare parts, transport is customer arranged (To-Pay).`,
+                `Free delivery applies to orders of ${minAerators}+ eligible items in ${baseRule.stateName}. For non-eligible items, transport is customer arranged (To-Pay).`,
         };
     }
 
-    // Has aerators! Check minimum quantity threshold (Default: 10 aerators)
-    if (totalEligibleAeratorQty >= minAerators) {
+    // Has eligible items! Check minimum quantity threshold (Default: 10 items)
+    if (totalEligibleQty >= minAerators) {
         return {
             isFreeDelivery: true,
             hasEligibleAerators: true,
             shippingFeeText: 'FREE Delivery (₹0)',
             deliveryRule: baseRule,
-            reason: `Order qualifies for 100% Free Door & Pond Delivery across ${baseRule.stateName} (Order contains ${totalEligibleAeratorQty} aerator sets; Min required: ${minAerators}).`,
+            reason: `Order qualifies for 100% Free Door & Pond Delivery across ${baseRule.stateName} (Order contains ${totalEligibleQty} eligible products; Min required: ${minAerators}).`,
         };
     }
 
-    // Has aerators, but below minimum order quantity (e.g. 1 to 9 aerators)
-    const shortfall = minAerators - totalEligibleAeratorQty;
+    // Has eligible items, but below minimum order quantity (e.g. 1 to 9 items)
+    const shortfall = minAerators - totalEligibleQty;
     const moqRule: StateDeliveryRule = {
         ...baseRule,
         isFreeDelivery: false,
-        policyBadgeText: `Customer Responsibility (< ${minAerators} Sets)`,
+        policyBadgeText: `Customer Responsibility (< ${minAerators} Items)`,
         tagline: `Delivery in ${baseRule.timelineText} (Free delivery requires minimum ${minAerators} aerator sets)`,
         description:
             `Free door & pond delivery in ${baseRule.stateName} requires a minimum order of ${minAerators} Aerator Sets. Orders with fewer than ${minAerators} aerators are dispatched via regional transport (To-Pay) or customer vehicle.`,
@@ -388,7 +388,7 @@ export function evaluateOrderFreeDelivery(
         hasEligibleAerators: true,
         shippingFeeText: 'Customer Arranged (To-Pay)',
         deliveryRule: moqRule,
-        reason: `Free Delivery in ${baseRule.stateName} requires a minimum of ${minAerators} Aerator Sets (Cart has ${totalEligibleAeratorQty} set${totalEligibleAeratorQty > 1 ? 's' : ''}. Add ${shortfall} more set${shortfall > 1 ? 's' : ''} to unlock 100% Free Delivery).`,
+        reason: `Free Delivery in ${baseRule.stateName} requires a minimum of ${minAerators} eligible items (Cart has ${totalEligibleQty} item${totalEligibleQty > 1 ? 's' : ''}. Add ${shortfall} more item${shortfall > 1 ? 's' : ''} to unlock 100% Free Delivery).`,
     };
 }
 

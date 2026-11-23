@@ -26,7 +26,7 @@ function syncLocalSettingsFile(rules: StateDeliveryRule[], general: DeliveryGene
                 free_shipping_notice: general.freeShippingNotice,
                 customer_arranged_notice: general.customerArrangedNotice,
                 free_delivery_for_aerators_only: general.freeDeliveryForAeratorsOnly ?? true,
-                eligible_aerator_slugs: general.eligibleAeratorSlugs || [],
+                eligible_aerator_slugs: general.eligibleAeratorSlugs || general.eligibleProductSlugs || [],
                 is_delivery_feature_enabled_in_production: general.enabledInProduction ?? true,
                 is_free_delivery_enabled: general.isFreeDeliveryEnabled ?? true,
                 min_aerator_qty_for_free_delivery: Number(general.minAeratorQtyForFreeDelivery ?? 10),
@@ -89,6 +89,7 @@ export async function GET(request: Request) {
                 customerArrangedNotice: dbGeneral.customer_arranged_notice || DEFAULT_GENERAL_SETTINGS.customerArrangedNotice,
                 freeDeliveryForAeratorsOnly: dbGeneral.free_delivery_for_aerators_only ?? DEFAULT_GENERAL_SETTINGS.freeDeliveryForAeratorsOnly,
                 eligibleAeratorSlugs: dbGeneral.eligible_aerator_slugs || DEFAULT_GENERAL_SETTINGS.eligibleAeratorSlugs,
+                eligibleProductSlugs: dbGeneral.eligible_aerator_slugs || DEFAULT_GENERAL_SETTINGS.eligibleAeratorSlugs,
                 enabledInProduction: dbGeneral.is_delivery_feature_enabled_in_production ?? DEFAULT_GENERAL_SETTINGS.enabledInProduction,
                 isFreeDeliveryEnabled: dbGeneral.is_free_delivery_enabled ?? DEFAULT_GENERAL_SETTINGS.isFreeDeliveryEnabled,
                 minAeratorQtyForFreeDelivery: Number(dbGeneral.min_aerator_qty_for_free_delivery ?? DEFAULT_GENERAL_SETTINGS.minAeratorQtyForFreeDelivery),
@@ -134,7 +135,11 @@ export async function POST(request: Request) {
                 free_shipping_notice: general.freeShippingNotice || DEFAULT_GENERAL_SETTINGS.freeShippingNotice,
                 customer_arranged_notice: general.customerArrangedNotice || DEFAULT_GENERAL_SETTINGS.customerArrangedNotice,
                 free_delivery_for_aerators_only: general.freeDeliveryForAeratorsOnly ?? true,
-                eligible_aerator_slugs: Array.isArray(general.eligibleAeratorSlugs) ? general.eligibleAeratorSlugs : [],
+                eligible_aerator_slugs: Array.isArray(general.eligibleProductSlugs)
+                    ? general.eligibleProductSlugs
+                    : Array.isArray(general.eligibleAeratorSlugs)
+                    ? general.eligibleAeratorSlugs
+                    : [],
                 is_delivery_feature_enabled_in_production: general.enabledInProduction ?? true,
                 is_free_delivery_enabled: general.isFreeDeliveryEnabled ?? true,
                 min_aerator_qty_for_free_delivery: Number(general.minAeratorQtyForFreeDelivery ?? 10),

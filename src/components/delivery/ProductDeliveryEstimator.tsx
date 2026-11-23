@@ -63,7 +63,7 @@ export default function ProductDeliveryEstimator({
     );
 
     const activeRule = evalResult.deliveryRule;
-    const isAerator = product ? isAeratorProduct(product) : true;
+    const isEligible = product ? isItemEligibleForFreeDelivery(product, general) : true;
     const isApState = selectedState === 'Andhra Pradesh';
     const minMoq = general.minAeratorQtyForFreeDelivery ?? 10;
 
@@ -91,7 +91,7 @@ export default function ProductDeliveryEstimator({
             <div className="flex flex-wrap gap-1.5 text-xs font-bold">
                 {quickStates.map((stName) => {
                     const isAp = stName === 'Andhra Pradesh';
-                    const isFreeActive = (general.isFreeDeliveryEnabled ?? true) && isAp && isAerator;
+                    const isFreeActive = (general.isFreeDeliveryEnabled ?? true) && isAp && isEligible;
                     const isSelected = selectedState === stName;
                     return (
                         <button
@@ -109,7 +109,7 @@ export default function ProductDeliveryEstimator({
                                     className={`text-[10px] px-1.5 py-0.2 rounded font-extrabold ${isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
                                         }`}
                                 >
-                                    FREE (10+)
+                                    FREE ({minMoq}+)
                                 </span>
                             )}
                         </button>
@@ -129,7 +129,7 @@ export default function ProductDeliveryEstimator({
                     className="flex-1 h-9 px-3 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 outline-none focus:border-blue-600 focus:bg-white transition-colors cursor-pointer"
                 >
                     {INDIAN_STATES_LIST.map((st) => {
-                        const isFreeState = (general.isFreeDeliveryEnabled ?? true) && isAerator && (st === 'Andhra Pradesh');
+                        const isFreeState = (general.isFreeDeliveryEnabled ?? true) && isEligible && (st === 'Andhra Pradesh');
                         const stRule = resolveDeliveryRule(st, rules, general);
                         return (
                             <option key={st} value={st}>
@@ -156,10 +156,10 @@ export default function ProductDeliveryEstimator({
                         {/* Shipping Fee Indicator */}
                         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-slate-600 font-semibold">Shipping Fee:</span>
-                            {isApState && isAerator && (general.isFreeDeliveryEnabled ?? true) ? (
+                            {isApState && isEligible && (general.isFreeDeliveryEnabled ?? true) ? (
                                 <>
                                     <span className="text-xs font-black px-2.5 py-0.5 rounded-md bg-emerald-600 text-white">
-                                        🟢 FREE Delivery on {minMoq}+ Aerators (₹0)
+                                        🟢 FREE Delivery on {minMoq}+ Sets (₹0)
                                     </span>
                                     <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
                                         Min {minMoq} Sets for Free Delivery
@@ -184,9 +184,9 @@ export default function ProductDeliveryEstimator({
                     </div>
                 </div>
 
-                {isApState && isAerator && (general.isFreeDeliveryEnabled ?? true) && (
+                {isApState && isEligible && (general.isFreeDeliveryEnabled ?? true) && (
                     <p className="text-xs text-slate-700 leading-relaxed font-medium pt-1 border-t border-slate-200/50">
-                        🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName} for orders of <strong>{minMoq} or more Aerator Sets</strong>! (Smaller orders under {minMoq} aerators are dispatched via regional transport To-Pay).
+                        🚚 <strong className="text-emerald-800">100% Free Door/Pond Delivery</strong> in <strong>{activeRule.timelineText}</strong> provided directly by Karthik Traders across {activeRule.stateName} for orders of <strong>{minMoq} or more eligible items</strong>! (Smaller orders under {minMoq} items are dispatched via regional transport To-Pay).
                     </p>
                 )}
             </div>
