@@ -467,7 +467,7 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                                     disabled={uploadingImage}
                                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-extrabold cursor-pointer transition-colors shadow-2xs active:scale-95 disabled:opacity-50"
                                 >
-                                    <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '📷 Choose Photo (DCIM / Camera)'}</span>
+                                    <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '📷 Choose Photo'}</span>
                                 </button>
 
                                 <div className="flex items-center gap-2 pt-1">
