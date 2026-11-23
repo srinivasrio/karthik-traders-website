@@ -416,9 +416,6 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                                     <h4 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
                                         <span>📸</span> Loaded Vehicle Photo Attached
                                     </h4>
-                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                                        This photo is visible to the farmer in their order tracking screen. You can change it with a new photo or delete it completely.
-                                    </p>
                                 </div>
 
                                 {/* Prominent Action Buttons: Change Photo & Delete Photo */}
