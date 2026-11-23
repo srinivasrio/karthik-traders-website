@@ -397,7 +397,7 @@ export default function ImageUploader({
                                     e.stopPropagation();
                                     removeImage(index);
                                 }}
-                                className="absolute bottom-1.5 right-1.5 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110 shadow"
+                                className="absolute bottom-1.5 right-1.5 p-1.5 bg-red-500 text-white rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 hover:scale-110 shadow"
                                 title="Remove Image"
                             >
                                 <XMarkIcon className="h-3.5 w-3.5" />

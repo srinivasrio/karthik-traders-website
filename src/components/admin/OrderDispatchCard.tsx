@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     resolveDeliveryRule,
     PRESET_VEHICLE_TYPES,
@@ -47,6 +47,23 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
 
     const [rules, setRules] = useState<StateDeliveryRule[]>([]);
     const [vehiclePresets, setVehiclePresets] = useState<string[]>(PRESET_VEHICLE_TYPES);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleDeletePhoto = () => {
+        setVehiclePhotoUrl('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+        setMessage({
+            type: 'success',
+            text: 'Vehicle photo deleted. Click "Save Dispatch & Vehicle Details" to update the order, or choose a new photo below.'
+        });
+    };
+
+    const handleTriggerFileInput = () => {
+        fileInputRef.current?.click();
+    };
 
     useEffect(() => {
         fetch('/api/delivery/config')
@@ -360,71 +377,121 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                         Vehicle Photo (After Load) 📸
                     </label>
 
-                    <div className="flex flex-col sm:flex-row gap-4 items-start">
-                        {/* Photo Preview */}
-                        {vehiclePhotoUrl ? (
-                            <div className="relative group rounded-xl overflow-hidden border-2 border-emerald-400 bg-slate-100 w-36 h-28 shrink-0 shadow-sm">
+                    {/* Hidden single file input ref reused for both initial upload and change photo */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.bmp,.gif,.dng"
+                        onChange={handleFileUpload}
+                        disabled={uploadingImage}
+                        className="hidden"
+                    />
+
+                    {vehiclePhotoUrl ? (
+                        /* State A: Photo is Present -> Show Photo, Delete Button & Change Button */
+                        <div className="flex flex-col sm:flex-row gap-4 items-start bg-emerald-50/40 border border-emerald-200/80 rounded-2xl p-4">
+                            {/* Photo Thumbnail */}
+                            <div className="relative rounded-xl overflow-hidden border-2 border-emerald-500 bg-slate-100 w-40 h-32 shrink-0 shadow-sm">
                                 <img
                                     src={vehiclePhotoUrl}
                                     alt="Vehicle after load"
                                     className="w-full h-full object-cover"
                                 />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <a
-                                        href={vehiclePhotoUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-white text-xs bg-black/70 px-2 py-1 rounded"
-                                    >
-                                        View
-                                    </a>
+                                <span className="absolute top-1.5 left-1.5 bg-emerald-700/90 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 backdrop-blur-xs">
+                                    <span>✓</span> Loaded
+                                </span>
+                                <a
+                                    href={vehiclePhotoUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="absolute bottom-1.5 right-1.5 bg-black/75 hover:bg-black text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-xs transition-colors flex items-center gap-1"
+                                >
+                                    <span>🔍</span> Full View
+                                </a>
+                            </div>
+
+                            {/* Details & Action Buttons */}
+                            <div className="flex-1 space-y-3">
+                                <div>
+                                    <h4 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                                        <span>📸</span> Loaded Vehicle Photo Attached
+                                    </h4>
+                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                                        This photo is visible to the farmer in their order tracking screen. You can change it with a new photo or delete it completely.
+                                    </p>
+                                </div>
+
+                                {/* Prominent Action Buttons: Change Photo & Delete Photo */}
+                                <div className="flex flex-wrap items-center gap-2.5 pt-1">
                                     <button
                                         type="button"
-                                        onClick={() => setVehiclePhotoUrl('')}
-                                        className="text-rose-300 text-xs bg-rose-900/80 px-2 py-1 rounded"
+                                        onClick={handleTriggerFileInput}
+                                        disabled={uploadingImage}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow active:scale-95 disabled:opacity-50 cursor-pointer"
                                     >
-                                        Remove
+                                        <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '🔄 Change / Replace Photo'}</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleDeletePhoto}
+                                        disabled={uploadingImage}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold transition-all shadow-xs hover:shadow active:scale-95 disabled:opacity-50 cursor-pointer"
+                                    >
+                                        <span>🗑️</span>
+                                        <span>Delete Image</span>
                                     </button>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="w-36 h-28 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shrink-0">
-                                <span className="text-2xl">📸</span>
-                                <span className="text-[10px] font-semibold mt-1">No photo yet</span>
-                            </div>
-                        )}
 
-                        <div className="flex-1 space-y-2">
-                            <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-extrabold cursor-pointer transition-colors shadow-2xs">
-                                <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '📷 Choose Photo (DCIM / Camera)'}</span>
-                                <input
-                                    type="file"
-                                    accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.bmp,.gif,.dng"
-                                    onChange={handleFileUpload}
-                                    disabled={uploadingImage}
-                                    className="hidden"
-                                />
-                            </label>
-                            <p className="text-[11px] text-slate-500">
-                                Supports all formats (Camera, Mobile DCIM gallery, PNG, JPG). Automatically compressed to high quality PNG.
-                            </p>
-
-                            <p className="text-[11px] text-slate-500 leading-relaxed">
-                                Upload a photo of the aerator gearboxes, motors, and floats loaded on the truck/van. The farmer can see this picture in their order tracking screen.
-                            </p>
-
-                            <div className="flex items-center gap-2 pt-1">
-                                <span className="text-[11px] text-slate-400">Or paste URL:</span>
-                                <input
-                                    type="text"
-                                    placeholder="https://..."
-                                    value={vehiclePhotoUrl}
-                                    onChange={(e) => setVehiclePhotoUrl(e.target.value)}
-                                    className="flex-1 rounded-lg border border-slate-300 px-2 py-1 text-[11px] text-slate-700"
-                                />
+                                <div className="flex items-center gap-2 pt-1">
+                                    <span className="text-[10px] font-medium text-slate-400">Photo URL:</span>
+                                    <input
+                                        type="text"
+                                        value={vehiclePhotoUrl}
+                                        onChange={(e) => setVehiclePhotoUrl(e.target.value)}
+                                        className="flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-600 font-mono"
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        /* State B: No Photo Yet -> Show Upload Box */
+                        <div className="flex flex-col sm:flex-row gap-4 items-start">
+                            <div className="w-40 h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shrink-0">
+                                <span className="text-3xl">📸</span>
+                                <span className="text-[10px] font-semibold mt-1">No photo yet</span>
+                            </div>
+
+                            <div className="flex-1 space-y-2">
+                                <button
+                                    type="button"
+                                    onClick={handleTriggerFileInput}
+                                    disabled={uploadingImage}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-extrabold cursor-pointer transition-colors shadow-2xs active:scale-95 disabled:opacity-50"
+                                >
+                                    <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '📷 Choose Photo (DCIM / Camera)'}</span>
+                                </button>
+                                <p className="text-[11px] text-slate-500">
+                                    Supports all formats (Camera, Mobile DCIM gallery, PNG, JPG). Automatically compressed to high quality PNG.
+                                </p>
+
+                                <p className="text-[11px] text-slate-500 leading-relaxed">
+                                    Upload a photo of the aerator gearboxes, motors, and floats loaded on the truck/van. The farmer can see this picture in their order tracking screen.
+                                </p>
+
+                                <div className="flex items-center gap-2 pt-1">
+                                    <span className="text-[11px] text-slate-400">Or paste URL:</span>
+                                    <input
+                                        type="text"
+                                        placeholder="https://..."
+                                        value={vehiclePhotoUrl}
+                                        onChange={(e) => setVehiclePhotoUrl(e.target.value)}
+                                        className="flex-1 rounded-lg border border-slate-300 px-2 py-1 text-[11px] text-slate-700"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
