@@ -21,6 +21,7 @@ interface OrderItem {
     slug: string;
   };
   product_id?: string;
+  product_name?: string;
 }
 
 interface Order {
@@ -182,13 +183,17 @@ export default function DashboardPage() {
       const { data, error } = await query;
       if (!error && data) {
         const enriched = data.map((o: any) => {
-          const items = (o.order_items || []).map((item: any) => ({
-            ...item,
-            product: productMap.get(item.product_id) || {
-              name: 'Aquaculture Product',
-              slug: '',
-            },
-          }));
+          const items = (o.order_items || []).map((item: any) => {
+            const dbProduct = productMap.get(item.product_id);
+            return {
+              ...item,
+              product: dbProduct || {
+                name: item.product_name || 'Aquaculture Product',
+                slug: '',
+              },
+              product_name: dbProduct?.name || item.product_name || 'Aquaculture Product',
+            };
+          });
           return { ...o, order_items: items };
         });
         setOrders(enriched);
@@ -922,7 +927,7 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-bold text-xs text-[#0B1A33] leading-snug">
                         <span className="text-slate-400 font-mono mr-1.5">#{idx + 1}</span>
-                        {l.product?.name || 'Aerator Product'}
+                        {l.product_name || l.product?.name || 'Aerator Product'}
                       </span>
                       <span className="font-extrabold text-sm text-[#0A1F5C] font-mono shrink-0">
                         {formatPrice(l.quantity * l.price_at_purchase)}
@@ -950,7 +955,7 @@ export default function DashboardPage() {
                     <div key={idx} className={`grid grid-cols-12 p-3 items-center ${idx % 2 === 1 ? 'bg-[#F8FAFC]' : ''}`}>
                       <span className="col-span-1 text-center text-slate-500">{idx + 1}</span>
                       <span className="col-span-5 font-bold text-[#0B1A33]">
-                        {l.product?.name || 'Aerator Product'}
+                        {l.product_name || l.product?.name || 'Aerator Product'}
                       </span>
                       <span className="col-span-2 text-center font-mono">{l.quantity}</span>
                       <span className="col-span-2 text-right font-mono text-slate-600">

@@ -93,7 +93,7 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
 
         try {
             // Compress and convert to high-quality PNG (reduces size while preserving crisp clarity)
-            const file = await compressAndConvertToPng(rawFile, 1600);
+            const file = await compressAndConvertToPng(rawFile, 1280);
 
             let photoUrl: string | null = null;
 
@@ -102,6 +102,9 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
                 const actionFormData = new FormData();
                 actionFormData.append('file', file);
                 actionFormData.append('category', 'delivery');
+                if (order?.id) {
+                    actionFormData.append('orderId', order.id);
+                }
                 const actionRes = await uploadProductImageAction(actionFormData);
                 if (actionRes.success && actionRes.publicUrl) {
                     photoUrl = actionRes.publicUrl;

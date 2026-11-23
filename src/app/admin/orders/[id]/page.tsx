@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { updateOrderStatus, updatePaymentStatus } from '@/lib/orders-actions';
+import { updateOrderStatus, updatePaymentStatus, updatePaymentMethod } from '@/lib/orders-actions';
 import DownloadInvoiceBtn from '@/components/invoice/DownloadInvoiceBtn';
 import InvoiceViewer from '@/components/invoice/InvoiceViewer';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -88,13 +88,18 @@ export default function OrderDetailPage() {
                 alert(`Error fetching order: ${error.message}`);
             } else {
                 if (data && data.order_items) {
-                    data.order_items = data.order_items.map((item: any) => ({
-                        ...item,
-                        product_name: productMap.get(item.product_id)?.name || item.product_id,
-                        is_available: item.is_available !== null && item.is_available !== undefined ? item.is_available : true,
-                        fulfilled_quantity: item.fulfilled_quantity !== null && item.fulfilled_quantity !== undefined ? item.fulfilled_quantity : item.quantity,
-                        out_of_stock_reason: item.out_of_stock_reason || ''
-                    }));
+                    data.order_items = data.order_items.map((item: any) => {
+                        const dbProd = productMap.get(item.product_id);
+                        const pName = dbProd?.name || item.product_name || item.product?.name || item.name || item.product_id;
+                        return {
+                            ...item,
+                            product_name: pName,
+                            product: dbProd || item.product || null,
+                            is_available: item.is_available !== null && item.is_available !== undefined ? item.is_available : true,
+                            fulfilled_quantity: item.fulfilled_quantity !== null && item.fulfilled_quantity !== undefined ? item.fulfilled_quantity : item.quantity,
+                            out_of_stock_reason: item.out_of_stock_reason || ''
+                        };
+                    });
                 }
                 setOrder(data);
             }
@@ -103,6 +108,18 @@ export default function OrderDetailPage() {
 
         fetchOrder();
     }, [id]);
+
+    const handleUpdatePaymentMethod = async (newMethod: string) => {
+        if (!order?.id) return;
+        setLoading(true);
+        const { success, error } = await updatePaymentMethod(order.id, newMethod);
+        if (success) {
+            setOrder((prev: any) => ({ ...prev, payment_method: newMethod }));
+        } else {
+            alert('Failed to update payment method: ' + error);
+        }
+        setLoading(false);
+    };
 
     const requestUpdateStatus = (newStatus: string) => {
         setConfirmModal({
@@ -463,27 +480,59 @@ export default function OrderDetailPage() {
                             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Payment & Invoice</h3>
                             <div className="flex flex-wrap items-center gap-4">
                                 <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-slate-600">Status:</span>
                                     <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                                         {order.payment_status || 'Pending'}
                                     </span>
                                     {order.payment_status !== 'paid' ? (
                                         <button
                                             onClick={() => requestUpdatePayment('paid')}
-                                            className="text-xs font-medium text-blue-600 hover:underline"
+                                            className="text-xs font-medium text-blue-600 hover:underline cursor-pointer"
                                         >
                                             Mark Paid
                                         </button>
                                     ) : (
                                         <button
                                             onClick={() => requestUpdatePayment('pending')}
-                                            className="text-xs font-medium text-slate-500 hover:text-red-600 hover:underline"
+                                            className="text-xs font-medium text-slate-500 hover:text-red-600 hover:underline cursor-pointer"
                                         >
                                             Mark Pending
                                         </button>
                                     )}
                                 </div>
 
-                                <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>
+                                <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+                                {/* Payment Method: COD and Online */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-slate-600">Method:</span>
+                                    <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-slate-50 text-xs font-bold">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleUpdatePaymentMethod('COD')}
+                                            className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                                                (order.payment_method || 'COD').toUpperCase() === 'COD'
+                                                    ? 'bg-emerald-600 text-white shadow-2xs'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                                            }`}
+                                        >
+                                            COD
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleUpdatePaymentMethod('Online')}
+                                            className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                                                (order.payment_method || '').toUpperCase() === 'ONLINE'
+                                                    ? 'bg-blue-600 text-white shadow-2xs'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                                            }`}
+                                        >
+                                            Online
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
 
                                 <DownloadInvoiceBtn order={order} variant="admin" />
                             </div>
@@ -521,7 +570,42 @@ export default function OrderDetailPage() {
                         )}
 
                         <p><span className="font-semibold text-slate-700">Total Amount:</span> <span className="text-xl font-bold text-aqua-600">₹{order.total_amount}</span></p>
-                        <p><span className="font-semibold text-slate-700">Payment Method:</span> {order.payment_method || 'COD'}</p>
+                        <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+                            <span className="font-semibold text-slate-700">Payment Method:</span>
+                            <div className="inline-flex items-center gap-2">
+                                <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+                                    (order.payment_method || 'COD').toUpperCase() === 'ONLINE'
+                                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                }`}>
+                                    {(order.payment_method || 'COD').toUpperCase() === 'ONLINE' ? 'Online Payment' : 'Cash on Delivery (COD)'}
+                                </span>
+                                <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-slate-50 text-xs font-bold">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUpdatePaymentMethod('COD')}
+                                        className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                            (order.payment_method || 'COD').toUpperCase() === 'COD'
+                                                ? 'bg-emerald-600 text-white shadow-2xs'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        COD
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUpdatePaymentMethod('Online')}
+                                        className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                            (order.payment_method || '').toUpperCase() === 'ONLINE'
+                                                ? 'bg-blue-600 text-white shadow-2xs'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        Online
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -583,7 +667,7 @@ export default function OrderDetailPage() {
                                                         />
                                                     )}
                                                     <div className="min-w-0">
-                                                        <p className="font-bold text-slate-900 leading-snug">{productDetails?.name || item.product_name || item.product_id}</p>
+                                                        <p className="font-bold text-slate-900 leading-snug">{item.product_name || item.product?.name || item.name || productDetails?.name || item.product_id}</p>
                                                         <p className="text-xs text-slate-500 mt-0.5 font-mono">Ordered: <span className="font-semibold text-slate-700">{item.quantity}</span> units</p>
                                                     </div>
                                                 </div>
@@ -666,7 +750,7 @@ export default function OrderDetailPage() {
                                                 )}
                                                 <div className="min-w-0">
                                                     <p className={`font-bold leading-snug ${!isAvailable ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                                                        {productDetails?.name || item.product_name || item.product_id}
+                                                        {item.product_name || item.product?.name || item.name || productDetails?.name || item.product_id}
                                                     </p>
                                                     {!isAvailable && (
                                                         <p className="text-xs text-rose-600 font-semibold mt-0.5">

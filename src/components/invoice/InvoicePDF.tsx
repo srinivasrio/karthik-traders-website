@@ -483,8 +483,8 @@ export default function InvoicePDF({ order }: InvoiceProps) {
     // Compute out of stock items
     const outOfStockItems: Array<{ name: string; qty: number; reason?: string }> = [];
     items.forEach((item: any) => {
-        const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
-        const name = productDetails?.name || item.product_name || item.product_id || 'Item';
+        const productDetails = item.product || allProducts.find(p => p.id === item.product_id || p.slug === item.product_id);
+        const name = item.product_name || item.product?.name || item.name || productDetails?.name || item.product_id || 'Item';
         const isAvailable = item.is_available !== false;
         const fulfilledQty = item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null
             ? item.fulfilled_quantity
@@ -575,6 +575,7 @@ export default function InvoicePDF({ order }: InvoiceProps) {
                         <Text style={styles.copyType}>TAX INVOICE WILL BE PROVIDED AT DELIVERY</Text>
                         <Text style={styles.invNumber}>{invoiceNumber}</Text>
                         <Text style={styles.invDate}>Date: {formattedDate}</Text>
+                        <Text style={styles.invDate}>Payment: {order.payment_method || 'COD'}</Text>
                         <View style={isPaid ? styles.paidBadge : styles.pendingBadge}>
                             <Text style={isPaid ? styles.paidBadgeText : styles.pendingBadgeText}>
                                 {isPaid ? 'PAID' : 'PAYMENT PENDING'}
@@ -617,17 +618,18 @@ export default function InvoicePDF({ order }: InvoiceProps) {
 
                     {fulfilledItems.length > 0 ? (
                         fulfilledItems.map((item: any, idx: number) => {
-                            const productDetails = allProducts.find(p => p.id === item.product_id || p.slug === item.product_id) || item.product;
+                            const productDetails = item.product || allProducts.find(p => p.id === item.product_id || p.slug === item.product_id);
                             const price = Number(item.price_at_purchase || 0);
                             const qty = Number(item.fulfilled_quantity !== undefined && item.fulfilled_quantity !== null ? item.fulfilled_quantity : item.quantity);
                             const rowAmount = price * qty;
                             const isEven = idx % 2 === 1;
+                            const displayName = item.product_name || item.product?.name || item.name || productDetails?.name || item.product_id || 'Aquaculture Equipment';
 
                             return (
                                 <View key={idx} style={[styles.tableRow, isEven ? styles.tableRowEven : {}]}>
                                     <Text style={styles.cellSno}>{idx + 1}</Text>
                                     <Text style={styles.cellDesc}>
-                                        {productDetails?.name || item.product_name || item.product_id || 'Aquaculture Equipment'}
+                                        {displayName}
                                     </Text>
                                     <Text style={styles.cellPrice}>Rs. {price.toLocaleString('en-IN')}</Text>
                                     <Text style={styles.cellQty}>{qty}</Text>

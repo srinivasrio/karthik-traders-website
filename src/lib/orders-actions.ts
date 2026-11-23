@@ -76,3 +76,24 @@ export async function updatePaymentStatus(orderId: string, paymentStatus: string
         return { success: false, error: 'Internal Server Error' };
     }
 }
+
+export async function updatePaymentMethod(orderId: string, paymentMethod: string) {
+    try {
+        const { data, error } = await supabase
+            .from('orders')
+            .update({ payment_method: paymentMethod })
+            .eq('id', orderId)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating payment method:', error);
+            return { success: false, error: error.message };
+        }
+
+        return { success: true, data };
+    } catch (error) {
+        console.error('Exception updating payment method:', error);
+        return { success: false, error: 'Internal Server Error' };
+    }
+}

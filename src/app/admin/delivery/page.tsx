@@ -83,12 +83,33 @@ const CATALOG_ITEMS: CatalogProductItem[] = [
     })),
 ];
 
+function parseProductImage(imagesVal: any): string | null {
+    if (!imagesVal) return null;
+    if (Array.isArray(imagesVal) && imagesVal.length > 0) return String(imagesVal[0]);
+    if (typeof imagesVal === 'string') {
+        const trimmed = imagesVal.trim();
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed) && parsed.length > 0) return String(parsed[0]);
+            } catch (e) {}
+        }
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            const inner = trimmed.slice(1, -1).split(',')[0]?.replace(/^"|"$/g, '').trim();
+            if (inner) return inner;
+        }
+        return trimmed;
+    }
+    return null;
+}
+
 type CategoryTab = 'all' | 'aerators' | 'motors' | 'gearboxes' | 'spares' | 'long-arm';
 
 export default function AdminDeliveryPage() {
     const { session } = useAuth();
     const [rules, setRules] = useState<StateDeliveryRule[]>(DEFAULT_RULES);
     const [general, setGeneral] = useState<DeliveryGeneralSettings>(DEFAULT_GENERAL_SETTINGS);
+    const [catalogItems, setCatalogItems] = useState<CatalogProductItem[]>(CATALOG_ITEMS);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -168,6 +189,77 @@ export default function AdminDeliveryPage() {
                 }
             } else if (data.error) {
                 console.error('Error fetching delivery settings:', data.error);
+            }
+
+            // Fetch live products directly from database so names and prices are ALWAYS up-to-date
+            try {
+                const { data: dbProducts } = await supabase
+                    .from('products')
+                    .select('*')
+                    .order('name');
+
+                if (dbProducts && dbProducts.length > 0) {
+                    const liveItems: CatalogProductItem[] = dbProducts.map((dbProduct: any) => {
+                        const cat = (dbProduct.category || '').toLowerCase();
+                        let categoryGroup: ProductCategoryGroup = 'spares';
+                        let groupLabel = 'Spare Part';
+                        let badgeBg = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                        let badgeText = 'SPARE';
+
+                        if (cat === 'aerators' || cat === 'aerator-set') {
+                            categoryGroup = 'aerators';
+                            groupLabel = 'Aerator Set';
+                            badgeBg = 'bg-indigo-100 text-indigo-800 border-indigo-200';
+                            badgeText = 'AERATOR';
+                        } else if (cat === 'motors' || cat === 'motor') {
+                            categoryGroup = 'motors';
+                            groupLabel = 'Motor';
+                            badgeBg = 'bg-amber-100 text-amber-800 border-amber-200';
+                            badgeText = 'MOTOR';
+                        } else if (cat === 'gearboxes' || cat === 'gearbox' || cat === 'worm-gearbox' || cat === 'bevel-gearbox') {
+                            categoryGroup = 'gearboxes';
+                            groupLabel = 'Gearbox';
+                            badgeBg = 'bg-purple-100 text-purple-800 border-purple-200';
+                            badgeText = 'GEARBOX';
+                        } else if (cat === 'long-arm' || cat === 'long-arm-gearbox' || cat === 'long-arm-spare') {
+                            categoryGroup = 'long-arm';
+                            groupLabel = 'Long Arm Aerator';
+                            badgeBg = 'bg-sky-100 text-sky-800 border-sky-200';
+                            badgeText = 'LONG ARM';
+                        }
+
+                        const specs = dbProduct.specifications || {};
+                        const model = specs.model || specs['Model number'] || specs.Model || dbProduct.model;
+                        const brand = dbProduct.brand || specs.brand || specs.Brand || 'seaboss';
+                        const firstImg = parseProductImage(dbProduct.images);
+
+                        return {
+                            product: {
+                                id: dbProduct.id,
+                                slug: dbProduct.slug,
+                                name: dbProduct.name,
+                                model: model,
+                                brand: brand,
+                                category: dbProduct.category,
+                                mrp: Number(dbProduct.mrp || dbProduct.price),
+                                salePrice: Number(dbProduct.price),
+                                features: Array.isArray(specs.features) ? specs.features : [],
+                                specifications: specs,
+                                inStock: dbProduct.stock > 0,
+                                images: firstImg ? [firstImg] : [],
+                                isActive: dbProduct.is_active !== false,
+                            },
+                            categoryGroup,
+                            groupLabel,
+                            badgeBg,
+                            badgeText,
+                        };
+                    });
+
+                    setCatalogItems(liveItems);
+                }
+            } catch (dbErr) {
+                console.warn('Could not fetch live products for delivery catalog, using fallback:', dbErr);
             }
         } catch (err: any) {
             console.error('Error fetching delivery settings:', err);
@@ -278,13 +370,15 @@ export default function AdminDeliveryPage() {
         const chosen = general.eligibleProductSlugs || general.eligibleAeratorSlugs;
         if (!chosen || chosen.length === 0) {
             // Default: aerator sets are eligible
-            return aeratorSets.map((p) => p.slug);
+            return catalogItems
+                .filter((item) => item.categoryGroup === 'aerators')
+                .map((item) => item.product.slug);
         }
         if (chosen.includes('none_selected') && chosen.length === 1) {
             return [];
         }
         return chosen;
-    }, [general.eligibleProductSlugs, general.eligibleAeratorSlugs]);
+    }, [general.eligibleProductSlugs, general.eligibleAeratorSlugs, catalogItems]);
 
     const isProductSelected = (slug: string) => {
         return currentEligibleSlugs.includes(slug);
@@ -292,7 +386,10 @@ export default function AdminDeliveryPage() {
 
     const setEligibleSlugs = (slugs: string[]) => {
         const finalSlugs = slugs.length === 0 ? ['none_selected'] : slugs;
-        const hasNonAerator = slugs.some((s) => !aeratorSets.some((a) => a.slug === s));
+        const aeratorSlugs = catalogItems
+            .filter((item) => item.categoryGroup === 'aerators')
+            .map((item) => item.product.slug);
+        const hasNonAerator = slugs.some((s) => !aeratorSlugs.includes(s));
         setGeneral((prev) => ({
             ...prev,
             eligibleAeratorSlugs: finalSlugs,
@@ -310,27 +407,47 @@ export default function AdminDeliveryPage() {
 
     // 1-Click Quick Presets
     const handleSelectAeratorsOnly = () => {
-        setEligibleSlugs(aeratorSets.map((p) => p.slug));
+        setEligibleSlugs(
+            catalogItems
+                .filter((item) => item.categoryGroup === 'aerators')
+                .map((item) => item.product.slug)
+        );
     };
 
     const handleSelectMotorsOnly = () => {
-        setEligibleSlugs(motors.map((p) => p.slug));
+        setEligibleSlugs(
+            catalogItems
+                .filter((item) => item.categoryGroup === 'motors')
+                .map((item) => item.product.slug)
+        );
     };
 
     const handleSelectGearboxesOnly = () => {
-        setEligibleSlugs(allGearboxes.map((p) => p.slug));
+        setEligibleSlugs(
+            catalogItems
+                .filter((item) => item.categoryGroup === 'gearboxes')
+                .map((item) => item.product.slug)
+        );
     };
 
     const handleSelectSparesOnly = () => {
-        setEligibleSlugs(allSpares.map((p) => p.slug));
+        setEligibleSlugs(
+            catalogItems
+                .filter((item) => item.categoryGroup === 'spares')
+                .map((item) => item.product.slug)
+        );
     };
 
     const handleSelectLongArmOnly = () => {
-        setEligibleSlugs(longArmProducts.map((p) => p.slug));
+        setEligibleSlugs(
+            catalogItems
+                .filter((item) => item.categoryGroup === 'long-arm')
+                .map((item) => item.product.slug)
+        );
     };
 
     const handleSelectAllStoreProducts = () => {
-        setEligibleSlugs(CATALOG_ITEMS.map((item) => item.product.slug));
+        setEligibleSlugs(catalogItems.map((item) => item.product.slug));
     };
 
     const handleClearAllProducts = () => {
@@ -339,18 +456,18 @@ export default function AdminDeliveryPage() {
 
     // Category group selection handlers
     const handleSelectActiveCategoryGroup = (group: ProductCategoryGroup) => {
-        const groupSlugs = CATALOG_ITEMS.filter((item) => item.categoryGroup === group).map(
-            (item) => item.product.slug
-        );
+        const groupSlugs = catalogItems
+            .filter((item) => item.categoryGroup === group)
+            .map((item) => item.product.slug);
         const combined = Array.from(new Set([...currentEligibleSlugs, ...groupSlugs]));
         setEligibleSlugs(combined);
     };
 
     const handleDeselectActiveCategoryGroup = (group: ProductCategoryGroup) => {
         const groupSlugs = new Set(
-            CATALOG_ITEMS.filter((item) => item.categoryGroup === group).map(
-                (item) => item.product.slug
-            )
+            catalogItems
+                .filter((item) => item.categoryGroup === group)
+                .map((item) => item.product.slug)
         );
         const remaining = currentEligibleSlugs.filter((s) => !groupSlugs.has(s));
         setEligibleSlugs(remaining);
@@ -358,7 +475,7 @@ export default function AdminDeliveryPage() {
 
     // Filtered products list based on category tab & search
     const filteredCatalogItems = useMemo(() => {
-        let list = CATALOG_ITEMS;
+        let list = catalogItems;
         if (selectedCategoryTab !== 'all') {
             list = list.filter((item) => item.categoryGroup === selectedCategoryTab);
         }
@@ -373,26 +490,41 @@ export default function AdminDeliveryPage() {
             );
         }
         return list;
-    }, [selectedCategoryTab, productSearchQuery]);
+    }, [selectedCategoryTab, productSearchQuery, catalogItems]);
 
     // Live counts per category
     const categoryStats = useMemo(() => {
         const stats: Record<ProductCategoryGroup, { total: number; selected: number }> = {
-            aerators: { total: aeratorSets.length, selected: 0 },
-            motors: { total: motors.length, selected: 0 },
-            gearboxes: { total: allGearboxes.length, selected: 0 },
-            spares: { total: allSpares.length, selected: 0 },
-            'long-arm': { total: longArmProducts.length, selected: 0 },
+            aerators: {
+                total: catalogItems.filter((i) => i.categoryGroup === 'aerators').length,
+                selected: 0,
+            },
+            motors: {
+                total: catalogItems.filter((i) => i.categoryGroup === 'motors').length,
+                selected: 0,
+            },
+            gearboxes: {
+                total: catalogItems.filter((i) => i.categoryGroup === 'gearboxes').length,
+                selected: 0,
+            },
+            spares: {
+                total: catalogItems.filter((i) => i.categoryGroup === 'spares').length,
+                selected: 0,
+            },
+            'long-arm': {
+                total: catalogItems.filter((i) => i.categoryGroup === 'long-arm').length,
+                selected: 0,
+            },
         };
 
-        CATALOG_ITEMS.forEach((item) => {
+        catalogItems.forEach((item) => {
             if (currentEligibleSlugs.includes(item.product.slug)) {
                 stats[item.categoryGroup].selected++;
             }
         });
 
         return stats;
-    }, [currentEligibleSlugs]);
+    }, [currentEligibleSlugs, catalogItems]);
 
     // Simulator evaluation
     const liveTestResult = useMemo(() => {
@@ -678,7 +810,7 @@ export default function AdminDeliveryPage() {
                                     Aerator Sets Free Delivery Eligibility
                                 </h2>
                                 <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                    {currentEligibleSlugs.length} of {CATALOG_ITEMS.length} Products Eligible
+                                    {currentEligibleSlugs.length} of {catalogItems.length} Products Eligible
                                 </span>
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">
@@ -712,7 +844,6 @@ export default function AdminDeliveryPage() {
                 <div className="mb-5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                         <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                            <span>⚡</span>
                             <span>Quick 1-Click Presets:</span>
                         </span>
                         <span className="text-[11px] font-medium text-slate-500">
@@ -725,83 +856,98 @@ export default function AdminDeliveryPage() {
                             type="button"
                             onClick={handleSelectAeratorsOnly}
                             className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                currentEligibleSlugs.length === aeratorSets.length &&
-                                aeratorSets.every((p) => currentEligibleSlugs.includes(p.slug))
+                                currentEligibleSlugs.length === categoryStats.aerators.total &&
+                                categoryStats.aerators.total > 0 &&
+                                catalogItems
+                                    .filter((i) => i.categoryGroup === 'aerators')
+                                    .every((p) => currentEligibleSlugs.includes(p.product.slug))
                                     ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
                                     : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
                             }`}
                         >
-                            <span>⚡ Aerators Only</span>
-                            <span className="text-[10px] opacity-80">({aeratorSets.length})</span>
+                            <span>Aerators Only</span>
+                            <span className="text-[10px] opacity-80">({categoryStats.aerators.total})</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={handleSelectMotorsOnly}
                             className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                currentEligibleSlugs.length === motors.length &&
-                                motors.every((p) => currentEligibleSlugs.includes(p.slug))
+                                currentEligibleSlugs.length === categoryStats.motors.total &&
+                                categoryStats.motors.total > 0 &&
+                                catalogItems
+                                    .filter((i) => i.categoryGroup === 'motors')
+                                    .every((p) => currentEligibleSlugs.includes(p.product.slug))
                                     ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
                                     : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'
                             }`}
                         >
-                            <span>⚡ Motors Only</span>
-                            <span className="text-[10px] opacity-80">({motors.length})</span>
+                            <span>Motors Only</span>
+                            <span className="text-[10px] opacity-80">({categoryStats.motors.total})</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={handleSelectGearboxesOnly}
                             className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                currentEligibleSlugs.length === allGearboxes.length &&
-                                allGearboxes.every((p) => currentEligibleSlugs.includes(p.slug))
+                                currentEligibleSlugs.length === categoryStats.gearboxes.total &&
+                                categoryStats.gearboxes.total > 0 &&
+                                catalogItems
+                                    .filter((i) => i.categoryGroup === 'gearboxes')
+                                    .every((p) => currentEligibleSlugs.includes(p.product.slug))
                                     ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
                                     : 'bg-white text-purple-800 border-purple-200 hover:bg-purple-50'
                             }`}
                         >
-                            <span>⚡ Gearboxes Only</span>
-                            <span className="text-[10px] opacity-80">({allGearboxes.length})</span>
+                            <span>Gearboxes Only</span>
+                            <span className="text-[10px] opacity-80">({categoryStats.gearboxes.total})</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={handleSelectSparesOnly}
                             className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                currentEligibleSlugs.length === allSpares.length &&
-                                allSpares.every((p) => currentEligibleSlugs.includes(p.slug))
+                                currentEligibleSlugs.length === categoryStats.spares.total &&
+                                categoryStats.spares.total > 0 &&
+                                catalogItems
+                                    .filter((i) => i.categoryGroup === 'spares')
+                                    .every((p) => currentEligibleSlugs.includes(p.product.slug))
                                     ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
                                     : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50'
                             }`}
                         >
-                            <span>⚡ Spares Only</span>
-                            <span className="text-[10px] opacity-80">({allSpares.length})</span>
+                            <span>Spares Only</span>
+                            <span className="text-[10px] opacity-80">({categoryStats.spares.total})</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={handleSelectLongArmOnly}
                             className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                currentEligibleSlugs.length === longArmProducts.length &&
-                                longArmProducts.every((p) => currentEligibleSlugs.includes(p.slug))
+                                currentEligibleSlugs.length === categoryStats['long-arm'].total &&
+                                categoryStats['long-arm'].total > 0 &&
+                                catalogItems
+                                    .filter((i) => i.categoryGroup === 'long-arm')
+                                    .every((p) => currentEligibleSlugs.includes(p.product.slug))
                                     ? 'bg-sky-600 text-white border-sky-700 shadow-xs'
                                     : 'bg-white text-sky-800 border-sky-200 hover:bg-sky-50'
                             }`}
                         >
-                            <span>⚡ Long Arm Only</span>
-                            <span className="text-[10px] opacity-80">({longArmProducts.length})</span>
+                            <span>Long Arm Only</span>
+                            <span className="text-[10px] opacity-80">({categoryStats['long-arm'].total})</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={handleSelectAllStoreProducts}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                currentEligibleSlugs.length === CATALOG_ITEMS.length
+                                currentEligibleSlugs.length === catalogItems.length && catalogItems.length > 0
                                     ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                                     : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-100'
                             }`}
                         >
-                            <span>✨ For All Products</span>
-                            <span className="text-[10px] opacity-80">({CATALOG_ITEMS.length})</span>
+                            <span>For All Products</span>
+                            <span className="text-[10px] opacity-80">({catalogItems.length})</span>
                         </button>
 
                         <button
@@ -818,12 +964,12 @@ export default function AdminDeliveryPage() {
                 <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-3 mb-4">
                     {(
                         [
-                            { id: 'all', label: 'All Products', total: CATALOG_ITEMS.length, selected: currentEligibleSlugs.length },
-                            { id: 'aerators', label: 'Aerator Sets', total: aeratorSets.length, selected: categoryStats.aerators.selected },
-                            { id: 'motors', label: 'Motors', total: motors.length, selected: categoryStats.motors.selected },
-                            { id: 'gearboxes', label: 'Gearboxes', total: allGearboxes.length, selected: categoryStats.gearboxes.selected },
-                            { id: 'spares', label: 'Spare Parts', total: allSpares.length, selected: categoryStats.spares.selected },
-                            { id: 'long-arm', label: 'Long Arm', total: longArmProducts.length, selected: categoryStats['long-arm'].selected },
+                            { id: 'all', label: 'All Products', total: catalogItems.length, selected: currentEligibleSlugs.length },
+                            { id: 'aerators', label: 'Aerator Sets', total: categoryStats.aerators.total, selected: categoryStats.aerators.selected },
+                            { id: 'motors', label: 'Motors', total: categoryStats.motors.total, selected: categoryStats.motors.selected },
+                            { id: 'gearboxes', label: 'Gearboxes', total: categoryStats.gearboxes.total, selected: categoryStats.gearboxes.selected },
+                            { id: 'spares', label: 'Spare Parts', total: categoryStats.spares.total, selected: categoryStats.spares.selected },
+                            { id: 'long-arm', label: 'Long Arm', total: categoryStats['long-arm'].total, selected: categoryStats['long-arm'].selected },
                         ] as const
                     ).map((tab) => {
                         const isTabActive = selectedCategoryTab === tab.id;

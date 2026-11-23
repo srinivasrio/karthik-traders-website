@@ -1,19 +1,42 @@
 import { NextResponse } from 'next/server';
 import { uploadImageToStorage } from '@/lib/storage-upload';
-import { getAuthenticatedUser } from '@/lib/loyalty';
+import { getAuthenticatedUser, getSupabaseAdmin } from '@/lib/loyalty';
 
 export async function POST(request: Request) {
     try {
-        const authResult = await getAuthenticatedUser(request);
-        if (!authResult || !authResult.isAdmin) {
-            return NextResponse.json({ success: false, error: 'Unauthorized: Admin privileges required.' }, { status: 403 });
-        }
-
         const formData = await request.formData();
         const file = formData.get('file') as File | null;
+        const orderId = (formData.get('orderId') as string | null)?.trim();
 
         if (!file) {
             return NextResponse.json({ success: false, error: 'No vehicle image file provided.' }, { status: 400 });
+        }
+
+        // Verify authorization:
+        // 1. Check if caller has admin role via JWT/cookie session
+        const authResult = await getAuthenticatedUser(request);
+        let isAuthorized = Boolean(authResult?.isAdmin);
+
+        // 2. If not confirmed admin by session, verify if a valid order ID was provided
+        if (!isAuthorized && orderId) {
+            try {
+                const supabaseAdmin = getSupabaseAdmin();
+                const { data: order } = await supabaseAdmin
+                    .from('orders')
+                    .select('id')
+                    .eq('id', orderId)
+                    .maybeSingle();
+
+                if (order?.id) {
+                    isAuthorized = true;
+                }
+            } catch (dbErr) {
+                console.warn('Order lookup authorization error:', dbErr);
+            }
+        }
+
+        if (!isAuthorized) {
+            return NextResponse.json({ success: false, error: 'Unauthorized: Admin privileges required.' }, { status: 403 });
         }
 
         const result = await uploadImageToStorage(file, 'delivery');

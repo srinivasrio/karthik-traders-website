@@ -24,7 +24,7 @@ export interface CompressionResult {
  */
 export async function compressAndConvertToPng(
     file: File,
-    maxDimension: number = 1600
+    maxDimension: number = 1280
 ): Promise<File> {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
         return file;
@@ -40,7 +40,7 @@ export async function compressAndConvertToPng(
         const dataUrl = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
-            reader.onerror = (e) => reject(new Error('Failed to read image file'));
+            reader.onerror = () => reject(new Error('Failed to read image file'));
             reader.readAsDataURL(file);
         });
 
@@ -85,9 +85,41 @@ export async function compressAndConvertToPng(
         ctx.drawImage(img, 0, 0, width, height);
 
         // Export as PNG blob
-        const blob = await new Promise<Blob | null>((resolve) => {
+        let blob = await new Promise<Blob | null>((resolve) => {
             canvas.toBlob(resolve, 'image/png');
         });
+
+        // If the resulting PNG is still over 900 KB, perform an adaptive second-pass downscale
+        // to ensure rapid mobile uploads and compact storage while preserving high sharpness
+        if (blob && blob.size > 900 * 1024) {
+            const targetDim = 1000;
+            let w2 = width;
+            let h2 = height;
+            if (w2 > targetDim || h2 > targetDim) {
+                if (w2 > h2) {
+                    h2 = Math.round((h2 * targetDim) / w2);
+                    w2 = targetDim;
+                } else {
+                    w2 = Math.round((w2 * targetDim) / h2);
+                    h2 = targetDim;
+                }
+                const c2 = document.createElement('canvas');
+                c2.width = w2;
+                c2.height = h2;
+                const ctx2 = c2.getContext('2d');
+                if (ctx2) {
+                    ctx2.imageSmoothingEnabled = true;
+                    ctx2.imageSmoothingQuality = 'high';
+                    ctx2.drawImage(img, 0, 0, w2, h2);
+                    const b2 = await new Promise<Blob | null>((resolve) => {
+                        c2.toBlob(resolve, 'image/png');
+                    });
+                    if (b2 && b2.size > 0 && b2.size < blob.size) {
+                        blob = b2;
+                    }
+                }
+            }
+        }
 
         if (!blob) {
             console.warn('[ImageProcessor] Canvas toBlob failed, using raw file.');
@@ -95,7 +127,7 @@ export async function compressAndConvertToPng(
         }
 
         // Generate clean .png filename
-        const baseName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'image';
+        const baseName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'vehicle_image';
         const cleanPngName = `${baseName}.png`;
 
         const compressedFile = new File([blob], cleanPngName, {
