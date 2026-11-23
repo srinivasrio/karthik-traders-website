@@ -8,6 +8,7 @@ import {
     StateDeliveryRule
 } from '@/lib/delivery-config';
 import { updateOrderDispatchAction } from '@/app/actions/orders';
+import { compressAndConvertToPng } from '@/lib/client-image-processor';
 
 interface OrderDispatchCardProps {
     order: any;
@@ -65,13 +66,16 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const rawFile = e.target.files?.[0];
+        if (!rawFile) return;
 
         setUploadingImage(true);
         setMessage(null);
 
         try {
+            // Compress and convert to high-quality PNG (reduces size while preserving crisp clarity)
+            const file = await compressAndConvertToPng(rawFile, 1600);
+
             const formData = new FormData();
             formData.append('file', file);
             formData.append('orderId', order.id);
@@ -82,9 +86,11 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
             });
 
             const data = await res.json();
-            if (data.success && data.imageUrl) {
-                setVehiclePhotoUrl(data.imageUrl);
-                setMessage({ type: 'success', text: 'Vehicle photo uploaded successfully!' });
+            const photoUrl = data.publicUrl || data.imageUrl;
+
+            if (data.success && photoUrl) {
+                setVehiclePhotoUrl(photoUrl);
+                setMessage({ type: 'success', text: 'Vehicle photo uploaded & optimized successfully!' });
             } else {
                 setMessage({ type: 'error', text: data.error || 'Failed to upload photo' });
             }
@@ -93,6 +99,9 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
             setMessage({ type: 'error', text: err.message || 'Error uploading photo' });
         } finally {
             setUploadingImage(false);
+            if (e.target) {
+                e.target.value = '';
+            }
         }
     };
 
@@ -348,16 +357,18 @@ export default function OrderDispatchCard({ order, onOrderUpdated }: OrderDispat
 
                         <div className="flex-1 space-y-2">
                             <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-extrabold cursor-pointer transition-colors shadow-2xs">
-                                <span>{uploadingImage ? '⏳ Uploading...' : '📷 Choose Photo / Take Camera Photo'}</span>
+                                <span>{uploadingImage ? '⏳ Compressing & Uploading...' : '📷 Choose Photo (DCIM / Camera)'}</span>
                                 <input
                                     type="file"
-                                    accept="image/*"
-                                    capture="environment"
+                                    accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.bmp,.gif,.dng"
                                     onChange={handleFileUpload}
                                     disabled={uploadingImage}
                                     className="hidden"
                                 />
                             </label>
+                            <p className="text-[11px] text-slate-500">
+                                Supports all formats (Camera, Mobile DCIM gallery, PNG, JPG). Automatically compressed to high quality PNG.
+                            </p>
 
                             <p className="text-[11px] text-slate-500 leading-relaxed">
                                 Upload a photo of the aerator gearboxes, motors, and floats loaded on the truck/van. The farmer can see this picture in their order tracking screen.

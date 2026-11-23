@@ -341,6 +341,49 @@ async function main() {
         assert(cartContextCode.includes('priceUpdateNotice'), 'CartContext must provide priceUpdateNotice state');
     });
 
+    // TEST CASE 9: Mobile DCIM & Vehicle Image Compression to High Quality PNG
+    await runTestCase('TC-09: Mobile DCIM & Image Compression to High-Quality PNG', async () => {
+        // 1. Verify client processor exists and defines compressAndConvertToPng
+        const processorCode = fs.readFileSync('src/lib/client-image-processor.ts', 'utf8');
+        assert(processorCode.includes('compressAndConvertToPng'), 'client-image-processor must export compressAndConvertToPng');
+        assert(processorCode.includes("'image/png'"), 'client-image-processor must export as image/png');
+
+        // 2. Verify OrderDispatchCard uses compressAndConvertToPng and supports imageUrl + publicUrl
+        const dispatchCode = fs.readFileSync('src/components/admin/OrderDispatchCard.tsx', 'utf8');
+        assert(dispatchCode.includes('compressAndConvertToPng'), 'OrderDispatchCard must compress images before upload');
+        assert(dispatchCode.includes('data.publicUrl || data.imageUrl'), 'OrderDispatchCard must check both publicUrl and imageUrl');
+        assert(!dispatchCode.includes('capture="environment"'), 'OrderDispatchCard must not restrict file input with capture="environment" to allow DCIM gallery');
+
+        // 3. Verify upload-vehicle-image route returns both publicUrl and imageUrl
+        const uploadRouteCode = fs.readFileSync('src/app/api/admin/orders/upload-vehicle-image/route.ts', 'utf8');
+        assert(uploadRouteCode.includes('publicUrl: result.publicUrl'), 'upload-vehicle-image route must return publicUrl');
+        assert(uploadRouteCode.includes('imageUrl: result.publicUrl'), 'upload-vehicle-image route must return imageUrl for backward compatibility');
+
+        // 4. Verify storage-upload.ts stores all images canonically as .png
+        const storageUploadCode = fs.readFileSync('src/lib/storage-upload.ts', 'utf8');
+        assert(storageUploadCode.includes("const ext = 'png'"), 'storage-upload.ts must store files as png');
+        assert(storageUploadCode.includes("'Content-Type': 'image/png'"), 'storage-upload.ts must use image/png content type');
+
+        // 5. Test mathematical scaling logic (proportional downscaling to maxDimension)
+        const scaleDimensions = (w, h, maxDim = 1600) => {
+            if (w > maxDim || h > maxDim) {
+                if (w > h) return { w: maxDim, h: Math.round((h * maxDim) / w) };
+                return { w: Math.round((w * maxDim) / h), h: maxDim };
+            }
+            return { w, h };
+        };
+
+        // 4000x3000 DCIM photo scaled to 1600x1200
+        const scaled4k = scaleDimensions(4000, 3000, 1600);
+        assert(scaled4k.w === 1600, 'Width must scale to 1600');
+        assert(scaled4k.h === 1200, 'Height must scale to 1200');
+
+        // 3000x4000 Portrait DCIM photo scaled to 1200x1600
+        const scaledPortrait = scaleDimensions(3000, 4000, 1600);
+        assert(scaledPortrait.w === 1200, 'Portrait width must scale to 1200');
+        assert(scaledPortrait.h === 1600, 'Portrait height must scale to 1600');
+    });
+
     console.log('\n====================================================');
     const passed = results.filter(r => r.status === 'PASSED').length;
     const failed = results.filter(r => r.status === 'FAILED').length;

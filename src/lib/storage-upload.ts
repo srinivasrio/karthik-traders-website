@@ -26,17 +26,8 @@ export async function uploadImageToStorage(file: File, category: string = ''): P
             };
         }
 
-        // Determine sanitized extension
-        let ext = 'jpg';
-        const rawExt = file.name ? file.name.split('.').pop()?.toLowerCase() : null;
-        if (rawExt && ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(rawExt)) {
-            ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
-        } else if (file.type) {
-            if (file.type.includes('png')) ext = 'png';
-            else if (file.type.includes('webp')) ext = 'webp';
-            else if (file.type.includes('jpeg') || file.type.includes('jpg')) ext = 'jpg';
-        }
-
+        // All image uploads stored canonically as .png format
+        const ext = 'png';
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
 
         // Map category to bucket directories:
@@ -83,7 +74,7 @@ export async function uploadImageToStorage(file: File, category: string = ''): P
                 headers: {
                     'Authorization': `Bearer ${serviceRoleKey}`,
                     'apikey': serviceRoleKey,
-                    'Content-Type': file.type || `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+                    'Content-Type': 'image/png',
                     'x-upsert': 'true',
                 },
                 body: buffer,
@@ -105,7 +96,7 @@ export async function uploadImageToStorage(file: File, category: string = ''): P
                     headers: {
                         'Authorization': `Bearer ${serviceRoleKey}`,
                         'apikey': serviceRoleKey,
-                        'Content-Type': file.type || `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+                        'Content-Type': 'image/png',
                         'x-upsert': 'true',
                     },
                     body: buffer,

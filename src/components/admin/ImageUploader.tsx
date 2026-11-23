@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { uploadProductImageAction } from '@/app/actions/uploadImage';
 import { supabase } from '@/lib/supabase';
+import { compressAndConvertToPng } from '@/lib/client-image-processor';
 import {
     PhotoIcon,
     XMarkIcon,
@@ -39,78 +40,19 @@ export default function ImageUploader({
     const [dragIndex, setDragIndex] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const acceptedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/pjpeg', 'image/x-png'];
-
     const validateFile = (file: File): string | null => {
-        const ext = file.name.split('.').pop()?.toLowerCase();
-        const validExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '');
-        const validMime = !file.type || acceptedMimes.includes(file.type.toLowerCase());
-
-        if (!validExt && !validMime) {
-            return 'Only JPG, PNG, and WebP images are allowed';
+        const isImage = file.type?.startsWith('image/') || /\.(jpg|jpeg|png|webp|heic|heif|bmp|gif|dng|raw)$/i.test(file.name);
+        if (!isImage) {
+            return 'Please select a valid image file (PNG, JPG, WebP, DCIM, etc.)';
         }
-        if (file.size > maxSizeMB * 1024 * 1024) {
-            return `File size must be under ${maxSizeMB}MB`;
+        if (file.size > 25 * 1024 * 1024) {
+            return `File size must be under 25MB`;
         }
         return null;
     };
 
     const compressImage = async (file: File): Promise<File> => {
-        if (!file.type || !file.type.startsWith('image/')) return file;
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    try {
-                        const maxWidth = 1200;
-                        const maxHeight = 1200;
-                        let { width, height } = img;
-                        if (width > maxWidth || height > maxHeight) {
-                            if (width / height > maxWidth / maxHeight) {
-                                height = Math.round((height * maxWidth) / width);
-                                width = maxWidth;
-                            } else {
-                                width = Math.round((width * maxHeight) / height);
-                                height = maxHeight;
-                            }
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            ctx.drawImage(img, 0, 0, width, height);
-                            const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-                            canvas.toBlob(
-                                (blob) => {
-                                    if (blob && blob.size < file.size) {
-                                        const compressedFile = new File([blob], file.name, {
-                                            type: mime,
-                                            lastModified: Date.now(),
-                                        });
-                                        resolve(compressedFile);
-                                    } else {
-                                        resolve(file);
-                                    }
-                                },
-                                mime,
-                                0.85
-                            );
-                        } else {
-                            resolve(file);
-                        }
-                    } catch (canvasErr) {
-                        console.warn('Canvas compression error, using raw file:', canvasErr);
-                        resolve(file);
-                    }
-                };
-                img.onerror = () => resolve(file);
-                img.src = e.target?.result as string;
-            };
-            reader.onerror = () => resolve(file);
-            reader.readAsDataURL(file);
-        });
+        return compressAndConvertToPng(file, 1600);
     };
 
     const uploadFile = async (file: File): Promise<{ url: string | null; error?: string }> => {
@@ -331,7 +273,7 @@ export default function ImageUploader({
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.bmp,.gif,.dng"
                     onChange={(e) => e.target.files && handleFiles(e.target.files)}
                     className="hidden"
                 />

@@ -24,7 +24,12 @@ export async function POST(request: Request) {
             return NextResponse.json(result, { status: 500 });
         }
 
-        return NextResponse.json(result);
+        return NextResponse.json({
+            success: true,
+            publicUrl: result.publicUrl,
+            imageUrl: result.publicUrl,
+            filePath: result.filePath,
+        });
     } catch (err: any) {
         console.error('API /admin/products/upload-image error:', err);
         return NextResponse.json({
