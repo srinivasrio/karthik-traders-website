@@ -527,22 +527,40 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="mt-8">
-                <div className="flex justify-between items-center border-b pb-2 mb-4">
-                    <h3 className="text-lg font-medium text-slate-900">Order Items</h3>
+                <div className="flex flex-wrap justify-between items-center gap-2 border-b border-slate-200 pb-3 mb-4">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900">Order Items</h3>
+                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                            {order.order_items?.length || 0} items
+                        </span>
+                    </div>
                     {isEditingFulfillment && (
-                        <span className="text-xs text-slate-500 font-medium">Modify stock availability & fulfilled quantities below</span>
+                        <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg font-medium">
+                            Modify stock availability & fulfilled quantities below
+                        </span>
                     )}
                 </div>
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-                    <table className="min-w-full divide-y divide-slate-300">
-                        <thead className="bg-slate-50">
+
+                {/* Mobile scroll swipe indicator */}
+                <div className="sm:hidden flex items-center justify-between text-xs text-slate-500 mb-2.5 px-1">
+                    <span className="flex items-center gap-1.5 font-medium">
+                        <span className="animate-pulse">👉</span>
+                        <span>Swipe sideways to view all item details</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">Scrollable ⇄</span>
+                </div>
+
+                {/* Structured Horizontal Side Scroll Table */}
+                <div className="overflow-x-auto shadow-xs border border-slate-200 rounded-2xl bg-white scrollbar-thin">
+                    <table className="w-full min-w-[640px] divide-y divide-slate-200 text-left">
+                        <thead className="bg-slate-50/90 text-slate-700 text-xs font-extrabold uppercase tracking-wider">
                             <tr>
-                                <th className="py-3 px-4 text-left text-sm font-semibold">Product</th>
-                                <th className="py-3 px-4 text-right text-sm font-semibold">Price</th>
-                                <th className="py-3 px-4 text-right text-sm font-semibold">
+                                <th className="py-3.5 px-4 min-w-[260px]">Product</th>
+                                <th className="py-3.5 px-4 text-right min-w-[100px]">Price</th>
+                                <th className="py-3.5 px-4 text-right min-w-[180px]">
                                     {isEditingFulfillment ? 'Fulfillment Settings' : 'Quantity'}
                                 </th>
-                                <th className="py-3 px-4 text-right text-sm font-semibold">Subtotal</th>
+                                <th className="py-3.5 px-4 text-right min-w-[110px]">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 bg-white">
@@ -555,25 +573,29 @@ export default function OrderDetailPage() {
                                     if (!editItem) return null;
                                     return (
                                         <tr key={item.id} className={!editItem.is_available ? 'bg-rose-50/40' : ''}>
-                                            <td className="py-4 px-4 text-sm text-slate-900 font-medium">
-                                                <div className="flex items-center">
+                                            <td className="py-3.5 px-4 text-sm text-slate-900 font-medium">
+                                                <div className="flex items-center gap-3">
                                                     {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
-                                                        <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className={`h-10 w-10 rounded mr-3 object-contain bg-transparent ${!editItem.is_available ? 'opacity-50 grayscale' : ''}`} />
+                                                        <img
+                                                            src={productDetails.image || productDetails.images?.[0] || productDetails.image_url}
+                                                            alt=""
+                                                            className={`h-12 w-12 rounded-xl object-contain bg-slate-50 border border-slate-200 p-1 shrink-0 ${!editItem.is_available ? 'opacity-50 grayscale' : ''}`}
+                                                        />
                                                     )}
-                                                    <div>
-                                                        <p className="font-semibold">{productDetails?.name || item.product_name || item.product_id}</p>
-                                                        <p className="text-xs text-slate-500">Ordered: {item.quantity} units</p>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-slate-900 leading-snug">{productDetails?.name || item.product_name || item.product_id}</p>
+                                                        <p className="text-xs text-slate-500 mt-0.5 font-mono">Ordered: <span className="font-semibold text-slate-700">{item.quantity}</span> units</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-4 text-sm text-slate-500 text-right">₹{item.price_at_purchase}</td>
-                                            <td className="py-4 px-4 text-sm text-slate-500 text-right">
+                                            <td className="py-3.5 px-4 text-sm font-mono text-slate-600 text-right whitespace-nowrap">₹{Number(item.price_at_purchase).toLocaleString()}</td>
+                                            <td className="py-3.5 px-4 text-sm text-slate-500 text-right">
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <div className="inline-flex rounded-md shadow-sm" role="group">
+                                                    <div className="inline-flex rounded-lg shadow-2xs" role="group">
                                                         <button
                                                             type="button"
                                                             onClick={() => handleToggleItemAvailability(index, true)}
-                                                            className={`px-3 py-1 text-xs font-semibold rounded-l-md border ${
+                                                            className={`px-3 py-1 text-xs font-bold rounded-l-lg border ${
                                                                 editItem.is_available
                                                                     ? 'bg-green-600 text-white border-green-600'
                                                                     : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
@@ -584,7 +606,7 @@ export default function OrderDetailPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => handleToggleItemAvailability(index, false)}
-                                                            className={`px-3 py-1 text-xs font-semibold rounded-r-md border-t border-b border-r ${
+                                                            className={`px-3 py-1 text-xs font-bold rounded-r-lg border-t border-b border-r ${
                                                                 !editItem.is_available
                                                                     ? 'bg-rose-600 text-white border-rose-600'
                                                                     : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
@@ -596,31 +618,31 @@ export default function OrderDetailPage() {
 
                                                     {editItem.is_available ? (
                                                         <div className="flex items-center gap-1.5 mt-1">
-                                                            <span className="text-xs text-slate-500">Fulfilled Qty:</span>
+                                                            <span className="text-xs text-slate-500 font-medium">Fulfilled Qty:</span>
                                                             <input
                                                                 type="number"
                                                                 min="0"
                                                                 max={item.quantity}
                                                                 value={editItem.fulfilled_quantity}
                                                                 onChange={(e) => handleUpdateItemFulfilledQty(index, parseInt(e.target.value) || 0)}
-                                                                className="w-16 rounded border border-slate-300 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-aqua-500"
+                                                                className="w-16 rounded-lg border border-slate-300 px-2.5 py-1 text-xs text-right font-mono font-bold focus:outline-none focus:ring-2 focus:ring-aqua-500"
                                                             />
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center gap-1.5 mt-1">
-                                                            <span className="text-xs text-slate-500">Reason:</span>
+                                                            <span className="text-xs text-slate-500 font-medium">Reason:</span>
                                                             <input
                                                                 type="text"
-                                                                placeholder="Reason (e.g. Out of stock)"
+                                                                placeholder="e.g. Out of stock"
                                                                 value={editItem.out_of_stock_reason}
                                                                 onChange={(e) => handleUpdateItemReason(index, e.target.value)}
-                                                                className="w-40 rounded border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-aqua-500"
+                                                                className="w-40 rounded-lg border border-slate-300 px-2.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-aqua-500"
                                                             />
                                                         </div>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-4 text-sm text-slate-900 text-right font-medium">
+                                            <td className="py-3.5 px-4 text-sm text-slate-900 text-right font-bold font-mono whitespace-nowrap">
                                                 ₹{(item.price_at_purchase * (editItem.is_available ? editItem.fulfilled_quantity : 0)).toLocaleString()}
                                             </td>
                                         </tr>
@@ -632,14 +654,18 @@ export default function OrderDetailPage() {
                                 const hasFulfillmentDiff = fulfilledQty !== item.quantity;
 
                                 return (
-                                    <tr key={item.id} className={!isAvailable ? 'bg-slate-50 text-slate-400' : ''}>
-                                        <td className="py-4 px-4 text-sm text-slate-900 font-medium">
-                                            <div className="flex items-center">
+                                    <tr key={item.id} className={!isAvailable ? 'bg-slate-50/70 text-slate-400' : 'hover:bg-slate-50/40 transition-colors'}>
+                                        <td className="py-3.5 px-4 text-sm text-slate-900 font-medium">
+                                            <div className="flex items-center gap-3">
                                                 {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
-                                                    <img src={productDetails.image || productDetails.images?.[0] || productDetails.image_url} alt="" className={`h-10 w-10 rounded mr-3 object-contain bg-transparent ${!isAvailable ? 'opacity-50 grayscale' : ''}`} />
+                                                    <img
+                                                        src={productDetails.image || productDetails.images?.[0] || productDetails.image_url}
+                                                        alt=""
+                                                        className={`h-12 w-12 rounded-xl object-contain bg-slate-50 border border-slate-200 p-1 shrink-0 ${!isAvailable ? 'opacity-50 grayscale' : ''}`}
+                                                    />
                                                 )}
-                                                <div>
-                                                    <p className={!isAvailable ? 'text-slate-500 line-through' : 'text-slate-900'}>
+                                                <div className="min-w-0">
+                                                    <p className={`font-bold leading-snug ${!isAvailable ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                                                         {productDetails?.name || item.product_name || item.product_id}
                                                     </p>
                                                     {!isAvailable && (
@@ -655,25 +681,25 @@ export default function OrderDetailPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-4 text-sm text-slate-500 text-right">₹{item.price_at_purchase}</td>
-                                        <td className="py-4 px-4 text-sm text-slate-500 text-right">
+                                        <td className="py-3.5 px-4 text-sm font-mono text-slate-600 text-right whitespace-nowrap">₹{Number(item.price_at_purchase).toLocaleString()}</td>
+                                        <td className="py-3.5 px-4 text-sm text-slate-700 text-right whitespace-nowrap">
                                             {isAvailable ? (
                                                 hasFulfillmentDiff ? (
                                                     <div>
-                                                        <span className="font-semibold text-slate-900">{fulfilledQty}</span>
-                                                        <span className="text-xs text-slate-400 block">ordered {item.quantity}</span>
+                                                        <span className="font-bold text-slate-900 font-mono text-sm">{fulfilledQty}</span>
+                                                        <span className="text-xs text-slate-400 font-mono block">ordered {item.quantity}</span>
                                                     </div>
                                                 ) : (
-                                                    item.quantity
+                                                    <span className="font-semibold text-slate-800 font-mono text-sm">{item.quantity}</span>
                                                 )
                                             ) : (
                                                 <div>
-                                                    <span className="line-through">{item.quantity}</span>
+                                                    <span className="line-through font-mono">{item.quantity}</span>
                                                     <span className="text-xs text-rose-500 font-semibold block">0 fulfilled</span>
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="py-4 px-4 text-sm text-slate-900 text-right font-medium">
+                                        <td className="py-3.5 px-4 text-sm text-slate-900 text-right font-extrabold font-mono whitespace-nowrap">
                                             ₹{(item.price_at_purchase * (isAvailable ? fulfilledQty : 0)).toLocaleString()}
                                         </td>
                                     </tr>
