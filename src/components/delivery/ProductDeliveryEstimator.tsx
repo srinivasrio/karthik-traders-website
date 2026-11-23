@@ -131,15 +131,11 @@ export default function ProductDeliveryEstimator({
                     className="flex-1 h-9 px-3 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 outline-none focus:border-blue-600 focus:bg-white transition-colors cursor-pointer"
                 >
                     {INDIAN_STATES_LIST.map((st) => {
-                        const stEval = evaluateOrderFreeDelivery(
-                            product ? [product] : [{ category: 'aerator-set' }],
-                            st,
-                            rules,
-                            general
-                        );
+                        const isFreeState = (general.isFreeDeliveryEnabled ?? true) && isAerator && (st === 'Andhra Pradesh');
+                        const stRule = resolveDeliveryRule(st, rules, general);
                         return (
                             <option key={st} value={st}>
-                                {st} ({stEval.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {stEval.deliveryRule.timelineText})
+                                {st} ({isFreeState ? `FREE Delivery (${minMoq}+ Sets)` : 'Customer Arranged'} · ${stRule.timelineText})
                             </option>
                         );
                     })}

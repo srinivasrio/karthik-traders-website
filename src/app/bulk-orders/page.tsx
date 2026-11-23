@@ -423,11 +423,12 @@ export default function CheckoutPage() {
                     className="h-12 px-3.5 rounded-xl border border-[#D5DCE8] bg-[#FBFBFB] text-sm font-semibold text-[#0B1A33] outline-none focus:border-[#4338CA] transition-colors"
                   >
                     {INDIAN_STATES_LIST.map((st) => {
-                      const stRule = resolveDeliveryRule(st, deliveryRules);
+                      const stEval = evaluateOrderFreeDelivery(cartItems, st, deliveryRules, deliveryGeneral);
+                      const isFreeOption = (deliveryGeneral.isFreeDeliveryEnabled ?? true) && stEval.isFreeDelivery;
                       return (
                         <option key={st} value={st}>
                           {isDeliveryVisible
-                            ? `${st} (${stRule.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · ${stRule.timelineText})`
+                            ? `${st} (${isFreeOption ? 'FREE Delivery' : 'Customer Arranged'} · ${stEval.deliveryRule.timelineText})`
                             : st}
                         </option>
                       );

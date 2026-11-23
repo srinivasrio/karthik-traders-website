@@ -270,7 +270,7 @@ export function evaluateOrderFreeDelivery(
     deliveryRule: StateDeliveryRule;
     reason: string;
 } {
-    const baseRule = resolveDeliveryRule(destinationState, rules);
+    const baseRule = resolveDeliveryRule(destinationState, rules, generalSettings);
 
     // 1. Check if Free Delivery is globally enabled by admin
     const isFreeDeliveryGloballyEnabled = generalSettings.isFreeDeliveryEnabled ?? true;
@@ -424,64 +424,64 @@ export function isDeliveryFeatureVisible(
  */
 export function resolveDeliveryRule(
     stateInput?: string,
-    rules: StateDeliveryRule[] = DEFAULT_RULES
+    rules: StateDeliveryRule[] = DEFAULT_RULES,
+    generalSettings?: DeliveryGeneralSettings
 ): StateDeliveryRule {
     const activeRules = rules.filter((r) => r.isActive);
     const apDefault = activeRules.find((r) => r.stateCode === 'AP') || DEFAULT_RULES[0];
     const otherDefault = activeRules.find((r) => r.stateCode === 'OTHER' || r.id === 'other_states') || DEFAULT_RULES[DEFAULT_RULES.length - 1];
 
-    if (!stateInput) return apDefault;
+    let matchedRule = apDefault;
 
-    const trimmed = String(stateInput).trim();
-    if (!trimmed) return apDefault;
+    if (stateInput) {
+        const trimmed = String(stateInput).trim();
+        if (trimmed) {
+            const normalized = trimmed.toLowerCase().replace(/[^a-z\s]/g, '').trim();
 
-    const normalized = trimmed.toLowerCase().replace(/[^a-z\s]/g, '').trim();
-
-    // 1. Exact match on stateName or stateCode
-    const exact = activeRules.find(
-        (r) => r.stateName.toLowerCase() === normalized || r.stateCode.toLowerCase() === normalized
-    );
-    if (exact) return exact;
-
-    // 2. Fuzzy matches for common state names
-    if (normalized.includes('andhra') || normalized === 'ap') {
-        return activeRules.find((r) => r.stateCode === 'AP') || apDefault;
-    }
-    if (normalized.includes('telangana') || normalized === 'ts' || normalized === 'tg') {
-        return activeRules.find((r) => r.stateCode === 'TS') || activeRules[1] || otherDefault;
-    }
-    if (normalized.includes('tamil') || normalized.includes('nadu') || normalized === 'tn') {
-        return activeRules.find((r) => r.stateCode === 'TN') || activeRules[2] || otherDefault;
-    }
-    if (normalized.includes('bengal') || normalized.includes('kolkata') || normalized === 'wb') {
-        return activeRules.find((r) => r.stateCode === 'WB') || activeRules[3] || otherDefault;
-    }
-    if (normalized.includes('karnataka') || normalized === 'ka') {
-        const ka = activeRules.find((r) => r.stateCode === 'KA' || r.stateName.toLowerCase().includes('karnataka'));
-        if (ka) return ka;
-    }
-    if (normalized.includes('odisha') || normalized.includes('orissa') || normalized === 'or') {
-        const od = activeRules.find((r) => r.stateCode === 'OR' || r.stateName.toLowerCase().includes('odisha'));
-        if (od) return od;
-    }
-    if (normalized.includes('kerala') || normalized === 'kl') {
-        const kl = activeRules.find((r) => r.stateCode === 'KL' || r.stateName.toLowerCase().includes('kerala'));
-        if (kl) return kl;
-    }
-    if (normalized.includes('maharashtra') || normalized === 'mh') {
-        const mh = activeRules.find((r) => r.stateCode === 'MH' || r.stateName.toLowerCase().includes('maharashtra'));
-        if (mh) return mh;
-    }
-    if (normalized.includes('gujarat') || normalized === 'gj') {
-        const gj = activeRules.find((r) => r.stateCode === 'GJ' || r.stateName.toLowerCase().includes('gujarat'));
-        if (gj) return gj;
+            // 1. Exact match on stateName or stateCode
+            const exact = activeRules.find(
+                (r) => r.stateName.toLowerCase() === normalized || r.stateCode.toLowerCase() === normalized
+            );
+            if (exact) {
+                matchedRule = exact;
+            } else if (normalized.includes('andhra') || normalized === 'ap') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'AP') || apDefault;
+            } else if (normalized.includes('telangana') || normalized === 'ts' || normalized === 'tg') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'TS') || activeRules[1] || otherDefault;
+            } else if (normalized.includes('tamil') || normalized.includes('nadu') || normalized === 'tn') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'TN') || activeRules[2] || otherDefault;
+            } else if (normalized.includes('bengal') || normalized.includes('kolkata') || normalized === 'wb') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'WB') || activeRules[3] || otherDefault;
+            } else if (normalized.includes('karnataka') || normalized === 'ka') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'KA' || r.stateName.toLowerCase().includes('karnataka')) || otherDefault;
+            } else if (normalized.includes('odisha') || normalized.includes('orissa') || normalized === 'or') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'OR' || r.stateName.toLowerCase().includes('odisha')) || otherDefault;
+            } else if (normalized.includes('kerala') || normalized === 'kl') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'KL' || r.stateName.toLowerCase().includes('kerala')) || otherDefault;
+            } else if (normalized.includes('maharashtra') || normalized === 'mh') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'MH' || r.stateName.toLowerCase().includes('maharashtra')) || otherDefault;
+            } else if (normalized.includes('gujarat') || normalized === 'gj') {
+                matchedRule = activeRules.find((r) => r.stateCode === 'GJ' || r.stateName.toLowerCase().includes('gujarat')) || otherDefault;
+            } else {
+                // Substring match against any configured state
+                const subMatch = activeRules.find((r) => r.stateName.toLowerCase().includes(normalized));
+                matchedRule = subMatch || otherDefault;
+            }
+        }
     }
 
-    // 3. Substring match against any configured state
-    const subMatch = activeRules.find((r) => r.stateName.toLowerCase().includes(normalized));
-    if (subMatch) return subMatch;
+    if (generalSettings && generalSettings.isFreeDeliveryEnabled === false) {
+        return {
+            ...matchedRule,
+            isFreeDelivery: false,
+            policyBadgeText: 'Customer Responsibility (To-Pay)',
+            tagline: `Delivery in ${matchedRule.timelineText} (Customer arranged transport)`,
+            description: `Free delivery option is currently disabled by store administration. Dispatched via regional transport (To-Pay) or customer vehicle.`,
+            badgeColor: getBadgeColor('customer', false, matchedRule.stateCode),
+        };
+    }
 
-    return otherDefault;
+    return matchedRule;
 }
 
 /**

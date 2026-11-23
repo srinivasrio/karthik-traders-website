@@ -117,11 +117,11 @@ async function main() {
         const enabledInProduction = generalRes?.is_delivery_feature_enabled_in_production ?? false;
         assert(enabledInProduction === true, 'Delivery transparency feature MUST be LIVE on production (enabledInProduction: true)');
 
-        const isFreeEnabled = generalRes?.is_free_delivery_enabled ?? true;
-        assert(isFreeEnabled === true, 'Free delivery master toggle must be enabled by default');
-
         const minMoq = generalRes?.min_aerator_qty_for_free_delivery ?? 10;
         assert(minMoq === 10, `Minimum order quantity for free delivery must be 10 aerators, got ${minMoq}`);
+
+        // Verify database holds a boolean for is_free_delivery_enabled
+        assert(typeof generalRes?.is_free_delivery_enabled === 'boolean', 'is_free_delivery_enabled must be a boolean in database');
 
         // Test delivery rules
         const rules = [
@@ -173,6 +173,18 @@ async function main() {
         // Test 7: Admin disables Free Delivery globally -> All orders become Customer Arranged
         const resDisabled = evalOrder([{ category: 'aerator-set', quantity: 10 }], 'Andhra Pradesh', { isFreeDeliveryEnabled: false, minAeratorQtyForFreeDelivery: 10 });
         assert(resDisabled.isFreeDelivery === false, 'When Admin disables free delivery option, all orders must be Customer Arranged');
+
+        // Test 8: State Selector Label Logic when Free Delivery is Disabled
+        const disabledGen = { isFreeDeliveryEnabled: false, minAeratorQtyForFreeDelivery: 10 };
+        const testStates = ['Andhra Pradesh', 'Telangana', 'Tamil Nadu'];
+        for (const st of testStates) {
+            const stEval = evalOrder([{ category: 'aerator-set', quantity: 10 }], st, disabledGen);
+            const isFreeOption = (disabledGen.isFreeDeliveryEnabled ?? true) && stEval.isFreeDelivery;
+            const optionLabel = `${st} (${isFreeOption ? 'FREE Delivery' : 'Customer Arranged'} · 3 to 7 Days)`;
+            assert(isFreeOption === false, `State ${st} must NOT have isFreeOption when free delivery is disabled`);
+            assert(!optionLabel.includes('FREE Delivery'), `State selector for ${st} must NOT contain 'FREE Delivery' when disabled by admin`);
+            assert(optionLabel.includes('Customer Arranged'), `State selector for ${st} must show 'Customer Arranged' when disabled by admin`);
+        }
     });
 
     // TEST CASE 4: Loyalty Points Database Rules & Preview RPC

@@ -410,9 +410,10 @@ export default function CartPage() {
                   >
                     {INDIAN_STATES_LIST.map((st) => {
                       const stEval = evaluateOrderFreeDelivery(cartItems, st, deliveryRules, deliveryGeneral);
+                      const isFreeOption = (deliveryGeneral.isFreeDeliveryEnabled ?? true) && stEval.isFreeDelivery;
                       return (
                         <option key={st} value={st}>
-                          {st} ({stEval.isFreeDelivery ? 'FREE Delivery' : 'Customer Arranged'} · {stEval.deliveryRule.timelineText})
+                          {st} ({isFreeOption ? 'FREE Delivery' : 'Customer Arranged'} · ${stEval.deliveryRule.timelineText})
                         </option>
                       );
                     })}
