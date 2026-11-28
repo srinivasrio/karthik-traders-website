@@ -19,7 +19,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://karthiktraders.in'),
-  title: "Karthik Traders | Premium Aquaculture Equipment - Aqualion & Sea Boss",
+  title: {
+    default: "Karthik Traders | Premium Aquaculture Equipment - Aqualion & Sea Boss",
+    template: "%s | Karthik Traders",
+  },
   description: "India's trusted supplier of paddle wheel aerators, motors, gearboxes, and spares for shrimp & fish farms. Shop Aqualion premium and Sea Boss budget-friendly aquaculture equipment.",
   keywords: "paddle wheel aerator, aquaculture equipment, shrimp farming, fish farming, aerator motor, gearbox, HDPE float, India",
   authors: [{ name: "Karthik Traders" }],

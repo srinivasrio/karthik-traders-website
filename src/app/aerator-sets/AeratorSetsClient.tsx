@@ -85,7 +85,6 @@ export default function AeratorSetsClient({ initialProducts }: AeratorSetsClient
               <span>/</span>
               <span className="text-[#0B1A33] font-bold">Aerator Sets</span>
             </nav>
-            <h1 className="sr-only">Aerator Sets</h1>
           </div>
         </div>
       </section>

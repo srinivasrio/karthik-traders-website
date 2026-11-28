@@ -344,7 +344,7 @@ export default function CustomerDetailPage() {
                                                         <div key={item.id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 shadow-sm">
                                                             <div className="flex items-center gap-3">
                                                                 {item.product?.images && item.product.images[0] ? (
-                                                                    <img src={item.product.images[0]} alt="" className="w-8 h-8 rounded object-contain bg-transparent" />
+                                                                    <img src={item.product.images[0]} alt={item.product?.name || 'Product'} className="w-8 h-8 rounded object-contain bg-transparent" />
                                                                 ) : (
                                                                     <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-400">
                                                                         <ShoppingBagIcon className="w-4 h-4" />

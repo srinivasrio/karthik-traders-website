@@ -122,7 +122,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
               <span>/</span>
               <span className="text-[#0B1A33] font-bold">Motors & Gearboxes</span>
             </nav>
-            <h1 className="sr-only">Motors & Gearboxes</h1>
           </div>
         </div>
       </section>

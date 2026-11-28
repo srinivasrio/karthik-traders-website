@@ -269,7 +269,7 @@ export default function ProductDetailView({
                   >
                     <img
                       src={img}
-                      alt=""
+                      alt={`${product.name} — view ${i + 1}`}
                       style={{ mixBlendMode: 'multiply' }}
                       className="w-full h-full object-contain"
                     />

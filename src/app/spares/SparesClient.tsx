@@ -130,7 +130,6 @@ export default function SparesClient({ initialProducts }: SparesClientProps) {
               <span>/</span>
               <span className="text-[#0B1A33] font-bold">Spares</span>
             </nav>
-            <h1 className="sr-only">Spares</h1>
           </div>
         </div>
       </section>

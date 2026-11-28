@@ -1,13 +1,19 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import HeroSection from '@/components/home/HeroSection';
 import CategorySection from '@/components/home/CategorySection';
-import BrandsSection from '@/components/home/BrandsSection';
-import WhyUsSection from '@/components/home/WhyUsSection';
-import ComparePromo from '@/components/home/ComparePromo';
-import ReviewsSection from '@/components/home/ReviewsSection';
-import LocationSection from '@/components/home/LocationSection';
-import BulkEnquirySection from '@/components/home/BulkEnquirySection';
+import LazyMount from '@/components/ui/LazyMount';
+
+// Below-the-fold sections: code-split and mounted only when scrolled near.
+// Keeps framer-motion + the large Compare/Brands sections out of the
+// initial bundle, speeding up first paint and interactivity.
+const BrandsSection = dynamic(() => import('@/components/home/BrandsSection'), { ssr: false });
+const WhyUsSection = dynamic(() => import('@/components/home/WhyUsSection'), { ssr: false });
+const ComparePromo = dynamic(() => import('@/components/home/ComparePromo'), { ssr: false });
+const ReviewsSection = dynamic(() => import('@/components/home/ReviewsSection'), { ssr: false });
+const LocationSection = dynamic(() => import('@/components/home/LocationSection'), { ssr: false });
+const BulkEnquirySection = dynamic(() => import('@/components/home/BulkEnquirySection'), { ssr: false });
 
 export default function Home() {
   return (
@@ -19,22 +25,22 @@ export default function Home() {
       <CategorySection />
 
       {/* 03. Our Brands: Aqualion & Sea Boss */}
-      <BrandsSection />
+      <LazyMount><BrandsSection /></LazyMount>
 
       {/* 04. Why Karthik Traders (4 Animated Pillars) */}
-      <WhyUsSection />
+      <LazyMount><WhyUsSection /></LazyMount>
 
       {/* 05. Compare Models Promo Card */}
-      <ComparePromo />
+      <LazyMount><ComparePromo /></LazyMount>
 
       {/* 06. Google Customer Reviews */}
-      <ReviewsSection />
+      <LazyMount><ReviewsSection /></LazyMount>
 
       {/* 07. Location & Google Map */}
-      <LocationSection />
+      <LazyMount><LocationSection /></LazyMount>
 
       {/* 08. Bulk Orders & Dealer Inquiry Form */}
-      <BulkEnquirySection />
+      <LazyMount><BulkEnquirySection /></LazyMount>
     </div>
   );
 }

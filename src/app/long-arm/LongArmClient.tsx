@@ -117,7 +117,6 @@ export default function LongArmClient({ initialProducts }: LongArmClientProps) {
               <span>/</span>
               <span className="text-[#0B1A33] font-bold">Long Arm</span>
             </nav>
-            <h1 className="sr-only">Long Arm</h1>
           </div>
         </div>
       </section>
