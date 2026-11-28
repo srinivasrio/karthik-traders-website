@@ -662,7 +662,7 @@ export default function OrderDetailPage() {
                                                     {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
                                                         <img
                                                             src={productDetails.image || productDetails.images?.[0] || productDetails.image_url}
-                                                            alt=""
+                                                            alt={productDetails?.name || 'Product'}
                                                             className={`h-12 w-12 rounded-xl object-contain bg-slate-50 border border-slate-200 p-1 shrink-0 ${!editItem.is_available ? 'opacity-50 grayscale' : ''}`}
                                                         />
                                                     )}
@@ -744,7 +744,7 @@ export default function OrderDetailPage() {
                                                 {(productDetails?.image || productDetails?.images?.[0] || productDetails?.image_url) && (
                                                     <img
                                                         src={productDetails.image || productDetails.images?.[0] || productDetails.image_url}
-                                                        alt=""
+                                                        alt={productDetails?.name || 'Product'}
                                                         className={`h-12 w-12 rounded-xl object-contain bg-slate-50 border border-slate-200 p-1 shrink-0 ${!isAvailable ? 'opacity-50 grayscale' : ''}`}
                                                     />
                                                 )}

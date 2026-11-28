@@ -1,6 +1,7 @@
 'use server';
 
-import { uploadImageToStorage, UploadImageResult } from '@/lib/storage-upload';
+import { uploadImageToStorage } from '@/lib/storage-upload';
+import type { UploadImageResult } from '@/lib/storage-upload';
 
 export type { UploadImageResult };
 
